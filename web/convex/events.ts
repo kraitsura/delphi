@@ -1,0 +1,557 @@
+import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
+import { mutation, query } from "./_generated/server";
+import {
+  getAuthenticatedUser,
+  requireEventCoordinator,
+  canManageEvent,
+} from "./authHelpers";
+
+/**
+ * Create new event
+ * Automatically creates main room and adds coordinator as participant
+ */
+export const create = mutation({
+  args: {
+    name: v.string(),
+    description: v.optional(v.string()),
+    type: v.union(
+      v.literal("wedding"),
+      v.literal("corporate"),
+      v.literal("party"),
+      v.literal("destination"),
+      v.literal("other")
+    ),
+    date: v.optional(v.number()),
+    budget: v.number(),
+    expectedGuests: v.number(),
+    location: v.optional(
+      v.object({
+        address: v.string(),
+        city: v.string(),
+        state: v.string(),
+        country: v.string(),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    // Create event
+    const eventId = await ctx.db.insert("events", {
+      name: args.name,
+      description: args.description,
+      type: args.type,
+      date: args.date,
+      location: args.location,
+      budget: {
+        total: args.budget,
+        spent: 0,
+        committed: 0,
+      },
+      guestCount: {
+        expected: args.expectedGuests,
+        confirmed: 0,
+      },
+      coordinatorId: user._id,
+      status: "planning",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      createdBy: user._id,
+    });
+
+    // Create main event room automatically
+    const roomId = await ctx.db.insert("rooms", {
+      eventId,
+      name: `${args.name} - Main Chat`,
+      type: "main",
+      isArchived: false,
+      allowGuestMessages: false,
+      createdAt: Date.now(),
+      createdBy: user._id,
+    });
+
+    // Add coordinator as room participant with full permissions
+    await ctx.db.insert("roomParticipants", {
+      roomId,
+      userId: user._id,
+      canPost: true,
+      canEdit: true,
+      canDelete: true,
+      canManage: true,
+      notificationLevel: "all",
+      joinedAt: Date.now(),
+      addedBy: user._id,
+    });
+
+    return { eventId, roomId };
+  },
+});
+
+/**
+ * Get event by ID with access control
+ * User must be coordinator, co-coordinator, or room participant
+ */
+export const getById = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    const event = await ctx.db.get(args.eventId);
+
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    // Check user has access (coordinator, co-coordinator, or collaborator via room)
+    const isCoordinator =
+      event.coordinatorId === user._id ||
+      event.coCoordinatorIds?.includes(user._id);
+
+    // For non-coordinators, check if they're in any room
+    if (!isCoordinator) {
+      const rooms = await ctx.db
+        .query("rooms")
+        .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+        .collect();
+
+      const roomIds = rooms.map((r) => r._id);
+
+      if (roomIds.length > 0) {
+        // Check if user is a participant in any room
+        const memberships = await ctx.db
+          .query("roomParticipants")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+
+        const hasAccess = memberships.some((m) => roomIds.includes(m.roomId));
+
+        if (!hasAccess) {
+          throw new Error("Forbidden: Not a member of this event");
+        }
+      } else {
+        throw new Error("Forbidden: Not a member of this event");
+      }
+    }
+
+    return event;
+  },
+});
+
+/**
+ * List user's events
+ * Returns events where user is coordinator, co-coordinator, or has room access
+ */
+export const listUserEvents = query({
+  args: {
+    status: v.optional(
+      v.union(
+        v.literal("planning"),
+        v.literal("in_progress"),
+        v.literal("completed"),
+        v.literal("cancelled"),
+        v.literal("archived")
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    // Events where user is coordinator
+    let coordinatorQuery = ctx.db
+      .query("events")
+      .withIndex("by_coordinator", (q) => q.eq("coordinatorId", user._id));
+
+    if (args.status) {
+      coordinatorQuery = coordinatorQuery.filter((q) =>
+        q.eq(q.field("status"), args.status)
+      );
+    }
+
+    const coordinatorEvents = await coordinatorQuery.collect();
+
+    // Events where user is co-coordinator
+    const allEvents = await ctx.db.query("events").collect();
+    const coCoordinatorEvents = allEvents.filter(
+      (event) =>
+        event.coCoordinatorIds?.includes(user._id) &&
+        (!args.status || event.status === args.status)
+    );
+
+    // Events where user is a room participant
+    const userRooms = await ctx.db
+      .query("roomParticipants")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const roomEventIds = new Set<Id<"events">>();
+    for (const participant of userRooms) {
+      const room = await ctx.db.get(participant.roomId);
+      if (room) {
+        roomEventIds.add(room.eventId);
+      }
+    }
+
+    const collaboratorEvents = (
+      await Promise.all(Array.from(roomEventIds).map((id) => ctx.db.get(id)))
+    ).filter(
+      (event) =>
+        event !== null &&
+        event.coordinatorId !== user._id &&
+        !event.coCoordinatorIds?.includes(user._id) &&
+        (!args.status || event.status === args.status)
+    );
+
+    // Combine and deduplicate
+    const allUserEvents = [
+      ...coordinatorEvents,
+      ...coCoordinatorEvents,
+      ...collaboratorEvents,
+    ];
+
+    // Sort by creation date (most recent first)
+    return allUserEvents.sort((a, b) => b.createdAt - a.createdAt);
+  },
+});
+
+/**
+ * Update event
+ * Only coordinators and co-coordinators can update
+ */
+export const update = mutation({
+  args: {
+    eventId: v.id("events"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    date: v.optional(v.number()),
+    location: v.optional(
+      v.object({
+        address: v.string(),
+        city: v.string(),
+        state: v.string(),
+        country: v.string(),
+      })
+    ),
+    budget: v.optional(v.object({ total: v.number() })),
+    guestCount: v.optional(v.object({ expected: v.number() })),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    // Verify user is coordinator or co-coordinator
+    const canManage = await canManageEvent(ctx, args.eventId, user._id);
+    if (!canManage) {
+      throw new Error(
+        "Forbidden: Only coordinators and co-coordinators can update events"
+      );
+    }
+
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+
+    // Build update object
+    const updates: any = {
+      updatedAt: Date.now(),
+    };
+
+    if (args.name) updates.name = args.name;
+    if (args.description !== undefined) updates.description = args.description;
+    if (args.date) updates.date = args.date;
+    if (args.location) updates.location = args.location;
+
+    if (args.budget) {
+      updates.budget = {
+        ...event.budget,
+        total: args.budget.total,
+      };
+    }
+
+    if (args.guestCount) {
+      updates.guestCount = {
+        ...event.guestCount,
+        expected: args.guestCount.expected,
+      };
+    }
+
+    await ctx.db.patch(args.eventId, updates);
+
+    return await ctx.db.get(args.eventId);
+  },
+});
+
+/**
+ * Update event status
+ * Only coordinators and co-coordinators can update
+ */
+export const updateStatus = mutation({
+  args: {
+    eventId: v.id("events"),
+    status: v.union(
+      v.literal("planning"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("archived")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    // Verify user is coordinator or co-coordinator
+    const canManage = await canManageEvent(ctx, args.eventId, user._id);
+    if (!canManage) {
+      throw new Error(
+        "Forbidden: Only coordinators and co-coordinators can update event status"
+      );
+    }
+
+    await ctx.db.patch(args.eventId, {
+      status: args.status,
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.eventId);
+  },
+});
+
+/**
+ * Add co-coordinator to event
+ * Only main coordinator can add co-coordinators
+ */
+export const addCoCoordinator = mutation({
+  args: {
+    eventId: v.id("events"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    // Verify requester is the main coordinator
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+
+    if (event.coordinatorId !== user._id) {
+      throw new Error("Only the main coordinator can add co-coordinators");
+    }
+
+    // Add to co-coordinators list
+    const currentCoCoordinators = event.coCoordinatorIds || [];
+
+    if (currentCoCoordinators.includes(args.userId)) {
+      throw new Error("User is already a co-coordinator");
+    }
+
+    await ctx.db.patch(args.eventId, {
+      coCoordinatorIds: [...currentCoCoordinators, args.userId],
+      updatedAt: Date.now(),
+    });
+
+    // Add to all event rooms with manage permissions
+    const rooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .collect();
+
+    for (const room of rooms) {
+      // Check if already a participant
+      const existing = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", room._id).eq("userId", args.userId)
+        )
+        .first();
+
+      if (!existing) {
+        await ctx.db.insert("roomParticipants", {
+          roomId: room._id,
+          userId: args.userId,
+          canPost: true,
+          canEdit: true,
+          canDelete: true,
+          canManage: true,
+          notificationLevel: "all",
+          joinedAt: Date.now(),
+          addedBy: user._id,
+        });
+      }
+    }
+
+    return await ctx.db.get(args.eventId);
+  },
+});
+
+/**
+ * Remove co-coordinator from event
+ * Only main coordinator can remove co-coordinators
+ */
+export const removeCoCoordinator = mutation({
+  args: {
+    eventId: v.id("events"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+
+    if (event.coordinatorId !== user._id) {
+      throw new Error("Only the main coordinator can remove co-coordinators");
+    }
+
+    const currentCoCoordinators = event.coCoordinatorIds || [];
+    const updated = currentCoCoordinators.filter((id) => id !== args.userId);
+
+    await ctx.db.patch(args.eventId, {
+      coCoordinatorIds: updated,
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(args.eventId);
+  },
+});
+
+/**
+ * Archive event
+ * Only coordinators and co-coordinators can archive
+ */
+export const archive = mutation({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    // Verify user is coordinator or co-coordinator
+    const canManage = await canManageEvent(ctx, args.eventId, user._id);
+    if (!canManage) {
+      throw new Error(
+        "Forbidden: Only coordinators and co-coordinators can archive events"
+      );
+    }
+
+    await ctx.db.patch(args.eventId, {
+      status: "archived",
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Delete event (soft delete via cancelled status)
+ * Only main coordinator can delete
+ */
+export const remove = mutation({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+
+    // Only main coordinator can delete
+    if (event.coordinatorId !== user._id) {
+      throw new Error("Only the main coordinator can delete events");
+    }
+
+    // In production, you might want hard delete or keep forever
+    await ctx.db.patch(args.eventId, {
+      status: "cancelled",
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+/**
+ * Get event statistics
+ * Returns task, expense, room, and participant counts
+ */
+export const getStats = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+
+    // Verify access (same as getById)
+    const isCoordinator =
+      event.coordinatorId === user._id ||
+      event.coCoordinatorIds?.includes(user._id);
+
+    if (!isCoordinator) {
+      const rooms = await ctx.db
+        .query("rooms")
+        .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+        .collect();
+
+      const roomIds = rooms.map((r) => r._id);
+
+      if (roomIds.length > 0) {
+        const memberships = await ctx.db
+          .query("roomParticipants")
+          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .collect();
+
+        const hasAccess = memberships.some((m) => roomIds.includes(m.roomId));
+
+        if (!hasAccess) {
+          throw new Error("Forbidden: Not a member of this event");
+        }
+      } else {
+        throw new Error("Forbidden: Not a member of this event");
+      }
+    }
+
+    // Count tasks
+    const tasks = await ctx.db
+      .query("tasks")
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .collect();
+
+    const taskStats = {
+      total: tasks.length,
+      completed: tasks.filter((t) => t.status === "completed").length,
+      inProgress: tasks.filter((t) => t.status === "in_progress").length,
+      notStarted: tasks.filter((t) => t.status === "not_started").length,
+    };
+
+    // Count expenses
+    const expenses = await ctx.db
+      .query("expenses")
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .collect();
+
+    const expenseStats = {
+      total: expenses.reduce((sum, e) => sum + e.amount, 0),
+      count: expenses.length,
+    };
+
+    // Count rooms and participants
+    const rooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .collect();
+
+    const participantIds = new Set<Id<"users">>();
+    for (const room of rooms) {
+      const participants = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room", (q) => q.eq("roomId", room._id))
+        .collect();
+      participants.forEach((p) => participantIds.add(p.userId));
+    }
+
+    return {
+      tasks: taskStats,
+      expenses: expenseStats,
+      rooms: rooms.length,
+      participants: participantIds.size,
+    };
+  },
+});
