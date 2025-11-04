@@ -1,33 +1,67 @@
 # Phase 1.2: Users CRUD Operations
 
-> **Status:** ❌ NOT STARTED - Blocked by Phase 1.0 (schema required)
-> **Last Updated:** January 2025
+> **Status:** ✅ MOSTLY COMPLETE (Avatar upload deferred)
+> **Last Updated:** November 2025
 > **Prerequisites:**
-> - ⚠️ **BLOCKER:** Phase 1.0 (Database Schema) must be completed first
-> - ✅ Phase 1.1 (Authentication) - Already complete
-> **Estimated Time:** 2-3 hours
+> - ✅ Phase 1.0 (Database Schema) - Complete
+> - ✅ Phase 1.1 (Authentication) - Complete
+> **Completion:** ~85% (Core CRUD, auth helpers, and activity tracking complete; avatar upload pending)
 
 ---
 
 ## Current Implementation Status
 
+### ✅ Implemented Features
+
+**Backend (Convex):**
+- ✅ `convex/schema.ts` - Complete users table with all fields and indexes
+- ✅ `convex/authHelpers.ts` - Comprehensive auth helpers (exceeds spec requirements)
+  - `authenticatedQuery` and `authenticatedMutation` wrappers
+  - Role-based authorization helpers
+  - Event and room permission helpers
+- ✅ `convex/users.ts` - Full CRUD operations
+  - Get current profile (`getMyProfile`)
+  - Get user by ID/IDs (`getById`, `getByIds`)
+  - Create/update profile (`createOrUpdateProfile`)
+  - Update profile fields (name, avatar, bio, location, preferences)
+  - Activity tracking (`updateLastActive`)
+  - Soft delete (`deactivate`, `reactivate`)
+  - User search by name/email (`searchByName`)
+- ✅ `convex/auth.ts` - Auto profile creation callback on signup
+
+**Frontend (React):**
+- ✅ `src/hooks/use-activity-tracker.ts` - Activity tracking hook (updates every 5min)
+- ✅ `src/routes/_authed.tsx` - Activity tracker integrated in auth layout
+- ✅ `src/routes/_authed/profile.tsx` - Complete profile page
+- ✅ `src/components/user/profile-form.tsx` - Full profile form with all fields
+
+**Database:**
+- ✅ Users table with all required fields
+- ✅ Indexes: by_email, by_role, by_active
+- ✅ Role-based access control (coordinator, collaborator, guest, vendor)
+- ✅ Preferences object (theme, notifications, timezone)
+
+### ⚠️ Partially Implemented
+
+**Auto Profile Creation:**
+- ✅ Better Auth callback implemented in `convex/auth.ts`
+- ✅ Creates profile automatically on signup (email or OAuth)
+- ⚠️ Uses email-based lookup instead of ID-based (potential future improvement)
+
 ### ❌ Not Yet Implemented
-This entire phase is blocked because the `users` table is not yet defined in the schema.
 
-**Missing Prerequisites:**
-- `users` table in `/web/convex/schema.ts`
-- `auth-helpers.ts` with `authenticatedMutation` and `authenticatedQuery` wrappers
-- User roles defined in schema
+**Avatar Upload:**
+- ❌ `convex/storage.ts` - Backend file upload functions
+- ❌ `src/components/user/avatar-upload.tsx` - Upload component
+- ⚠️ Profile page shows avatar placeholder with "Avatar upload coming soon"
+- ℹ️ **Deferred** - Will be implemented when file upload is needed
 
-**What Exists:**
-- ✅ Better Auth user data (email, name, emailVerified, image)
-- ✅ Access via `authComponent.getAuthUser(ctx)`
-
-**What's Blocked:**
-- ❌ Extended user profile (role, avatar, preferences, lastActiveAt)
-- ❌ All user CRUD operations
-- ❌ Avatar upload functionality
-- ❌ Profile management UI
+**What Works Now:**
+- ✅ Complete user profile management (except avatar upload)
+- ✅ All CRUD operations functional
+- ✅ Activity tracking active
+- ✅ Auto profile creation on signup
+- ✅ Role-based access control ready
 
 ---
 
@@ -107,40 +141,76 @@ This phase implements complete user profile management with CRUD operations. Use
 
 ### Integration Point: Creating Extended Profile
 
-The extended profile should be created when a user signs up:
+✅ **IMPLEMENTED** - The extended profile is automatically created when a user signs up:
 
 ```typescript
-// In convex/auth.ts - add callback
+// In convex/auth.ts - Auto profile creation callback
 export const createAuth = (ctx: GenericCtx<DataModel>, options) => {
   return betterAuth({
     // ... existing config
-    callbacks: {
-      async afterSignUp({ user }) {
-        // Create extended profile
-        await ctx.db.insert("users", {
-          email: user.email,
-          role: "guest", // default role
-          preferences: {
-            theme: "light",
-            notifications: true,
-            timezone: "UTC",
-          },
-          lastActiveAt: Date.now(),
-          isActive: true,
-        });
-      },
+    hooks: {
+      after: createAuthMiddleware(async (hookCtx) => {
+        // Create extended profile after signup (email or OAuth)
+        if (hookCtx.path.startsWith("/sign-up")) {
+          const newSession = hookCtx.context.newSession;
+          if (newSession?.user) {
+            const user = newSession.user;
+            // Check if profile already exists
+            const existing = await ctx.db
+              .query("users")
+              .withIndex("by_email", (q) => q.eq("email", user.email))
+              .first();
+
+            if (!existing) {
+              // Create extended profile
+              await ctx.db.insert("users", {
+                email: user.email,
+                name: user.name,
+                role: "collaborator", // default role
+                preferences: {
+                  notifications: true,
+                  theme: "light",
+                  timezone: "UTC",
+                },
+                isActive: true,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                lastActiveAt: Date.now(),
+              });
+            }
+          }
+        }
+      }),
     },
   });
 };
 ```
 
+**Implementation Notes:**
+- Uses Better Auth's `after` hooks with `createAuthMiddleware` from `better-auth/api`
+- Triggers on any `/sign-up` path (email or OAuth)
+- Checks for existing profile to prevent duplicates
+- Sets default role to "collaborator" for new users
+- Initializes preferences with sensible defaults
+
 ---
 
 ## Backend: User Queries & Mutations
 
-**⚠️ This section requires Phase 1.0 to be completed first.**
+✅ **IMPLEMENTED** - All user CRUD operations are complete in `/web/convex/users.ts`
 
-Create `/web/convex/users.ts`:
+**Implementation Status:**
+- ✅ Create/update profile with `createOrUpdateProfile`
+- ✅ Get current user profile with `getMyProfile`
+- ✅ Get user(s) by ID with `getById` and `getByIds`
+- ✅ Update profile fields with `updateProfile`
+- ✅ Activity tracking with `updateLastActive`
+- ✅ Soft delete with `deactivate` / `reactivate`
+- ✅ User search with `searchByName`
+
+**Reference Implementation:** `/web/convex/users.ts`
+
+The following shows the expected interface (actual implementation may have minor variations):
 
 ```typescript
 import { v } from "convex/values";
@@ -361,9 +431,23 @@ export const searchByName = query({
 
 ## Avatar Upload Implementation
 
-### Backend: Storage Functions
+❌ **NOT IMPLEMENTED** - Deferred to future phase
 
-Create `mono/packages/backend/convex/storage.ts`:
+**Status:** Avatar upload functionality is not yet implemented. The profile page includes a placeholder UI with "Avatar upload coming soon" message.
+
+**When Implemented:**
+- Backend file upload via Convex storage
+- Frontend upload component with preview
+- Storage cleanup for replaced avatars
+
+**Current Workaround:**
+- OAuth providers (Google) may provide avatar URLs
+- Avatar field accepts URL strings for manual entry
+- Profile page displays avatar if URL is set
+
+### Backend: Storage Functions (Deferred)
+
+To be created in `/web/convex/storage.ts`:
 
 ```typescript
 import { mutation } from "./_generated/server";
@@ -431,9 +515,21 @@ export const deleteFile = mutation({
 
 ## Frontend Components
 
+✅ **IMPLEMENTED** - All core frontend components are complete
+
+**Implemented Components:**
+- ✅ `/src/components/user/profile-form.tsx` - Full profile editing form
+- ✅ `/src/routes/_authed/profile.tsx` - Complete profile page
+- ✅ `/src/hooks/use-activity-tracker.ts` - Activity tracking hook
+
+**Deferred:**
+- ❌ Avatar upload component (pending backend implementation)
+
 ### User Profile Form
 
-Create `mono/apps/web/src/components/user-profile-form.tsx`:
+✅ **IMPLEMENTED** - See `/src/components/user/profile-form.tsx`
+
+The following shows the expected interface (actual implementation may have variations):
 
 ```typescript
 import { useConvexMutation, useConvexQuery } from "@convex-dev/react-query";
@@ -518,7 +614,9 @@ export function UserProfileForm() {
 
 ### Avatar Upload Component
 
-Create `mono/apps/web/src/components/avatar-upload.tsx`:
+❌ **NOT IMPLEMENTED** - Deferred to future phase
+
+To be created in `/src/components/user/avatar-upload.tsx`:
 
 ```typescript
 import { useConvexMutation } from "@convex-dev/react-query";
@@ -652,7 +750,9 @@ export function AvatarUpload({ currentAvatar }: { currentAvatar?: string }) {
 
 ### User Profile Page
 
-Create `mono/apps/web/src/routes/profile.tsx`:
+✅ **IMPLEMENTED** - See `/src/routes/_authed/profile.tsx`
+
+The following shows the expected interface (actual implementation may have variations):
 
 ```typescript
 import { createFileRoute } from "@tanstack/react-router";
@@ -718,7 +818,9 @@ function ProfilePage() {
 
 ### Activity Tracker Hook
 
-Create `mono/apps/web/src/hooks/use-activity-tracker.ts`:
+✅ **IMPLEMENTED** - See `/src/hooks/use-activity-tracker.ts`
+
+The following shows the expected interface (actual implementation matches this):
 
 ```typescript
 import { useConvexMutation } from "@convex-dev/react-query";
@@ -745,20 +847,31 @@ export function useActivityTracker() {
 }
 ```
 
-Usage in root layout:
+✅ **IMPLEMENTED** - Usage in authenticated layout:
 
 ```typescript
-// mono/apps/web/src/routes/__root.tsx
+// /src/routes/_authed.tsx
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 
-export function RootLayout() {
-  useActivityTracker(); // Track activity across entire app
+function ActivityTracker() {
+  useActivityTracker();
+  return null;
+}
 
+function AuthenticatedLayout() {
   return (
-    // ... rest of layout
+    <ConvexProvider>
+      <ActivityTracker />
+      <Outlet />
+    </ConvexProvider>
   );
 }
 ```
+
+**Implementation Notes:**
+- Activity tracker runs only for authenticated users
+- Integrated into `_authed` layout (not root layout)
+- Updates activity every 5 minutes automatically
 
 ---
 
@@ -858,7 +971,23 @@ describe("Users CRUD", () => {
 
 ## Next Steps
 
-With user profile management complete, you're ready to proceed to:
+✅ **Phase 1.2 is 85% complete!** Core user profile management is fully functional.
+
+### Completed in This Phase:
+- ✅ All backend CRUD operations
+- ✅ Comprehensive auth helpers (exceeds requirements)
+- ✅ Auto profile creation on signup
+- ✅ Activity tracking system
+- ✅ Complete frontend profile management UI
+- ✅ Database schema with all fields and indexes
+
+### Deferred to Future Phase:
+- ❌ Avatar upload functionality (backend + frontend)
+  - Not blocking any current features
+  - OAuth avatars work as interim solution
+  - Will implement when file uploads are needed elsewhere
+
+### Ready to Proceed To:
 
 **Phase 1.3: Events CRUD Operations**
 - Create and manage events
@@ -866,11 +995,13 @@ With user profile management complete, you're ready to proceed to:
 - Event queries and filters
 - Event collaborators
 
-**Estimated Time to Complete Phase 1.2:** 2-3 hours
-- Backend CRUD operations: 1 hour
-- Avatar upload implementation: 1 hour
-- Frontend components: 30 minutes
-- Testing: 30 minutes
+**Actual Time Spent on Phase 1.2:** ~2 hours
+- Backend CRUD operations: ✅ Complete
+- Auth helpers: ✅ Complete (exceeds spec)
+- Activity tracking: ✅ Complete
+- Auto profile creation: ✅ Complete
+- Frontend components: ✅ Complete (minus avatar upload)
+- Avatar upload: ⏸️ Deferred
 
 ---
 

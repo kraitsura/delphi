@@ -10,7 +10,10 @@
 
 import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
+import type * as events from "../events.js";
 import type * as http from "../http.js";
+import type * as roomParticipants from "../roomParticipants.js";
+import type * as rooms from "../rooms.js";
 import type * as users from "../users.js";
 
 import type {
@@ -30,7 +33,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authHelpers: typeof authHelpers;
+  events: typeof events;
   http: typeof http;
+  roomParticipants: typeof roomParticipants;
+  rooms: typeof rooms;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

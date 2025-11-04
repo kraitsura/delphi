@@ -16,6 +16,8 @@ export default defineSchema({
     email: v.string(),
     name: v.string(),
     avatar: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    location: v.optional(v.string()),
 
     // Role-based access control
     role: v.union(

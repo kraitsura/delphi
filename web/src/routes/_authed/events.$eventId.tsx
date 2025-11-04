@@ -1,10 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, MapPin, Users, DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, MapPin, Users, DollarSign, MessageSquare, ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authed/events/$eventId")({
   component: EventDetailPage,
@@ -79,13 +80,21 @@ function EventDetailPage() {
               <p className="text-gray-600 text-lg">{event.description}</p>
             )}
           </div>
-          <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-              event.status
-            )}`}
-          >
-            {event.status.replace("_", " ")}
-          </span>
+          <div className="flex items-center gap-3">
+            <Link to="/events/$eventId/rooms" params={{ eventId }}>
+              <Button variant="outline">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Rooms
+              </Button>
+            </Link>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
+                event.status
+              )}`}
+            >
+              {event.status.replace("_", " ")}
+            </span>
+          </div>
         </div>
         <div className="text-sm text-gray-500">
           <span className="capitalize">{event.type}</span> • Created{" "}
@@ -246,15 +255,27 @@ function EventDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-3xl font-bold mb-1">{stats.rooms}</div>
-                <div className="text-sm text-gray-600">Chat Rooms</div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Communication channels
-                </div>
-              </CardContent>
-            </Card>
+            <Link to="/events/$eventId/rooms" params={{ eventId }}>
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer group border-l-4 border-l-blue-500">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-3xl font-bold mb-1 group-hover:text-blue-600 transition-colors">
+                        {stats.rooms}
+                      </div>
+                      <div className="text-sm text-gray-600">Chat Rooms</div>
+                      <div className="mt-2 text-xs text-gray-500">
+                        Communication channels
+                      </div>
+                    </div>
+                    <MessageSquare className="h-6 w-6 text-blue-500 group-hover:scale-110 transition-transform" />
+                  </div>
+                  <div className="mt-3 flex items-center text-sm text-blue-600 font-medium">
+                    View Rooms <ArrowRight className="h-4 w-4 ml-1" />
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
 
             <Card>
               <CardContent className="pt-6">

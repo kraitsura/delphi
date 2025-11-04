@@ -35,7 +35,7 @@ export const create = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Create event
     const eventId = await ctx.db.insert("events", {
@@ -53,11 +53,11 @@ export const create = mutation({
         expected: args.expectedGuests,
         confirmed: 0,
       },
-      coordinatorId: user._id,
+      coordinatorId: userProfile._id,
       status: "planning",
       createdAt: Date.now(),
       updatedAt: Date.now(),
-      createdBy: user._id,
+      createdBy: userProfile._id,
     });
 
     // Create main event room automatically
@@ -68,20 +68,20 @@ export const create = mutation({
       isArchived: false,
       allowGuestMessages: false,
       createdAt: Date.now(),
-      createdBy: user._id,
+      createdBy: userProfile._id,
     });
 
     // Add coordinator as room participant with full permissions
     await ctx.db.insert("roomParticipants", {
       roomId,
-      userId: user._id,
+      userId: userProfile._id,
       canPost: true,
       canEdit: true,
       canDelete: true,
       canManage: true,
       notificationLevel: "all",
       joinedAt: Date.now(),
-      addedBy: user._id,
+      addedBy: userProfile._id,
     });
 
     return { eventId, roomId };
@@ -97,7 +97,7 @@ export const getById = query({
     eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
     const event = await ctx.db.get(args.eventId);
 
     if (!event) {
@@ -106,8 +106,8 @@ export const getById = query({
 
     // Check user has access (coordinator, co-coordinator, or collaborator via room)
     const isCoordinator =
-      event.coordinatorId === user._id ||
-      event.coCoordinatorIds?.includes(user._id);
+      event.coordinatorId === userProfile._id ||
+      event.coCoordinatorIds?.includes(userProfile._id);
 
     // For non-coordinators, check if they're in any room
     if (!isCoordinator) {
@@ -122,7 +122,7 @@ export const getById = query({
         // Check if user is a participant in any room
         const memberships = await ctx.db
           .query("roomParticipants")
-          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
           .collect();
 
         const hasAccess = memberships.some((m) => roomIds.includes(m.roomId));
@@ -156,12 +156,12 @@ export const listUserEvents = query({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Events where user is coordinator
     let coordinatorQuery = ctx.db
       .query("events")
-      .withIndex("by_coordinator", (q) => q.eq("coordinatorId", user._id));
+      .withIndex("by_coordinator", (q) => q.eq("coordinatorId", userProfile._id));
 
     if (args.status) {
       coordinatorQuery = coordinatorQuery.filter((q) =>
@@ -175,14 +175,14 @@ export const listUserEvents = query({
     const allEvents = await ctx.db.query("events").collect();
     const coCoordinatorEvents = allEvents.filter(
       (event) =>
-        event.coCoordinatorIds?.includes(user._id) &&
+        event.coCoordinatorIds?.includes(userProfile._id) &&
         (!args.status || event.status === args.status)
     );
 
     // Events where user is a room participant
     const userRooms = await ctx.db
       .query("roomParticipants")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
       .collect();
 
     const roomEventIds = new Set<Id<"events">>();
@@ -198,8 +198,8 @@ export const listUserEvents = query({
     ).filter(
       (event) =>
         event !== null &&
-        event.coordinatorId !== user._id &&
-        !event.coCoordinatorIds?.includes(user._id) &&
+        event.coordinatorId !== userProfile._id &&
+        !event.coCoordinatorIds?.includes(userProfile._id) &&
         (!args.status || event.status === args.status)
     );
 
@@ -207,7 +207,7 @@ export const listUserEvents = query({
     const allUserEvents = [
       ...coordinatorEvents,
       ...coCoordinatorEvents,
-      ...collaboratorEvents,
+      ...collaboratorEvents.filter((e): e is NonNullable<typeof e> => e !== null),
     ];
 
     // Sort by creation date (most recent first)
@@ -237,10 +237,10 @@ export const update = mutation({
     guestCount: v.optional(v.object({ expected: v.number() })),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Verify user is coordinator or co-coordinator
-    const canManage = await canManageEvent(ctx, args.eventId, user._id);
+    const canManage = await canManageEvent(ctx, args.eventId, userProfile._id);
     if (!canManage) {
       throw new Error(
         "Forbidden: Only coordinators and co-coordinators can update events"
@@ -296,10 +296,10 @@ export const updateStatus = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Verify user is coordinator or co-coordinator
-    const canManage = await canManageEvent(ctx, args.eventId, user._id);
+    const canManage = await canManageEvent(ctx, args.eventId, userProfile._id);
     if (!canManage) {
       throw new Error(
         "Forbidden: Only coordinators and co-coordinators can update event status"
@@ -325,13 +325,13 @@ export const addCoCoordinator = mutation({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Verify requester is the main coordinator
     const event = await ctx.db.get(args.eventId);
     if (!event) throw new Error("Event not found");
 
-    if (event.coordinatorId !== user._id) {
+    if (event.coordinatorId !== userProfile._id) {
       throw new Error("Only the main coordinator can add co-coordinators");
     }
 
@@ -372,7 +372,7 @@ export const addCoCoordinator = mutation({
           canManage: true,
           notificationLevel: "all",
           joinedAt: Date.now(),
-          addedBy: user._id,
+          addedBy: userProfile._id,
         });
       }
     }
@@ -391,12 +391,12 @@ export const removeCoCoordinator = mutation({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const event = await ctx.db.get(args.eventId);
     if (!event) throw new Error("Event not found");
 
-    if (event.coordinatorId !== user._id) {
+    if (event.coordinatorId !== userProfile._id) {
       throw new Error("Only the main coordinator can remove co-coordinators");
     }
 
@@ -421,10 +421,10 @@ export const archive = mutation({
     eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Verify user is coordinator or co-coordinator
-    const canManage = await canManageEvent(ctx, args.eventId, user._id);
+    const canManage = await canManageEvent(ctx, args.eventId, userProfile._id);
     if (!canManage) {
       throw new Error(
         "Forbidden: Only coordinators and co-coordinators can archive events"
@@ -447,13 +447,13 @@ export const remove = mutation({
     eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const event = await ctx.db.get(args.eventId);
     if (!event) throw new Error("Event not found");
 
     // Only main coordinator can delete
-    if (event.coordinatorId !== user._id) {
+    if (event.coordinatorId !== userProfile._id) {
       throw new Error("Only the main coordinator can delete events");
     }
 
@@ -474,15 +474,15 @@ export const getStats = query({
     eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
-    const user = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const event = await ctx.db.get(args.eventId);
     if (!event) throw new Error("Event not found");
 
     // Verify access (same as getById)
     const isCoordinator =
-      event.coordinatorId === user._id ||
-      event.coCoordinatorIds?.includes(user._id);
+      event.coordinatorId === userProfile._id ||
+      event.coCoordinatorIds?.includes(userProfile._id);
 
     if (!isCoordinator) {
       const rooms = await ctx.db
@@ -495,7 +495,7 @@ export const getStats = query({
       if (roomIds.length > 0) {
         const memberships = await ctx.db
           .query("roomParticipants")
-          .withIndex("by_user", (q) => q.eq("userId", user._id))
+          .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
           .collect();
 
         const hasAccess = memberships.some((m) => roomIds.includes(m.roomId));

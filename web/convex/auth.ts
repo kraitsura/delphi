@@ -4,6 +4,7 @@ import { components } from "./_generated/api";
 import { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 
 const siteUrl = process.env.SITE_URL!;
 
@@ -31,19 +32,38 @@ export const createAuth = (
     },
     plugins: [convex()], // Required for Convex integration
     hooks: {
-      after: [
-        {
-          matcher: (context) => {
-            // Trigger on any signup event (email/password or OAuth)
-            return context.action === "signUp.email" || context.action === "signUp.social";
-          },
-          handler: async (context) => {
-            // Extended profile creation is handled by createOrUpdateProfile mutation
-            // which should be called from the frontend after signup completes
-            console.log("User signed up:", context.user?.email);
-          },
-        },
-      ],
+      after: createAuthMiddleware(async (hookCtx) => {
+        // Create extended profile after signup (email or OAuth)
+        if (hookCtx.path.startsWith("/sign-up")) {
+          const newSession = hookCtx.context.newSession;
+          if (newSession?.user) {
+            const user = newSession.user;
+            // Check if profile already exists
+            const existing = await ctx.db
+              .query("users")
+              .withIndex("by_email", (q) => q.eq("email", user.email))
+              .first();
+
+            if (!existing) {
+              // Create extended profile
+              await ctx.db.insert("users", {
+                email: user.email,
+                name: user.name,
+                role: "collaborator", // Default role for new users
+                preferences: {
+                  notifications: true,
+                  theme: "light",
+                  timezone: "UTC",
+                },
+                isActive: true,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+                lastActiveAt: Date.now(),
+              });
+            }
+          }
+        }
+      }),
     },
   });
 };

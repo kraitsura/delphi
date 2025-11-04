@@ -9,14 +9,31 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PlansRouteImport } from './routes/plans'
+import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthedProfileRouteImport } from './routes/_authed/profile'
 import { Route as AuthedDashboardRouteImport } from './routes/_authed/dashboard'
+import { Route as AuthedEventsIndexRouteImport } from './routes/_authed/events.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthedEventsNewRouteImport } from './routes/_authed/events.new'
+import { Route as AuthedEventsEventIdRouteImport } from './routes/_authed/events.$eventId'
+import { Route as AuthedEventsEventIdRoomsIndexRouteImport } from './routes/_authed/events.$eventId.rooms.index'
+import { Route as AuthedEventsEventIdRoomsRoomIdRouteImport } from './routes/_authed/events.$eventId.rooms.$roomId'
 
+const PlansRoute = PlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthedRoute = AuthedRouteImport.update({
   id: '/_authed',
   getParentRoute: () => rootRouteImport,
@@ -46,69 +63,140 @@ const AuthedDashboardRoute = AuthedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedEventsIndexRoute = AuthedEventsIndexRouteImport.update({
+  id: '/events/',
+  path: '/events/',
+  getParentRoute: () => AuthedRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthedEventsNewRoute = AuthedEventsNewRouteImport.update({
+  id: '/events/new',
+  path: '/events/new',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedEventsEventIdRoute = AuthedEventsEventIdRouteImport.update({
+  id: '/events/$eventId',
+  path: '/events/$eventId',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedEventsEventIdRoomsIndexRoute =
+  AuthedEventsEventIdRoomsIndexRouteImport.update({
+    id: '/rooms/',
+    path: '/rooms/',
+    getParentRoute: () => AuthedEventsEventIdRoute,
+  } as any)
+const AuthedEventsEventIdRoomsRoomIdRoute =
+  AuthedEventsEventIdRoomsRoomIdRouteImport.update({
+    id: '/rooms/$roomId',
+    path: '/rooms/$roomId',
+    getParentRoute: () => AuthedEventsEventIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/features': typeof FeaturesRoute
+  '/plans': typeof PlansRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/events/$eventId': typeof AuthedEventsEventIdRouteWithChildren
+  '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/events': typeof AuthedEventsIndexRoute
+  '/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
+  '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/features': typeof FeaturesRoute
+  '/plans': typeof PlansRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/events/$eventId': typeof AuthedEventsEventIdRouteWithChildren
+  '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/events': typeof AuthedEventsIndexRoute
+  '/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
+  '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authed': typeof AuthedRouteWithChildren
+  '/features': typeof FeaturesRoute
+  '/plans': typeof PlansRoute
   '/_authed/dashboard': typeof AuthedDashboardRoute
   '/_authed/profile': typeof AuthedProfileRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/_authed/events/$eventId': typeof AuthedEventsEventIdRouteWithChildren
+  '/_authed/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_authed/events/': typeof AuthedEventsIndexRoute
+  '/_authed/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
+  '/_authed/events/$eventId/rooms/': typeof AuthedEventsEventIdRoomsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/features'
+    | '/plans'
     | '/dashboard'
     | '/profile'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/events/$eventId'
+    | '/events/new'
     | '/api/auth/$'
+    | '/events'
+    | '/events/$eventId/rooms/$roomId'
+    | '/events/$eventId/rooms'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/features'
+    | '/plans'
     | '/dashboard'
     | '/profile'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/events/$eventId'
+    | '/events/new'
     | '/api/auth/$'
+    | '/events'
+    | '/events/$eventId/rooms/$roomId'
+    | '/events/$eventId/rooms'
   id:
     | '__root__'
     | '/'
     | '/_authed'
+    | '/features'
+    | '/plans'
     | '/_authed/dashboard'
     | '/_authed/profile'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/_authed/events/$eventId'
+    | '/_authed/events/new'
     | '/api/auth/$'
+    | '/_authed/events/'
+    | '/_authed/events/$eventId/rooms/$roomId'
+    | '/_authed/events/$eventId/rooms/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthedRoute: typeof AuthedRouteWithChildren
+  FeaturesRoute: typeof FeaturesRoute
+  PlansRoute: typeof PlansRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -116,6 +204,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/plans': {
+      id: '/plans'
+      path: '/plans'
+      fullPath: '/plans'
+      preLoaderRoute: typeof PlansRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features': {
+      id: '/features'
+      path: '/features'
+      fullPath: '/features'
+      preLoaderRoute: typeof FeaturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authed': {
       id: '/_authed'
       path: ''
@@ -158,6 +260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedDashboardRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/events/': {
+      id: '/_authed/events/'
+      path: '/events'
+      fullPath: '/events'
+      preLoaderRoute: typeof AuthedEventsIndexRouteImport
+      parentRoute: typeof AuthedRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -165,17 +274,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authed/events/new': {
+      id: '/_authed/events/new'
+      path: '/events/new'
+      fullPath: '/events/new'
+      preLoaderRoute: typeof AuthedEventsNewRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/events/$eventId': {
+      id: '/_authed/events/$eventId'
+      path: '/events/$eventId'
+      fullPath: '/events/$eventId'
+      preLoaderRoute: typeof AuthedEventsEventIdRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/events/$eventId/rooms/': {
+      id: '/_authed/events/$eventId/rooms/'
+      path: '/rooms'
+      fullPath: '/events/$eventId/rooms'
+      preLoaderRoute: typeof AuthedEventsEventIdRoomsIndexRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoute
+    }
+    '/_authed/events/$eventId/rooms/$roomId': {
+      id: '/_authed/events/$eventId/rooms/$roomId'
+      path: '/rooms/$roomId'
+      fullPath: '/events/$eventId/rooms/$roomId'
+      preLoaderRoute: typeof AuthedEventsEventIdRoomsRoomIdRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoute
+    }
   }
 }
+
+interface AuthedEventsEventIdRouteChildren {
+  AuthedEventsEventIdRoomsRoomIdRoute: typeof AuthedEventsEventIdRoomsRoomIdRoute
+  AuthedEventsEventIdRoomsIndexRoute: typeof AuthedEventsEventIdRoomsIndexRoute
+}
+
+const AuthedEventsEventIdRouteChildren: AuthedEventsEventIdRouteChildren = {
+  AuthedEventsEventIdRoomsRoomIdRoute: AuthedEventsEventIdRoomsRoomIdRoute,
+  AuthedEventsEventIdRoomsIndexRoute: AuthedEventsEventIdRoomsIndexRoute,
+}
+
+const AuthedEventsEventIdRouteWithChildren =
+  AuthedEventsEventIdRoute._addFileChildren(AuthedEventsEventIdRouteChildren)
 
 interface AuthedRouteChildren {
   AuthedDashboardRoute: typeof AuthedDashboardRoute
   AuthedProfileRoute: typeof AuthedProfileRoute
+  AuthedEventsEventIdRoute: typeof AuthedEventsEventIdRouteWithChildren
+  AuthedEventsNewRoute: typeof AuthedEventsNewRoute
+  AuthedEventsIndexRoute: typeof AuthedEventsIndexRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedDashboardRoute: AuthedDashboardRoute,
   AuthedProfileRoute: AuthedProfileRoute,
+  AuthedEventsEventIdRoute: AuthedEventsEventIdRouteWithChildren,
+  AuthedEventsNewRoute: AuthedEventsNewRoute,
+  AuthedEventsIndexRoute: AuthedEventsIndexRoute,
 }
 
 const AuthedRouteWithChildren =
@@ -184,6 +340,8 @@ const AuthedRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthedRoute: AuthedRouteWithChildren,
+  FeaturesRoute: FeaturesRoute,
+  PlansRoute: PlansRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
