@@ -46,7 +46,9 @@ export const createOrUpdateProfile = mutation({
       role: "guest", // Default role for new users
       preferences: {
         notifications: true,
-        theme: "light",
+        themeSet: "default",
+        accent: "indigo",
+        themeMode: "system",
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
       },
       createdAt: Date.now(),
@@ -87,7 +89,25 @@ export const updateMyProfile = mutation({
     preferences: v.optional(
       v.object({
         notifications: v.boolean(),
-        theme: v.union(v.literal("light"), v.literal("dark")),
+        themeSet: v.optional(v.union(
+          v.literal("default"),
+          v.literal("patagonia"),
+          v.literal("redwood")
+        )),
+        accent: v.optional(v.union(
+          v.literal("indigo"),
+          v.literal("rose"),
+          v.literal("forest"),
+          v.literal("amber"),
+          v.literal("teal")
+        )),
+        themeMode: v.optional(v.union(
+          v.literal("light"),
+          v.literal("dark"),
+          v.literal("system")
+        )),
+        // Legacy field for backwards compatibility
+        theme: v.optional(v.union(v.literal("light"), v.literal("dark"))),
         timezone: v.string(),
       })
     ),
@@ -115,6 +135,71 @@ export const updateMyProfile = mutation({
       ...(args.preferences !== undefined && { preferences: args.preferences }),
       updatedAt: Date.now(),
       lastActiveAt: Date.now(),
+    });
+
+    return profile._id;
+  },
+});
+
+/**
+ * Update current user's theme preferences
+ * Optimized mutation for theme changes only
+ */
+export const updateThemePreferences = mutation({
+  args: {
+    themeSet: v.optional(v.union(
+      v.literal("default"),
+      v.literal("patagonia"),
+      v.literal("redwood")
+    )),
+    accent: v.optional(v.union(
+      v.literal("indigo"),
+      v.literal("rose"),
+      v.literal("forest"),
+      v.literal("amber"),
+      v.literal("teal")
+    )),
+    themeMode: v.optional(v.union(
+      v.literal("light"),
+      v.literal("dark"),
+      v.literal("system")
+    )),
+  },
+  handler: async (ctx, args) => {
+    const authUser = await authComponent.getAuthUser(ctx);
+    if (!authUser) {
+      throw new Error("Unauthorized");
+    }
+
+    const profile = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", authUser.email))
+      .unique();
+
+    if (!profile) {
+      throw new Error("Profile not found");
+    }
+
+    // Get existing preferences or create defaults
+    const currentPreferences = profile.preferences || {
+      notifications: true,
+      themeSet: "default" as const,
+      accent: "indigo" as const,
+      themeMode: "system" as const,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    };
+
+    // Update only the theme fields that are provided
+    const updatedPreferences = {
+      ...currentPreferences,
+      ...(args.themeSet !== undefined && { themeSet: args.themeSet }),
+      ...(args.accent !== undefined && { accent: args.accent }),
+      ...(args.themeMode !== undefined && { themeMode: args.themeMode }),
+    };
+
+    await ctx.db.patch(profile._id, {
+      preferences: updatedPreferences,
+      updatedAt: Date.now(),
     });
 
     return profile._id;

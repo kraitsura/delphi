@@ -4,7 +4,6 @@ import { components } from "./_generated/api";
 import { DataModel } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { betterAuth } from "better-auth";
-import { createAuthMiddleware } from "better-auth/api";
 
 const siteUrl = process.env.SITE_URL!;
 
@@ -31,40 +30,9 @@ export const createAuth = (
       },
     },
     plugins: [convex()], // Required for Convex integration
-    hooks: {
-      after: createAuthMiddleware(async (hookCtx) => {
-        // Create extended profile after signup (email or OAuth)
-        if (hookCtx.path.startsWith("/sign-up")) {
-          const newSession = hookCtx.context.newSession;
-          if (newSession?.user) {
-            const user = newSession.user;
-            // Check if profile already exists
-            const existing = await ctx.db
-              .query("users")
-              .withIndex("by_email", (q) => q.eq("email", user.email))
-              .first();
-
-            if (!existing) {
-              // Create extended profile
-              await ctx.db.insert("users", {
-                email: user.email,
-                name: user.name,
-                role: "collaborator", // Default role for new users
-                preferences: {
-                  notifications: true,
-                  theme: "light",
-                  timezone: "UTC",
-                },
-                isActive: true,
-                createdAt: Date.now(),
-                updatedAt: Date.now(),
-                lastActiveAt: Date.now(),
-              });
-            }
-          }
-        }
-      }),
-    },
+    // Note: Profile creation happens via createOrUpdateProfile mutation
+    // Better Auth hooks run in HTTP/Action context without direct database access
+    // Frontend calls createOrUpdateProfile after signup to ensure profile exists
   });
 };
 

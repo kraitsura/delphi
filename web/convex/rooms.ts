@@ -304,3 +304,105 @@ export const getStats = query({
     };
   },
 });
+
+/**
+ * List accessible rooms for an event with latest message preview
+ * Designed for WhatsApp-like chat interface in sidebar
+ * Returns only rooms user is a participant of, sorted by activity
+ */
+export const listAccessibleForEvent = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const { user, userProfile } = await getAuthenticatedUser(ctx);
+
+    // Verify event exists
+    const event = await ctx.db.get(args.eventId);
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    // Get all non-archived rooms in the event
+    const allRooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .collect();
+
+    const activeRooms = allRooms.filter((room) => !room.isArchived);
+
+    // Get user's room memberships
+    const userParticipations = await ctx.db
+      .query("roomParticipants")
+      .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
+      .collect();
+
+    const userRoomIds = new Set(userParticipations.map((p) => p.roomId));
+
+    // Filter to only rooms user is a participant of
+    const accessibleRooms = activeRooms.filter((room) =>
+      userRoomIds.has(room._id)
+    );
+
+    // For each room, get the latest message
+    const roomsWithMessages = await Promise.all(
+      accessibleRooms.map(async (room) => {
+        // Get latest message for this room
+        const latestMessage = await ctx.db
+          .query("messages")
+          .withIndex("by_room_and_created", (q) =>
+            q.eq("roomId", room._id)
+          )
+          .order("desc")
+          .filter((q) => q.eq(q.field("isDeleted"), false))
+          .first();
+
+        // Get membership info
+        const membership = userParticipations.find(
+          (p) => p.roomId === room._id
+        );
+
+        // Get unread count (messages after lastReadAt)
+        const unreadCount = membership?.lastReadAt
+          ? await ctx.db
+              .query("messages")
+              .withIndex("by_room_and_created", (q) =>
+                q.eq("roomId", room._id)
+              )
+              .filter((q) =>
+                q.and(
+                  q.gt(q.field("createdAt"), membership.lastReadAt!),
+                  q.eq(q.field("isDeleted"), false)
+                )
+              )
+              .collect()
+              .then((msgs) => msgs.length)
+          : 0;
+
+        return {
+          ...room,
+          membership,
+          latestMessage: latestMessage
+            ? {
+                _id: latestMessage._id,
+                text: latestMessage.text,
+                authorId: latestMessage.authorId,
+                createdAt: latestMessage.createdAt,
+                isAIGenerated: latestMessage.isAIGenerated,
+              }
+            : null,
+          unreadCount,
+        };
+      })
+    );
+
+    // Sort by latest activity (rooms with recent messages first)
+    roomsWithMessages.sort((a, b) => {
+      const aTime = a.lastMessageAt || a.createdAt;
+      const bTime = b.lastMessageAt || b.createdAt;
+      return bTime - aTime;
+    });
+
+    return roomsWithMessages;
+  },
+});

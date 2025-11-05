@@ -30,7 +30,25 @@ export default defineSchema({
     // User preferences
     preferences: v.optional(v.object({
       notifications: v.boolean(),
-      theme: v.union(v.literal("light"), v.literal("dark")),
+      themeSet: v.optional(v.union(
+        v.literal("default"),
+        v.literal("patagonia"),
+        v.literal("redwood")
+      )),
+      accent: v.optional(v.union(
+        v.literal("indigo"),
+        v.literal("rose"),
+        v.literal("forest"),
+        v.literal("amber"),
+        v.literal("teal")
+      )),
+      themeMode: v.optional(v.union(
+        v.literal("light"),
+        v.literal("dark"),
+        v.literal("system")
+      )),
+      // Legacy field for backwards compatibility
+      theme: v.optional(v.union(v.literal("light"), v.literal("dark"))),
       timezone: v.string(),
     })),
 

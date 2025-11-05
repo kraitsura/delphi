@@ -1,7 +1,8 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@/lib/convex-query";
 import {
 	ArrowLeft,
 	Briefcase,
@@ -22,10 +23,28 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authed/events/$eventId/rooms/$roomId")({
+	loader: async ({ params, context }) => {
+		const eventId = params.eventId as Id<"events">;
+		const roomId = params.roomId as Id<"rooms">;
+
+		// Prefetch event data (for EventContext)
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.events.getById, { eventId })
+		);
+
+		// Prefetch room data
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.rooms.getById, { roomId })
+		);
+
+		// Prefetch room stats
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.rooms.getStats, { roomId })
+		);
+	},
 	component: RoomDetailPage,
 });
 
@@ -34,13 +53,18 @@ type RoomType = "main" | "vendor" | "topic" | "guest_announcements" | "private";
 function RoomDetailPage() {
 	const { eventId, roomId } = Route.useParams();
 
-	const room = useQuery(api.rooms.getById, {
-		roomId: roomId as Id<"rooms">,
-	});
+	// Use useSuspenseQuery to read prefetched data
+	const { data: room } = useSuspenseQuery(
+		convexQuery(api.rooms.getById, {
+			roomId: roomId as Id<"rooms">,
+		})
+	);
 
-	const stats = useQuery(api.rooms.getStats, {
-		roomId: roomId as Id<"rooms">,
-	});
+	const { data: stats } = useSuspenseQuery(
+		convexQuery(api.rooms.getStats, {
+			roomId: roomId as Id<"rooms">,
+		})
+	);
 
 	const getRoomIcon = (type: RoomType) => {
 		switch (type) {
@@ -74,15 +98,7 @@ function RoomDetailPage() {
 		}
 	};
 
-	if (room === undefined) {
-		return (
-			<div className="container max-w-6xl mx-auto p-6">
-				<Skeleton className="h-10 w-96 mb-8" />
-				<Skeleton className="h-96" />
-			</div>
-		);
-	}
-
+	// Room not found check
 	if (!room) {
 		return (
 			<div className="container max-w-6xl mx-auto p-6">
@@ -143,11 +159,7 @@ function RoomDetailPage() {
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">
-							{stats === undefined ? (
-								<Skeleton className="h-8 w-12" />
-							) : (
-								stats.participantCount
-							)}
+							{stats.participantCount}
 						</div>
 					</CardContent>
 				</Card>
@@ -157,13 +169,7 @@ function RoomDetailPage() {
 						<CardTitle className="text-sm font-medium">Messages</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
-							{stats === undefined ? (
-								<Skeleton className="h-8 w-12" />
-							) : (
-								stats.messageCount
-							)}
-						</div>
+						<div className="text-2xl font-bold">{stats.messageCount}</div>
 						<p className="text-xs text-muted-foreground">Coming in Phase 1.5</p>
 					</CardContent>
 				</Card>

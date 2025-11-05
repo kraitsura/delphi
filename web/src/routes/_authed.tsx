@@ -2,12 +2,16 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Separator } from "@/components/ui/separator";
 import {
-	SidebarInset,
-	SidebarProvider,
-	SidebarTrigger,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
+import { ThemeConvexSync } from "@/components/theme-convex-sync";
+import { EventProvider } from "@/contexts/EventContext";
+import { Suspense } from "react";
 
 /**
  * Authenticated Layout Route
@@ -24,24 +28,24 @@ import ConvexProvider from "@/integrations/convex/provider";
  */
 
 export const Route = createFileRoute("/_authed")({
-	beforeLoad: async ({ context, location }) => {
-		// Check if user is authenticated (set by __root.tsx)
-		if (!context.userId) {
-			// Redirect to sign-in with return URL
-			throw redirect({
-				to: "/auth/sign-in",
-				search: {
-					redirect: location.pathname,
-				},
-			});
-		}
+  beforeLoad: async ({ context, location }) => {
+    // Check if user is authenticated (set by __root.tsx)
+    if (!context.userId) {
+      // Redirect to sign-in with return URL
+      throw redirect({
+        to: "/auth/sign-in",
+        search: {
+          redirect: location.pathname,
+        },
+      });
+    }
 
-		// Pass userId to child routes
-		return {
-			userId: context.userId,
-		};
-	},
-	component: AuthenticatedLayout,
+    // Pass userId to child routes
+    return {
+      userId: context.userId,
+    };
+  },
+  component: AuthenticatedLayout,
 });
 
 /**
@@ -49,31 +53,68 @@ export const Route = createFileRoute("/_authed")({
  * Tracks user activity and updates lastActiveAt timestamp
  */
 function ActivityTracker() {
-	useActivityTracker();
-	return null;
+  useActivityTracker();
+  return null;
+}
+
+/**
+ * SidebarAwareHeader Component
+ * Header that adjusts styling based on sidebar expansion state
+ */
+function SidebarAwareHeader() {
+  const { state } = useSidebar();
+  const isInsetExpanded = state === "expanded";
+
+  return (
+    <header
+      className={`flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-4 ${
+        isInsetExpanded ? "md:-mt-2" : ""
+      }`}
+    >
+      <SidebarTrigger className="-ml-1.5 mt-1" />
+      <div className="flex-1" />
+    </header>
+  );
 }
 
 /**
  * Authenticated Layout Component
- * Wraps children with ConvexProvider, sidebar navigation, and activity tracking
+ * Wraps children with ConvexProvider, EventProvider, sidebar navigation, and activity tracking
  */
 function AuthenticatedLayout() {
-	return (
-		<ConvexProvider>
-			<ActivityTracker />
-			<SidebarProvider>
-				<AppSidebar />
-				<SidebarInset>
-					<header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-						<SidebarTrigger className="-ml-1" />
-						<Separator orientation="vertical" className="mr-2 h-4" />
-						<div className="flex-1" />
-					</header>
-					<div className="flex flex-1 flex-col gap-4 p-4">
-						<Outlet />
-					</div>
-				</SidebarInset>
-			</SidebarProvider>
-		</ConvexProvider>
-	);
+  const { userId } = Route.useRouteContext();
+
+  return (
+    <ConvexProvider>
+      <ActivityTracker />
+      <Suspense fallback={null}>
+        <ThemeConvexSync />
+      </Suspense>
+      <Suspense
+        fallback={
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <SidebarAwareHeader />
+              <div className="flex flex-1 flex-col gap-4 p-4">
+                <div>Loading...</div>
+              </div>
+            </SidebarInset>
+          </SidebarProvider>
+        }
+      >
+        <EventProvider userId={userId}>
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <SidebarAwareHeader />
+              <div className="flex flex-1 flex-col gap-4 p-4">
+                <Outlet />
+              </div>
+            </SidebarInset>
+          </SidebarProvider>
+        </EventProvider>
+      </Suspense>
+    </ConvexProvider>
+  );
 }

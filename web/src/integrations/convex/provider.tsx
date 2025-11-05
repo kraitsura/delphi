@@ -13,6 +13,9 @@ const convexClient = new ConvexReactClient(CONVEX_URL, {
 	expectAuth: true, // Pauses queries until auth is ready
 });
 
+// Export client for use in TanStack Query integration
+export { convexClient };
+
 export default function AppConvexProvider({
 	children,
 }: {

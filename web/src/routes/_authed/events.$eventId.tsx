@@ -1,7 +1,8 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@/lib/convex-query";
 import {
 	ArrowRight,
 	Calendar,
@@ -12,41 +13,41 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authed/events/$eventId")({
+	loader: async ({ params, context }) => {
+		const eventId = params.eventId as Id<"events">;
+
+		// Prefetch event data for EventContext and this page
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.events.getById, { eventId })
+		);
+
+		// Prefetch stats data
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.events.getStats, { eventId })
+		);
+	},
 	component: EventDetailPage,
 });
 
 function EventDetailPage() {
 	const { eventId } = Route.useParams();
 
-	const event = useQuery(api.events.getById, {
-		eventId: eventId as Id<"events">,
-	});
+	// Use useSuspenseQuery to read prefetched data
+	const { data: event } = useSuspenseQuery(
+		convexQuery(api.events.getById, {
+			eventId: eventId as Id<"events">,
+		})
+	);
 
-	const stats = useQuery(api.events.getStats, {
-		eventId: eventId as Id<"events">,
-	});
+	const { data: stats } = useSuspenseQuery(
+		convexQuery(api.events.getStats, {
+			eventId: eventId as Id<"events">,
+		})
+	);
 
-	if (event === undefined) {
-		return (
-			<div className="container max-w-6xl mx-auto p-6">
-				<Skeleton className="h-10 w-96 mb-8" />
-				<div className="grid gap-6 md:grid-cols-2 mb-8">
-					<Skeleton className="h-64" />
-					<Skeleton className="h-64" />
-				</div>
-				<div className="grid gap-4 md:grid-cols-4">
-					<Skeleton className="h-32" />
-					<Skeleton className="h-32" />
-					<Skeleton className="h-32" />
-					<Skeleton className="h-32" />
-				</div>
-			</div>
-		);
-	}
-
+	// Event not found check
 	if (!event) {
 		return (
 			<div className="container max-w-6xl mx-auto p-6">

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import {
   getAuthenticatedUser,
@@ -250,8 +250,8 @@ export const update = mutation({
     const event = await ctx.db.get(args.eventId);
     if (!event) throw new Error("Event not found");
 
-    // Build update object
-    const updates: any = {
+    // Build update object with proper typing
+    const updates: Partial<Doc<"events">> = {
       updatedAt: Date.now(),
     };
 
@@ -407,6 +407,25 @@ export const removeCoCoordinator = mutation({
       coCoordinatorIds: updated,
       updatedAt: Date.now(),
     });
+
+    // Remove from all event rooms (they lose coordinator-level access)
+    const rooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .collect();
+
+    for (const room of rooms) {
+      const participant = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", room._id).eq("userId", args.userId)
+        )
+        .first();
+
+      if (participant) {
+        await ctx.db.delete(participant._id);
+      }
+    }
 
     return await ctx.db.get(args.eventId);
   },

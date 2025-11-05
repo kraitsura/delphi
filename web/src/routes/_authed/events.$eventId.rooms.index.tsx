@@ -1,7 +1,8 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { convexQuery } from "@/lib/convex-query";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { RoomCreateDialog } from "@/components/rooms/room-create-dialog";
 import { RoomList } from "@/components/rooms/room-list";
@@ -13,32 +14,50 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authed/events/$eventId/rooms/")({
+	loader: async ({ params, context }) => {
+		const eventId = params.eventId as Id<"events">;
+
+		// Prefetch event data (also used by EventContext)
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.events.getById, { eventId })
+		);
+
+		// Prefetch rooms list
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.rooms.listByEvent, { eventId })
+		);
+
+		// Prefetch user profile
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.users.getMyProfile)
+		);
+	},
 	component: RoomsIndexPage,
 });
 
 function RoomsIndexPage() {
 	const { eventId } = Route.useParams();
 
-	const event = useQuery(api.events.getById, {
-		eventId: eventId as Id<"events">,
-	});
+	// Use useSuspenseQuery to read prefetched data
+	const { data: event } = useSuspenseQuery(
+		convexQuery(api.events.getById, {
+			eventId: eventId as Id<"events">,
+		})
+	);
 
-	const rooms = useQuery(api.rooms.listByEvent, {
-		eventId: eventId as Id<"events">,
-	});
+	const { data: rooms } = useSuspenseQuery(
+		convexQuery(api.rooms.listByEvent, {
+			eventId: eventId as Id<"events">,
+		})
+	);
 
-	if (event === undefined) {
-		return (
-			<div className="container max-w-6xl mx-auto p-6">
-				<Skeleton className="h-10 w-96 mb-8" />
-				<Skeleton className="h-64" />
-			</div>
-		);
-	}
+	const { data: userProfile } = useSuspenseQuery(
+		convexQuery(api.users.getMyProfile)
+	);
 
+	// Event not found check
 	if (!event) {
 		return (
 			<div className="container max-w-6xl mx-auto p-6">
@@ -51,7 +70,31 @@ function RoomsIndexPage() {
 		);
 	}
 
-	const canManage = event.role === "coordinator";
+	if (!userProfile) {
+		return (
+			<div className="container max-w-6xl mx-auto p-6">
+				<Card>
+					<CardContent className="pt-6">
+						<p className="text-muted-foreground">User profile not found</p>
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	// Check if user is coordinator or co-coordinator
+	const canManage =
+		event.coordinatorId === userProfile._id ||
+		event.coCoordinatorIds?.includes(userProfile._id) ||
+		false;
+
+	// Determine user's role for display
+	const userRole =
+		event.coordinatorId === userProfile._id
+			? "coordinator"
+			: event.coCoordinatorIds?.includes(userProfile._id)
+			? "co-coordinator"
+			: "collaborator";
 
 	return (
 		<div className="container max-w-6xl mx-auto p-6">
@@ -86,13 +129,7 @@ function RoomsIndexPage() {
 						<MessageSquare className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
-						<div className="text-2xl font-bold">
-							{rooms === undefined ? (
-								<Skeleton className="h-8 w-12" />
-							) : (
-								rooms.length
-							)}
-						</div>
+						<div className="text-2xl font-bold">{rooms.length}</div>
 					</CardContent>
 				</Card>
 
@@ -101,7 +138,7 @@ function RoomsIndexPage() {
 						<CardTitle className="text-sm font-medium">Your Role</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className="text-lg font-medium capitalize">{event.role}</div>
+						<div className="text-lg font-medium capitalize">{userRole}</div>
 					</CardContent>
 				</Card>
 
