@@ -81,6 +81,10 @@ export function AppSidebar() {
         <SidebarContent>
           <RoomList />
         </SidebarContent>
+
+        <SidebarFooter className="pt-2 min-h-16" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
+          <div className="h-full" />
+        </SidebarFooter>
       </Sidebar>
     );
   }

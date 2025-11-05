@@ -6,6 +6,8 @@ import {
   requireEventCoordinator,
   canManageEvent,
 } from "./authHelpers";
+import { requireEventAccess } from "./model/permissions";
+import * as Events from "./model/events";
 
 /**
  * Create new event
@@ -98,42 +100,9 @@ export const getById = query({
   },
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
-    const event = await ctx.db.get(args.eventId);
 
-    if (!event) {
-      throw new Error("Event not found");
-    }
-
-    // Check user has access (coordinator, co-coordinator, or collaborator via room)
-    const isCoordinator =
-      event.coordinatorId === userProfile._id ||
-      event.coCoordinatorIds?.includes(userProfile._id);
-
-    // For non-coordinators, check if they're in any room
-    if (!isCoordinator) {
-      const rooms = await ctx.db
-        .query("rooms")
-        .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-        .collect();
-
-      const roomIds = rooms.map((r) => r._id);
-
-      if (roomIds.length > 0) {
-        // Check if user is a participant in any room
-        const memberships = await ctx.db
-          .query("roomParticipants")
-          .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
-          .collect();
-
-        const hasAccess = memberships.some((m) => roomIds.includes(m.roomId));
-
-        if (!hasAccess) {
-          throw new Error("Forbidden: Not a member of this event");
-        }
-      } else {
-        throw new Error("Forbidden: Not a member of this event");
-      }
-    }
+    // Use helper function for access control
+    const event = await requireEventAccess(ctx, args.eventId, userProfile._id);
 
     return event;
   },
@@ -158,60 +127,8 @@ export const listUserEvents = query({
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Events where user is coordinator
-    let coordinatorQuery = ctx.db
-      .query("events")
-      .withIndex("by_coordinator", (q) => q.eq("coordinatorId", userProfile._id));
-
-    if (args.status) {
-      coordinatorQuery = coordinatorQuery.filter((q) =>
-        q.eq(q.field("status"), args.status)
-      );
-    }
-
-    const coordinatorEvents = await coordinatorQuery.collect();
-
-    // Events where user is co-coordinator
-    const allEvents = await ctx.db.query("events").collect();
-    const coCoordinatorEvents = allEvents.filter(
-      (event) =>
-        event.coCoordinatorIds?.includes(userProfile._id) &&
-        (!args.status || event.status === args.status)
-    );
-
-    // Events where user is a room participant
-    const userRooms = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
-      .collect();
-
-    const roomEventIds = new Set<Id<"events">>();
-    for (const participant of userRooms) {
-      const room = await ctx.db.get(participant.roomId);
-      if (room) {
-        roomEventIds.add(room.eventId);
-      }
-    }
-
-    const collaboratorEvents = (
-      await Promise.all(Array.from(roomEventIds).map((id) => ctx.db.get(id)))
-    ).filter(
-      (event) =>
-        event !== null &&
-        event.coordinatorId !== userProfile._id &&
-        !event.coCoordinatorIds?.includes(userProfile._id) &&
-        (!args.status || event.status === args.status)
-    );
-
-    // Combine and deduplicate
-    const allUserEvents = [
-      ...coordinatorEvents,
-      ...coCoordinatorEvents,
-      ...collaboratorEvents.filter((e): e is NonNullable<typeof e> => e !== null),
-    ];
-
-    // Sort by creation date (most recent first)
-    return allUserEvents.sort((a, b) => b.createdAt - a.createdAt);
+    // Use helper function to get all user events
+    return await Events.getUserEvents(ctx, userProfile._id, args.status);
   },
 });
 
@@ -495,60 +412,36 @@ export const getStats = query({
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
 
-    const event = await ctx.db.get(args.eventId);
-    if (!event) throw new Error("Event not found");
-
-    // Verify access (same as getById)
-    const isCoordinator =
-      event.coordinatorId === userProfile._id ||
-      event.coCoordinatorIds?.includes(userProfile._id);
-
-    if (!isCoordinator) {
-      const rooms = await ctx.db
-        .query("rooms")
-        .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-        .collect();
-
-      const roomIds = rooms.map((r) => r._id);
-
-      if (roomIds.length > 0) {
-        const memberships = await ctx.db
-          .query("roomParticipants")
-          .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
-          .collect();
-
-        const hasAccess = memberships.some((m) => roomIds.includes(m.roomId));
-
-        if (!hasAccess) {
-          throw new Error("Forbidden: Not a member of this event");
-        }
-      } else {
-        throw new Error("Forbidden: Not a member of this event");
-      }
-    }
+    // Use helper function for access control
+    const event = await requireEventAccess(ctx, args.eventId, userProfile._id);
 
     // Count tasks
+    // Note: Limited to 5000 for performance. For events with more tasks,
+    // consider implementing incremental counter pattern or cached stats.
     const tasks = await ctx.db
       .query("tasks")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect();
+      .take(5000);
 
     const taskStats = {
       total: tasks.length,
       completed: tasks.filter((t) => t.status === "completed").length,
       inProgress: tasks.filter((t) => t.status === "in_progress").length,
       notStarted: tasks.filter((t) => t.status === "not_started").length,
+      isPartial: tasks.length === 5000, // Flag if stats may be incomplete
     };
 
     // Count expenses
+    // Note: Limited to 5000 for performance.
     const expenses = await ctx.db
       .query("expenses")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
-      .collect();
+      .take(5000);
 
     const expenseStats = {
       total: expenses.reduce((sum, e) => sum + e.amount, 0),
       count: expenses.length,
+      isPartial: expenses.length === 5000, // Flag if stats may be incomplete
     };
 
     // Count rooms and participants
@@ -558,11 +451,19 @@ export const getStats = query({
       .collect();
 
     const participantIds = new Set<Id<"users">>();
+    let hitParticipantLimit = false;
+
     for (const room of rooms) {
+      // Limit to 500 participants per room to prevent memory issues
       const participants = await ctx.db
         .query("roomParticipants")
         .withIndex("by_room", (q) => q.eq("roomId", room._id))
-        .collect();
+        .take(500);
+
+      if (participants.length === 500) {
+        hitParticipantLimit = true;
+      }
+
       participants.forEach((p) => participantIds.add(p.userId));
     }
 
@@ -571,6 +472,7 @@ export const getStats = query({
       expenses: expenseStats,
       rooms: rooms.length,
       participants: participantIds.size,
+      participantCountIsPartial: hitParticipantLimit, // Flag if count may be incomplete
     };
   },
 });

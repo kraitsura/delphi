@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authed/events/$eventId/rooms/")({
+	ssr: false, // Disable SSR - auth token not available during server rendering
 	loader: async ({ params, context }) => {
 		const eventId = params.eventId as Id<"events">;
 
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/_authed/events/$eventId/rooms/")({
 
 		// Prefetch user profile
 		await context.queryClient.ensureQueryData(
-			convexQuery(api.users.getMyProfile)
+			convexQuery(api.users.getMyProfile, {})
 		);
 	},
 	component: RoomsIndexPage,
@@ -54,7 +55,7 @@ function RoomsIndexPage() {
 	);
 
 	const { data: userProfile } = useSuspenseQuery(
-		convexQuery(api.users.getMyProfile)
+		convexQuery(api.users.getMyProfile, {})
 	);
 
 	// Event not found check

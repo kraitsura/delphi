@@ -4,6 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { convexQuery } from "@/lib/convex-query";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
+import { useSession } from "@/lib/auth";
 
 /**
  * Event type from Convex schema
@@ -84,14 +85,16 @@ interface EventProviderProps {
 export function EventProvider({ children, userId }: EventProviderProps) {
   const params = useParams({ strict: false });
   const navigate = useNavigate();
+  const { data: session } = useSession();
 
   // Check if we're on an event route by looking for eventId param
   const eventId = "eventId" in params ? (params.eventId as string) : null;
   const isInEventContext = eventId !== null;
 
-  // Fetch event data when in event context using SSR-compatible pattern
+  // Fetch event data when in event context AND session is ready
+  // This prevents unauthenticated queries during initialization
   const { data: event } = useSuspenseQuery(
-    eventId
+    eventId && session?.user
       ? convexQuery(api.events.getById, { eventId: eventId as Id<"events"> })
       : {
           queryKey: ["no-event"],

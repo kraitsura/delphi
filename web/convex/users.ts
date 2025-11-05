@@ -272,23 +272,17 @@ export const searchByName = query({
       return []; // Require at least 2 characters
     }
 
-    // Get all active users
-    const allUsers = await ctx.db
+    // Use search index for efficient name search
+    // Note: This searches by name only. For email search, consider adding a separate search index.
+    const results = await ctx.db
       .query("users")
-      .withIndex("by_active", (q) => q.eq("isActive", true))
-      .collect();
-
-    // Filter by name or email (case-insensitive)
-    const searchLower = args.searchTerm.toLowerCase();
-    const filtered = allUsers
-      .filter((user) =>
-        user.name.toLowerCase().includes(searchLower) ||
-        user.email.toLowerCase().includes(searchLower)
+      .withSearchIndex("search_name", (q) =>
+        q.search("name", args.searchTerm).eq("isActive", true)
       )
-      .slice(0, limit);
+      .take(limit);
 
     // Return public fields
-    return filtered.map((user) => ({
+    return results.map((user) => ({
       _id: user._id,
       name: user.name,
       email: user.email,

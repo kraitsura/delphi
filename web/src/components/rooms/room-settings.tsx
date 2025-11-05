@@ -184,10 +184,10 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 					{/* Room Type (read-only) */}
 					<div className="space-y-2">
 						<Label>Room Type</Label>
-						<div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md capitalize">
+						<div className="text-sm text-muted-foreground bg-muted p-3 rounded-md capitalize">
 							{room.type.replace(/_/g, " ")}
 						</div>
-						<p className="text-xs text-gray-500">
+						<p className="text-xs text-muted-foreground">
 							Room type cannot be changed after creation
 						</p>
 					</div>
@@ -198,7 +198,7 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 							<Label htmlFor="guest-messages" className="cursor-pointer">
 								Allow Guest Messages
 							</Label>
-							<p className="text-sm text-gray-500">
+							<p className="text-sm text-muted-foreground">
 								Let guests post messages in this room
 							</p>
 						</div>
@@ -233,7 +233,7 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 						<div className="flex items-center justify-between">
 							<div>
 								<h4 className="font-medium">Archive Room</h4>
-								<p className="text-sm text-gray-500">
+								<p className="text-sm text-muted-foreground">
 									Hide this room from the room list (can be restored later)
 								</p>
 							</div>
@@ -247,7 +247,7 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 						<div className="flex items-center justify-between pt-4 border-t">
 							<div>
 								<h4 className="font-medium text-red-600">Delete Room</h4>
-								<p className="text-sm text-gray-500">
+								<p className="text-sm text-muted-foreground">
 									Permanently delete this room and all its messages
 								</p>
 							</div>

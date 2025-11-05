@@ -10,8 +10,12 @@
 
 import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
+import type * as dashboards from "../dashboards.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
+import type * as messages from "../messages.js";
+import type * as model_events from "../model/events.js";
+import type * as model_permissions from "../model/permissions.js";
 import type * as roomParticipants from "../roomParticipants.js";
 import type * as rooms from "../rooms.js";
 import type * as users from "../users.js";
@@ -33,8 +37,12 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authHelpers: typeof authHelpers;
+  dashboards: typeof dashboards;
   events: typeof events;
   http: typeof http;
+  messages: typeof messages;
+  "model/events": typeof model_events;
+  "model/permissions": typeof model_permissions;
   roomParticipants: typeof roomParticipants;
   rooms: typeof rooms;
   users: typeof users;

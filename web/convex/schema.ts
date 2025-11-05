@@ -60,7 +60,11 @@ export default defineSchema({
   })
     .index("by_email", ["email"])
     .index("by_role", ["role"])
-    .index("by_active", ["isActive"]),
+    .index("by_active", ["isActive"])
+    .searchIndex("search_name", {
+      searchField: "name",
+      filterFields: ["isActive"],
+    }),
 
   // ==========================================
   // EVENTS
@@ -434,4 +438,26 @@ export default defineSchema({
     .index("by_poll", ["pollId"])
     .index("by_user", ["userId"])
     .index("by_poll_and_user", ["pollId", "userId"]), // One vote per user per poll
+
+  // ==========================================
+  // DASHBOARDS (Fluid UI System)
+  // ==========================================
+
+  /**
+   * Dashboards - Dynamic dashboard configurations for Fluid UI
+   * Stores JSON configuration for dashboard layouts
+   */
+  dashboards: defineTable({
+    eventId: v.id("events"),
+    userId: v.id("users"),
+    config: v.any(), // DashboardConfig JSON
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+    isActive: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_event_and_user", ["eventId", "userId"])
+    .index("by_user", ["userId"])
+    .index("by_event", ["eventId"]),
 });

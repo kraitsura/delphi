@@ -11,6 +11,7 @@ import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
 import { ThemeConvexSync } from "@/components/theme-convex-sync";
 import { EventProvider } from "@/contexts/EventContext";
+import { useSession } from "@/lib/auth";
 import { Suspense } from "react";
 
 /**
@@ -83,21 +84,25 @@ function SidebarAwareHeader() {
  */
 function AuthenticatedLayout() {
   const { userId } = Route.useRouteContext();
+  const { data: session } = useSession();
 
   return (
     <ConvexProvider>
       <ActivityTracker />
+      {/* Only sync theme once session is ready to avoid unauthenticated queries */}
       <Suspense fallback={null}>
-        <ThemeConvexSync />
+        {session?.user && <ThemeConvexSync />}
       </Suspense>
       <Suspense
         fallback={
           <SidebarProvider>
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="flex flex-col">
               <SidebarAwareHeader />
-              <div className="flex flex-1 flex-col gap-4 p-4">
-                <div>Loading...</div>
+              <div className="flex-1 overflow-auto">
+                <div className="flex flex-col gap-4 p-4 h-full">
+                  <div>Loading...</div>
+                </div>
               </div>
             </SidebarInset>
           </SidebarProvider>
@@ -106,10 +111,12 @@ function AuthenticatedLayout() {
         <EventProvider userId={userId}>
           <SidebarProvider>
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="flex flex-col">
               <SidebarAwareHeader />
-              <div className="flex flex-1 flex-col gap-4 p-4">
-                <Outlet />
+              <div className="flex-1 overflow-auto">
+                <div className="flex flex-col gap-4 p-4 h-full">
+                  <Outlet />
+                </div>
               </div>
             </SidebarInset>
           </SidebarProvider>

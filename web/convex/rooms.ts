@@ -271,10 +271,31 @@ export const deleteRoom = mutation({
       await ctx.db.delete(participant._id);
     }
 
+    // Delete all messages in batches (cascade delete)
+    let deletedMessageCount = 0;
+    let hasMoreMessages = true;
+
+    while (hasMoreMessages && deletedMessageCount < 10000) {
+      // Safety limit
+      const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+        .take(100); // Batch delete 100 at a time
+
+      if (messages.length === 0) {
+        hasMoreMessages = false;
+      } else {
+        for (const message of messages) {
+          await ctx.db.delete(message._id);
+          deletedMessageCount++;
+        }
+      }
+    }
+
     // Delete the room
     await ctx.db.delete(args.roomId);
 
-    return { success: true };
+    return { success: true, messagesDeleted: deletedMessageCount };
   },
 });
 
@@ -295,8 +316,13 @@ export const getStats = query({
       .collect()
       .then((participants) => participants.length);
 
-    // Message count will be implemented in Phase 1.5
-    const messageCount = 0;
+    // Count messages in the room (excluding deleted)
+    const messageCount = await ctx.db
+      .query("messages")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .filter((q) => q.eq(q.field("isDeleted"), false))
+      .collect()
+      .then((messages) => messages.length);
 
     return {
       participantCount,
@@ -363,6 +389,8 @@ export const listAccessibleForEvent = query({
         );
 
         // Get unread count (messages after lastReadAt)
+        // Note: Capped at 100 unread messages for performance.
+        // UI can show "99+" for counts at the limit.
         const unreadCount = membership?.lastReadAt
           ? await ctx.db
               .query("messages")
@@ -375,22 +403,42 @@ export const listAccessibleForEvent = query({
                   q.eq(q.field("isDeleted"), false)
                 )
               )
-              .collect()
+              .take(100) // Limit for performance - show "99+" in UI if at limit
               .then((msgs) => msgs.length)
           : 0;
 
+        // Flatten structure to reduce nesting depth and prevent deep instantiation errors
         return {
-          ...room,
-          membership,
-          latestMessage: latestMessage
-            ? {
-                _id: latestMessage._id,
-                text: latestMessage.text,
-                authorId: latestMessage.authorId,
-                createdAt: latestMessage.createdAt,
-                isAIGenerated: latestMessage.isAIGenerated,
-              }
-            : null,
+          // Room fields
+          _id: room._id,
+          eventId: room.eventId,
+          name: room.name,
+          description: room.description,
+          type: room.type,
+          vendorId: room.vendorId,
+          isArchived: room.isArchived,
+          allowGuestMessages: room.allowGuestMessages,
+          createdAt: room.createdAt,
+          createdBy: room.createdBy,
+          lastMessageAt: room.lastMessageAt,
+
+          // Membership permissions (flattened from membership object)
+          canPost: membership?.canPost ?? false,
+          canEdit: membership?.canEdit ?? false,
+          canDelete: membership?.canDelete ?? false,
+          canManage: membership?.canManage ?? false,
+          notificationLevel: membership?.notificationLevel ?? "all",
+          lastReadAt: membership?.lastReadAt,
+          joinedAt: membership?.joinedAt,
+
+          // Latest message (flattened)
+          latestMessageId: latestMessage?._id ?? null,
+          latestMessageText: latestMessage?.text ?? null,
+          latestMessageAuthorId: latestMessage?.authorId ?? null,
+          latestMessageCreatedAt: latestMessage?.createdAt ?? null,
+          latestMessageIsAI: latestMessage?.isAIGenerated ?? false,
+
+          // Unread count
           unreadCount,
         };
       })

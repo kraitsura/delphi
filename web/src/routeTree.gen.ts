@@ -21,6 +21,7 @@ import { Route as AuthedEventsIndexRouteImport } from './routes/_authed/events.i
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthedEventsNewRouteImport } from './routes/_authed/events.new'
 import { Route as AuthedEventsEventIdRouteImport } from './routes/_authed/events.$eventId'
+import { Route as AuthedEventsEventIdIndexRouteImport } from './routes/_authed/events.$eventId.index'
 import { Route as AuthedEventsEventIdRoomsIndexRouteImport } from './routes/_authed/events.$eventId.rooms.index'
 import { Route as AuthedEventsEventIdRoomsRoomIdRouteImport } from './routes/_authed/events.$eventId.rooms.$roomId'
 
@@ -83,6 +84,12 @@ const AuthedEventsEventIdRoute = AuthedEventsEventIdRouteImport.update({
   path: '/events/$eventId',
   getParentRoute: () => AuthedRoute,
 } as any)
+const AuthedEventsEventIdIndexRoute =
+  AuthedEventsEventIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthedEventsEventIdRoute,
+  } as any)
 const AuthedEventsEventIdRoomsIndexRoute =
   AuthedEventsEventIdRoomsIndexRouteImport.update({
     id: '/rooms/',
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/events': typeof AuthedEventsIndexRoute
+  '/events/$eventId/': typeof AuthedEventsEventIdIndexRoute
   '/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
   '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsIndexRoute
 }
@@ -119,10 +127,10 @@ export interface FileRoutesByTo {
   '/profile': typeof AuthedProfileRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
-  '/events/$eventId': typeof AuthedEventsEventIdRouteWithChildren
   '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/events': typeof AuthedEventsIndexRoute
+  '/events/$eventId': typeof AuthedEventsEventIdIndexRoute
   '/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
   '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsIndexRoute
 }
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/_authed/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authed/events/': typeof AuthedEventsIndexRoute
+  '/_authed/events/$eventId/': typeof AuthedEventsEventIdIndexRoute
   '/_authed/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
   '/_authed/events/$eventId/rooms/': typeof AuthedEventsEventIdRoomsIndexRoute
 }
@@ -157,6 +166,7 @@ export interface FileRouteTypes {
     | '/events/new'
     | '/api/auth/$'
     | '/events'
+    | '/events/$eventId/'
     | '/events/$eventId/rooms/$roomId'
     | '/events/$eventId/rooms'
   fileRoutesByTo: FileRoutesByTo
@@ -168,10 +178,10 @@ export interface FileRouteTypes {
     | '/profile'
     | '/auth/sign-in'
     | '/auth/sign-up'
-    | '/events/$eventId'
     | '/events/new'
     | '/api/auth/$'
     | '/events'
+    | '/events/$eventId'
     | '/events/$eventId/rooms/$roomId'
     | '/events/$eventId/rooms'
   id:
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/_authed/events/new'
     | '/api/auth/$'
     | '/_authed/events/'
+    | '/_authed/events/$eventId/'
     | '/_authed/events/$eventId/rooms/$roomId'
     | '/_authed/events/$eventId/rooms/'
   fileRoutesById: FileRoutesById
@@ -288,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsEventIdRouteImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/events/$eventId/': {
+      id: '/_authed/events/$eventId/'
+      path: '/'
+      fullPath: '/events/$eventId/'
+      preLoaderRoute: typeof AuthedEventsEventIdIndexRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoute
+    }
     '/_authed/events/$eventId/rooms/': {
       id: '/_authed/events/$eventId/rooms/'
       path: '/rooms'
@@ -306,11 +324,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthedEventsEventIdRouteChildren {
+  AuthedEventsEventIdIndexRoute: typeof AuthedEventsEventIdIndexRoute
   AuthedEventsEventIdRoomsRoomIdRoute: typeof AuthedEventsEventIdRoomsRoomIdRoute
   AuthedEventsEventIdRoomsIndexRoute: typeof AuthedEventsEventIdRoomsIndexRoute
 }
 
 const AuthedEventsEventIdRouteChildren: AuthedEventsEventIdRouteChildren = {
+  AuthedEventsEventIdIndexRoute: AuthedEventsEventIdIndexRoute,
   AuthedEventsEventIdRoomsRoomIdRoute: AuthedEventsEventIdRoomsRoomIdRoute,
   AuthedEventsEventIdRoomsIndexRoute: AuthedEventsEventIdRoomsIndexRoute,
 }

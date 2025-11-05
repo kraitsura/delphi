@@ -71,11 +71,11 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootComponent() {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="en" suppressHydrationWarning className="h-full">
 			<head>
 				<HeadContent />
 			</head>
-			<body>
+			<body className="h-full overflow-hidden">
 				<ThemeSetProvider>
 					<TooltipProvider>
 						<Outlet />
