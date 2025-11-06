@@ -10,7 +10,10 @@
 
 import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
+import type * as cascadeHelpers from "../cascadeHelpers.js";
 import type * as dashboards from "../dashboards.js";
+import type * as eventInvitations from "../eventInvitations.js";
+import type * as eventMembers from "../eventMembers.js";
 import type * as events from "../events.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
@@ -37,7 +40,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authHelpers: typeof authHelpers;
+  cascadeHelpers: typeof cascadeHelpers;
   dashboards: typeof dashboards;
+  eventInvitations: typeof eventInvitations;
+  eventMembers: typeof eventMembers;
   events: typeof events;
   http: typeof http;
   messages: typeof messages;

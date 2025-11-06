@@ -1,8 +1,26 @@
 import { api } from "@convex/_generated/api";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { Calendar, DollarSign, MapPin, Users } from "lucide-react";
+import {
+	Calendar,
+	DollarSign,
+	MapPin,
+	MoreVertical,
+	Pencil,
+	Trash2,
+	Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EventDeleteDialog } from "./event-delete-dialog";
+import { EventEditDialog } from "./event-edit-dialog";
+import { StatusBadge } from "./StatusBadge";
 
 interface EventListProps {
 	status?: "planning" | "in_progress" | "completed" | "cancelled" | "archived";
@@ -43,49 +61,76 @@ export function EventList({ status }: EventListProps) {
 		);
 	}
 
-	const getStatusColor = (eventStatus: string) => {
-		switch (eventStatus) {
-			case "planning":
-				return "bg-blue-100 text-blue-700";
-			case "in_progress":
-				return "bg-green-100 text-green-700";
-			case "completed":
-				return "bg-gray-100 text-gray-700";
-			case "cancelled":
-				return "bg-red-100 text-red-700";
-			case "archived":
-				return "bg-yellow-100 text-yellow-700";
-			default:
-				return "bg-gray-100 text-gray-700";
-		}
-	};
-
 	return (
 		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{events.map((event) => (
-				<Link key={event._id} to={`/events/${event._id}`}>
-					<Card className="hover:shadow-lg transition-shadow h-full">
-						<CardContent className="p-6">
-							<div className="flex items-start justify-between mb-4">
+				<Card
+					key={event._id}
+					className="hover:shadow-lg transition-shadow h-full relative"
+				>
+					<CardContent className="p-6">
+						{/* Header with title, status, and actions */}
+						<div className="flex items-start justify-between mb-4">
+							<Link
+								to={`/events/${event._id}`}
+								className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
+							>
 								<h3 className="font-semibold text-lg line-clamp-1">
 									{event.name}
 								</h3>
-								<span
-									className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ml-2 ${getStatusColor(
-										event.status,
-									)}`}
-								>
-									{event.status.replace("_", " ")}
-								</span>
+							</Link>
+							<div className="flex items-center gap-2 ml-2 flex-shrink-0">
+								<StatusBadge status={event.status} size="sm" />
+								{/* Actions Dropdown Menu */}
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-8 w-8"
+											onClick={(e) => e.stopPropagation()}
+										>
+											<MoreVertical className="h-4 w-4" />
+											<span className="sr-only">Open menu</span>
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<EventEditDialog
+											eventId={event._id}
+											trigger={
+												<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+													<Pencil className="mr-2 h-4 w-4" />
+													Edit
+												</DropdownMenuItem>
+											}
+										/>
+										<EventDeleteDialog
+											eventId={event._id}
+											redirectAfterDelete={false}
+											trigger={
+												<DropdownMenuItem
+													onSelect={(e) => e.preventDefault()}
+													className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+												>
+													<Trash2 className="mr-2 h-4 w-4" />
+													Delete
+												</DropdownMenuItem>
+											}
+										/>
+									</DropdownMenuContent>
+								</DropdownMenu>
 							</div>
+						</div>
 
+						{/* Rest of card content - wrapped in Link */}
+						<Link to={`/events/${event._id}`} className="block">
 							{event.description && (
-								<p className="text-sm text-gray-600 line-clamp-2 mb-4">
+								<p className="text-sm text-muted-foreground line-clamp-2 mb-4">
 									{event.description}
 								</p>
 							)}
 
-							<div className="space-y-2 text-sm text-gray-500">
+							<div className="space-y-2 text-sm text-muted-foreground">
 								{event.date && (
 									<div className="flex items-center gap-2">
 										<Calendar className="h-4 w-4 flex-shrink-0" />
@@ -119,13 +164,13 @@ export function EventList({ status }: EventListProps) {
 								</div>
 							</div>
 
-							<div className="mt-4 pt-4 border-t text-xs text-gray-400">
+							<div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
 								<span className="capitalize">{event.type}</span> •{" "}
 								{new Date(event.createdAt).toLocaleDateString()}
 							</div>
-						</CardContent>
-					</Card>
-				</Link>
+						</Link>
+					</CardContent>
+				</Card>
 			))}
 		</div>
 	);

@@ -5,9 +5,12 @@ import {
   getAuthenticatedUser,
   requireEventCoordinator,
   canManageEvent,
+  getUserEventRole,
+  requireEventMember,
 } from "./authHelpers";
 import { requireEventAccess } from "./model/permissions";
 import * as Events from "./model/events";
+import { softDeleteEventCascade } from "./cascadeHelpers";
 
 /**
  * Create new event
@@ -60,6 +63,7 @@ export const create = mutation({
       createdAt: Date.now(),
       updatedAt: Date.now(),
       createdBy: userProfile._id,
+      isDeleted: false,
     });
 
     // Create main event room automatically
@@ -69,6 +73,7 @@ export const create = mutation({
       type: "main",
       isArchived: false,
       allowGuestMessages: false,
+      isDeleted: false,
       createdAt: Date.now(),
       createdBy: userProfile._id,
     });
@@ -84,6 +89,7 @@ export const create = mutation({
       notificationLevel: "all",
       joinedAt: Date.now(),
       addedBy: userProfile._id,
+      isDeleted: false,
     });
 
     return { eventId, roomId };
@@ -92,7 +98,7 @@ export const create = mutation({
 
 /**
  * Get event by ID with access control
- * User must be coordinator, co-coordinator, or room participant
+ * User must be coordinator, co-coordinator, or event member
  */
 export const getById = query({
   args: {
@@ -101,10 +107,27 @@ export const getById = query({
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Use helper function for access control
-    const event = await requireEventAccess(ctx, args.eventId, userProfile._id);
+    // Use new permission check - requires eventMembers table
+    const { event } = await requireEventMember(ctx, args.eventId, userProfile._id);
 
     return event;
+  },
+});
+
+/**
+ * Get user's role in an event
+ * Returns "coordinator", "collaborator", "guest", "vendor", or null
+ */
+export const getUserRole = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    const role = await getUserEventRole(ctx, args.eventId, userProfile._id);
+
+    return role;
   },
 });
 
@@ -290,6 +313,7 @@ export const addCoCoordinator = mutation({
           notificationLevel: "all",
           joinedAt: Date.now(),
           addedBy: userProfile._id,
+          isDeleted: false,
         });
       }
     }
@@ -377,6 +401,7 @@ export const archive = mutation({
 /**
  * Delete event (soft delete via cancelled status)
  * Only main coordinator can delete
+ * @deprecated Use softDelete instead for cascade deletion
  */
 export const remove = mutation({
   args: {
@@ -402,6 +427,49 @@ export const remove = mutation({
 });
 
 /**
+ * Soft delete event with cascade
+ * Only main coordinator can delete
+ * Cascades to: rooms → roomParticipants, messages
+ *              eventMembers, eventInvitations, tasks, expenses, polls → pollVotes, dashboards
+ */
+export const softDelete = mutation({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    const event = await ctx.db.get(args.eventId);
+    if (!event) throw new Error("Event not found");
+
+    // Only main coordinator can delete
+    if (event.coordinatorId !== userProfile._id) {
+      throw new Error("Only the main coordinator can delete events");
+    }
+
+    // Prevent double deletion
+    if (event.isDeleted) {
+      throw new Error("Event is already deleted");
+    }
+
+    const now = Date.now();
+
+    // Cascade delete all related data using helper function
+    await softDeleteEventCascade(ctx, args.eventId, now);
+
+    // Finally, soft delete the event itself
+    await ctx.db.patch(args.eventId, {
+      isDeleted: true,
+      deletedAt: now,
+      status: "cancelled",
+      updatedAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
  * Get event statistics
  * Returns task, expense, room, and participant counts
  */
@@ -418,49 +486,57 @@ export const getStats = query({
     // Count tasks
     // Note: Limited to 5000 for performance. For events with more tasks,
     // consider implementing incremental counter pattern or cached stats.
-    const tasks = await ctx.db
+    const allTasks = await ctx.db
       .query("tasks")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .take(5000);
+
+    const tasks = allTasks.filter((t) => !t.isDeleted);
 
     const taskStats = {
       total: tasks.length,
       completed: tasks.filter((t) => t.status === "completed").length,
       inProgress: tasks.filter((t) => t.status === "in_progress").length,
       notStarted: tasks.filter((t) => t.status === "not_started").length,
-      isPartial: tasks.length === 5000, // Flag if stats may be incomplete
+      isPartial: allTasks.length === 5000, // Flag if stats may be incomplete
     };
 
     // Count expenses
     // Note: Limited to 5000 for performance.
-    const expenses = await ctx.db
+    const allExpenses = await ctx.db
       .query("expenses")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .take(5000);
 
+    const expenses = allExpenses.filter((e) => !e.isDeleted);
+
     const expenseStats = {
       total: expenses.reduce((sum, e) => sum + e.amount, 0),
       count: expenses.length,
-      isPartial: expenses.length === 5000, // Flag if stats may be incomplete
+      isPartial: allExpenses.length === 5000, // Flag if stats may be incomplete
     };
 
     // Count rooms and participants
-    const rooms = await ctx.db
+    const allRooms = await ctx.db
       .query("rooms")
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .collect();
+
+    const rooms = allRooms.filter((r) => !r.isDeleted);
 
     const participantIds = new Set<Id<"users">>();
     let hitParticipantLimit = false;
 
     for (const room of rooms) {
       // Limit to 500 participants per room to prevent memory issues
-      const participants = await ctx.db
+      const allParticipants = await ctx.db
         .query("roomParticipants")
         .withIndex("by_room", (q) => q.eq("roomId", room._id))
         .take(500);
 
-      if (participants.length === 500) {
+      const participants = allParticipants.filter((p) => !p.isDeleted);
+
+      if (allParticipants.length === 500) {
         hitParticipantLimit = true;
       }
 

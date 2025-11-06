@@ -15,15 +15,18 @@ export const Route = createFileRoute("/_authed/events/$eventId")({
 	loader: async ({ params, context }) => {
 		const eventId = params.eventId as Id<"events">;
 
-		// Prefetch event data for EventContext and child routes
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.events.getById, { eventId })
-		);
-
-		// Prefetch stats data
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.events.getStats, { eventId })
-		);
+		// Prefetch event data, stats, and room list in parallel
+		await Promise.all([
+			context.queryClient.ensureQueryData(
+				convexQuery(api.events.getById, { eventId }),
+			),
+			context.queryClient.ensureQueryData(
+				convexQuery(api.events.getStats, { eventId }),
+			),
+			context.queryClient.ensureQueryData(
+				convexQuery(api.rooms.listAccessibleForEvent, { eventId }),
+			),
+		]);
 	},
 	component: EventLayout,
 });

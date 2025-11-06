@@ -1,8 +1,8 @@
 import type { DashboardConfig } from "@/lib/fluid-ui/types";
 import { validateDashboardConfig } from "@/lib/fluid-ui/validators";
-import { TextRow } from "./text-row";
-import { GridRow } from "./grid-row";
 import { DashboardError } from "./dashboard-error";
+import { GridRow } from "./grid-row";
+import { TextRow } from "./text-row";
 
 interface LayoutControllerProps {
 	config: DashboardConfig;

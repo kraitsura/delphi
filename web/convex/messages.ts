@@ -10,7 +10,8 @@ import { mutation, query } from "./_generated/server";
 import {
   getAuthenticatedUser,
   requireCanPostInRoom,
-  requireRoomParticipant,
+  requireRoomAccess,
+  isRoomEventCoordinator,
 } from "./authHelpers";
 
 // ==========================================
@@ -103,16 +104,20 @@ export const update = mutation({
       throw new Error("Forbidden: You can only edit your own messages");
     }
 
-    // Check edit permission in the room
-    const participant = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_room_and_user", (q) =>
-        q.eq("roomId", message.roomId).eq("userId", userProfile._id)
-      )
-      .unique();
+    // Check edit permission in the room (coordinators have implicit access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, message.roomId, userProfile._id);
 
-    if (!participant?.canEdit) {
-      throw new Error("Forbidden: You don't have permission to edit messages in this room");
+    if (!isCoordinator) {
+      const participant = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", message.roomId).eq("userId", userProfile._id)
+        )
+        .unique();
+
+      if (!participant?.canEdit) {
+        throw new Error("Forbidden: You don't have permission to edit messages in this room");
+      }
     }
 
     // Validate new text
@@ -157,16 +162,20 @@ export const remove = mutation({
       throw new Error("Forbidden: You can only delete your own messages");
     }
 
-    // Check delete permission in the room
-    const participant = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_room_and_user", (q) =>
-        q.eq("roomId", message.roomId).eq("userId", userProfile._id)
-      )
-      .unique();
+    // Check delete permission in the room (coordinators have implicit access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, message.roomId, userProfile._id);
 
-    if (!participant?.canDelete) {
-      throw new Error("Forbidden: You don't have permission to delete messages in this room");
+    if (!isCoordinator) {
+      const participant = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", message.roomId).eq("userId", userProfile._id)
+        )
+        .unique();
+
+      if (!participant?.canDelete) {
+        throw new Error("Forbidden: You don't have permission to delete messages in this room");
+      }
     }
 
     // Soft delete the message
@@ -182,6 +191,7 @@ export const remove = mutation({
 
 /**
  * Mark a room as read (update lastReadAt timestamp)
+ * Coordinators with implicit access don't need to update (no participant record)
  */
 export const markRoomAsRead = mutation({
   args: {
@@ -189,6 +199,9 @@ export const markRoomAsRead = mutation({
   },
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
+
+    // Ensure user has access to the room (coordinator or participant)
+    await requireRoomAccess(ctx, args.roomId, userProfile._id);
 
     // Get the participant record
     const participant = await ctx.db
@@ -198,8 +211,10 @@ export const markRoomAsRead = mutation({
       )
       .unique();
 
+    // If no participant record, user is a coordinator with implicit access
+    // No lastReadAt to update, just return success
     if (!participant) {
-      throw new Error("Forbidden: You are not a participant in this room");
+      return { success: true, isCoordinator: true };
     }
 
     // Update lastReadAt to current time
@@ -207,7 +222,7 @@ export const markRoomAsRead = mutation({
       lastReadAt: Date.now(),
     });
 
-    return { success: true };
+    return { success: true, isCoordinator: false };
   },
 });
 
@@ -218,6 +233,7 @@ export const markRoomAsRead = mutation({
 /**
  * List messages in a room with pagination
  * Returns messages in reverse chronological order (newest first)
+ * Coordinators have implicit access
  */
 export const listByRoom = query({
   args: {
@@ -228,17 +244,8 @@ export const listByRoom = query({
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Verify user is a participant
-    const participant = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_room_and_user", (q) =>
-        q.eq("roomId", args.roomId).eq("userId", userProfile._id)
-      )
-      .unique();
-
-    if (!participant) {
-      throw new Error("Forbidden: You are not a participant in this room");
-    }
+    // Verify user has access to the room (coordinator or participant)
+    await requireRoomAccess(ctx, args.roomId, userProfile._id);
 
     // Query messages
     let query = ctx.db
@@ -331,6 +338,7 @@ export const getUnreadCounts = query({
 
 /**
  * Get a single message by ID (for editing UI)
+ * Coordinators have implicit access
  */
 export const getById = query({
   args: {
@@ -344,8 +352,8 @@ export const getById = query({
       throw new Error("Message not found");
     }
 
-    // Verify user is a participant in the room
-    await requireRoomParticipant(ctx, message.roomId, userProfile._id);
+    // Verify user has access to the room (coordinator or participant)
+    await requireRoomAccess(ctx, message.roomId, userProfile._id);
 
     // Get author details
     const author = await ctx.db.get(message.authorId);

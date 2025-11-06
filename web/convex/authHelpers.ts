@@ -265,6 +265,70 @@ export async function requireEventCoordinator(
 }
 
 /**
+ * Check if user is a member of an event (any role)
+ * Checks both coordinators and eventMembers table
+ */
+export async function requireEventMember(
+  ctx: QueryCtx | MutationCtx,
+  eventId: Id<"events">,
+  userId: Id<"users">
+): Promise<{ event: Doc<"events">; membership: Doc<"eventMembers"> | null; isCoordinator: boolean }> {
+  const doc = await ctx.db.get(eventId);
+  if (!doc) {
+    throw new Error("Event not found");
+  }
+
+  const event = doc as Doc<"events">;
+
+  // Check if user is coordinator first (bypass membership table)
+  if (isEventCoordinator(event, userId)) {
+    return { event, membership: null, isCoordinator: true };
+  }
+
+  // Check eventMembers table
+  const membership = await ctx.db
+    .query("eventMembers")
+    .withIndex("by_event_and_user", (q) =>
+      q.eq("eventId", eventId).eq("userId", userId)
+    )
+    .first();
+
+  if (!membership) {
+    throw new Error("Forbidden: Not a member of this event");
+  }
+
+  return { event, membership, isCoordinator: false };
+}
+
+/**
+ * Get user's role in an event
+ * Returns "coordinator", "collaborator", "guest", "vendor", or null if not a member
+ */
+export async function getUserEventRole(
+  ctx: QueryCtx | MutationCtx,
+  eventId: Id<"events">,
+  userId: Id<"users">
+): Promise<"coordinator" | "collaborator" | "guest" | "vendor" | null> {
+  const event = await ctx.db.get(eventId);
+  if (!event) return null;
+
+  // Check if coordinator
+  if (isEventCoordinator(event as Doc<"events">, userId)) {
+    return "coordinator";
+  }
+
+  // Check eventMembers table
+  const membership = await ctx.db
+    .query("eventMembers")
+    .withIndex("by_event_and_user", (q) =>
+      q.eq("eventId", eventId).eq("userId", userId)
+    )
+    .first();
+
+  return membership?.role || null;
+}
+
+/**
  * Check if user is a participant in a room
  */
 export async function isRoomParticipant(
@@ -305,13 +369,84 @@ export async function requireRoomParticipant(
 }
 
 /**
+ * Require user to have access to a room (either as coordinator or participant)
+ * Returns the room document
+ */
+export async function requireRoomAccess(
+  ctx: QueryCtx | MutationCtx,
+  roomId: Id<"rooms">,
+  userId: Id<"users">
+): Promise<Doc<"rooms">> {
+  const room = await ctx.db.get(roomId);
+  if (!room) {
+    throw new Error("Room not found");
+  }
+
+  // Check if user is event coordinator (implicit access to all rooms)
+  const event = await ctx.db.get(room.eventId);
+  if (event && isEventCoordinator(event as Doc<"events">, userId)) {
+    return room;
+  }
+
+  // Check if user is a participant
+  const participant = await ctx.db
+    .query("roomParticipants")
+    .withIndex("by_room_and_user", (q) =>
+      q.eq("roomId", roomId).eq("userId", userId)
+    )
+    .unique();
+
+  if (!participant) {
+    throw new Error("Forbidden: You don't have access to this room");
+  }
+
+  return room;
+}
+
+/**
+ * Get coordinator's implicit room permissions
+ * Coordinators have full permissions in all rooms
+ */
+export function getCoordinatorRoomPermissions() {
+  return {
+    canPost: true,
+    canEdit: true,
+    canDelete: true,
+    canManage: true,
+  };
+}
+
+/**
+ * Check if user is coordinator of the event that owns a room
+ */
+export async function isRoomEventCoordinator(
+  ctx: QueryCtx | MutationCtx,
+  roomId: Id<"rooms">,
+  userId: Id<"users">
+): Promise<boolean> {
+  const room = await ctx.db.get(roomId);
+  if (!room) return false;
+
+  const event = await ctx.db.get(room.eventId);
+  if (!event) return false;
+
+  return isEventCoordinator(event as Doc<"events">, userId);
+}
+
+/**
  * Check if user has permission to post in a room
+ * Includes implicit access for event coordinators
  */
 export async function canPostInRoom(
   ctx: QueryCtx | MutationCtx,
   roomId: Id<"rooms">,
   userId: Id<"users">
 ): Promise<boolean> {
+  // Check if user is event coordinator first (implicit access)
+  if (await isRoomEventCoordinator(ctx, roomId, userId)) {
+    return true;
+  }
+
   const participant = await ctx.db
     .query("roomParticipants")
     .withIndex("by_room_and_user", (q) =>

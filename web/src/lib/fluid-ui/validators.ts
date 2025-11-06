@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getComponentMetadata } from "./registry";
-import type { ValidationResult, ValidationError } from "./types";
+import type { ValidationError, ValidationResult } from "./types";
 
 /**
  * Zod schemas for runtime validation

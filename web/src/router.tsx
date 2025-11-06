@@ -1,9 +1,9 @@
+import { ConvexQueryClient } from "@convex-dev/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
-import { QueryClient } from "@tanstack/react-query";
-import { ConvexQueryClient } from "@convex-dev/react-query";
-import * as TanstackQuery from "./integrations/tanstack-query/root-provider";
 import { convexClient } from "./integrations/convex/provider";
+import * as TanstackQuery from "./integrations/tanstack-query/root-provider";
 
 // Import the generated route tree
 import { routeTree } from "./routeTree.gen";

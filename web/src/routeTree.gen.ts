@@ -13,9 +13,11 @@ import { Route as PlansRouteImport } from './routes/plans'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InvitationsTokenRouteImport } from './routes/invitations.$token'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
 import { Route as AuthedProfileRouteImport } from './routes/_authed/profile'
+import { Route as AuthedInvitationsRouteImport } from './routes/_authed/invitations'
 import { Route as AuthedDashboardRouteImport } from './routes/_authed/dashboard'
 import { Route as AuthedEventsIndexRouteImport } from './routes/_authed/events.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -44,6 +46,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvitationsTokenRoute = InvitationsTokenRouteImport.update({
+  id: '/invitations/$token',
+  path: '/invitations/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: '/auth/sign-up',
   path: '/auth/sign-up',
@@ -57,6 +64,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
 const AuthedProfileRoute = AuthedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthedRoute,
+} as any)
+const AuthedInvitationsRoute = AuthedInvitationsRouteImport.update({
+  id: '/invitations',
+  path: '/invitations',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedDashboardRoute = AuthedDashboardRouteImport.update({
@@ -108,9 +120,11 @@ export interface FileRoutesByFullPath {
   '/features': typeof FeaturesRoute
   '/plans': typeof PlansRoute
   '/dashboard': typeof AuthedDashboardRoute
+  '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/invitations/$token': typeof InvitationsTokenRoute
   '/events/$eventId': typeof AuthedEventsEventIdRouteWithChildren
   '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -124,9 +138,11 @@ export interface FileRoutesByTo {
   '/features': typeof FeaturesRoute
   '/plans': typeof PlansRoute
   '/dashboard': typeof AuthedDashboardRoute
+  '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/invitations/$token': typeof InvitationsTokenRoute
   '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/events': typeof AuthedEventsIndexRoute
@@ -141,9 +157,11 @@ export interface FileRoutesById {
   '/features': typeof FeaturesRoute
   '/plans': typeof PlansRoute
   '/_authed/dashboard': typeof AuthedDashboardRoute
+  '/_authed/invitations': typeof AuthedInvitationsRoute
   '/_authed/profile': typeof AuthedProfileRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/invitations/$token': typeof InvitationsTokenRoute
   '/_authed/events/$eventId': typeof AuthedEventsEventIdRouteWithChildren
   '/_authed/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -159,9 +177,11 @@ export interface FileRouteTypes {
     | '/features'
     | '/plans'
     | '/dashboard'
+    | '/invitations'
     | '/profile'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/invitations/$token'
     | '/events/$eventId'
     | '/events/new'
     | '/api/auth/$'
@@ -175,9 +195,11 @@ export interface FileRouteTypes {
     | '/features'
     | '/plans'
     | '/dashboard'
+    | '/invitations'
     | '/profile'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/invitations/$token'
     | '/events/new'
     | '/api/auth/$'
     | '/events'
@@ -191,9 +213,11 @@ export interface FileRouteTypes {
     | '/features'
     | '/plans'
     | '/_authed/dashboard'
+    | '/_authed/invitations'
     | '/_authed/profile'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/invitations/$token'
     | '/_authed/events/$eventId'
     | '/_authed/events/new'
     | '/api/auth/$'
@@ -210,6 +234,7 @@ export interface RootRouteChildren {
   PlansRoute: typeof PlansRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
+  InvitationsTokenRoute: typeof InvitationsTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -243,6 +268,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invitations/$token': {
+      id: '/invitations/$token'
+      path: '/invitations/$token'
+      fullPath: '/invitations/$token'
+      preLoaderRoute: typeof InvitationsTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/sign-up': {
       id: '/auth/sign-up'
       path: '/auth/sign-up'
@@ -262,6 +294,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthedProfileRouteImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/invitations': {
+      id: '/_authed/invitations'
+      path: '/invitations'
+      fullPath: '/invitations'
+      preLoaderRoute: typeof AuthedInvitationsRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/dashboard': {
@@ -340,6 +379,7 @@ const AuthedEventsEventIdRouteWithChildren =
 
 interface AuthedRouteChildren {
   AuthedDashboardRoute: typeof AuthedDashboardRoute
+  AuthedInvitationsRoute: typeof AuthedInvitationsRoute
   AuthedProfileRoute: typeof AuthedProfileRoute
   AuthedEventsEventIdRoute: typeof AuthedEventsEventIdRouteWithChildren
   AuthedEventsNewRoute: typeof AuthedEventsNewRoute
@@ -348,6 +388,7 @@ interface AuthedRouteChildren {
 
 const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedDashboardRoute: AuthedDashboardRoute,
+  AuthedInvitationsRoute: AuthedInvitationsRoute,
   AuthedProfileRoute: AuthedProfileRoute,
   AuthedEventsEventIdRoute: AuthedEventsEventIdRouteWithChildren,
   AuthedEventsNewRoute: AuthedEventsNewRoute,
@@ -364,6 +405,7 @@ const rootRouteChildren: RootRouteChildren = {
   PlansRoute: PlansRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  InvitationsTokenRoute: InvitationsTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

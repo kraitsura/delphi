@@ -1,5 +1,5 @@
-import type { RowSection } from "@/lib/fluid-ui/types";
 import { calculateGridLayout } from "@/lib/fluid-ui/registry";
+import type { RowSection } from "@/lib/fluid-ui/types";
 import { ComponentRenderer } from "./component-renderer";
 
 interface GridRowProps {

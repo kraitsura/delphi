@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import type { ComponentInstance } from "@/lib/fluid-ui/types";
 import { getComponent } from "@/lib/fluid-ui/registry";
+import type { ComponentInstance } from "@/lib/fluid-ui/types";
 import { ComponentSkeleton } from "./component-skeleton";
 
 interface ComponentRendererProps {

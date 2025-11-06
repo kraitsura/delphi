@@ -62,18 +62,22 @@ async function getCoordinatorEvents(
 ): Promise<Doc<"events">[]> {
   if (status) {
     // Use compound index when status is specified
-    return await ctx.db
+    const events = await ctx.db
       .query("events")
       .withIndex("by_coordinator_and_status", (q) =>
         q.eq("coordinatorId", userId).eq("status", status)
       )
       .collect();
+    // Filter out soft-deleted events
+    return events.filter((e) => !e.isDeleted);
   } else {
     // Use single field index when status is not specified
-    return await ctx.db
+    const events = await ctx.db
       .query("events")
       .withIndex("by_coordinator", (q) => q.eq("coordinatorId", userId))
       .collect();
+    // Filter out soft-deleted events
+    return events.filter((e) => !e.isDeleted);
   }
 }
 
@@ -95,6 +99,7 @@ async function getCoCoordinatorEvents(
 
   return recentEvents.filter(
     (event) =>
+      !event.isDeleted &&
       event.coCoordinatorIds?.includes(userId) &&
       (!status || event.status === status)
   );
@@ -108,17 +113,19 @@ async function getCollaboratorEvents(
   userId: Id<"users">,
   status?: EventStatus
 ): Promise<Doc<"events">[]> {
-  // Get all room memberships for this user
-  const userRooms = await ctx.db
+  // Get all room memberships for this user (excluding soft-deleted)
+  const allParticipants = await ctx.db
     .query("roomParticipants")
     .withIndex("by_user", (q) => q.eq("userId", userId))
     .collect();
 
-  // Extract unique event IDs from the rooms
+  const userRooms = allParticipants.filter((p) => !p.isDeleted);
+
+  // Extract unique event IDs from the rooms (excluding soft-deleted rooms)
   const roomEventIds = new Set<Id<"events">>();
   for (const participant of userRooms) {
     const room = await ctx.db.get(participant.roomId);
-    if (room) {
+    if (room && !room.isDeleted) {
       roomEventIds.add(room.eventId);
     }
   }
@@ -130,9 +137,11 @@ async function getCollaboratorEvents(
 
   // Filter to only events where user is NOT a coordinator/co-coordinator
   // (to avoid duplicates with the other two categories)
+  // Also filter out soft-deleted events
   return events.filter(
     (event): event is Doc<"events"> =>
       event !== null &&
+      !event.isDeleted &&
       event.coordinatorId !== userId &&
       !event.coCoordinatorIds?.includes(userId) &&
       (!status || event.status === status)

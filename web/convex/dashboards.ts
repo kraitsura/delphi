@@ -28,6 +28,7 @@ export const create = mutation({
       isActive: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      isDeleted: false,
     });
 
     return dashboardId;

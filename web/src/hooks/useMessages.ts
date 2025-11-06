@@ -1,6 +1,6 @@
-import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import { useQuery } from "convex/react";
 
 /**
  * Hook to fetch messages for a room with real-time updates
@@ -16,7 +16,7 @@ import type { Id } from "@convex/_generated/dataModel";
 export function useMessages(roomId: Id<"rooms"> | undefined, limit = 50) {
 	const messages = useQuery(
 		api.messages.listByRoom,
-		roomId ? { roomId, limit } : "skip"
+		roomId ? { roomId, limit } : "skip",
 	);
 
 	return messages;

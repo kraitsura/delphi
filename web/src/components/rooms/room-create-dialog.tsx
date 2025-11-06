@@ -29,7 +29,9 @@ import { UserSearch } from "@/components/user/user-search";
 interface RoomCreateDialogProps {
 	eventId: Id<"events">;
 	trigger?: React.ReactNode;
-	onSuccess?: () => void;
+	onSuccess?: (roomId: Id<"rooms">) => void;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
 type RoomType = "main" | "vendor" | "topic" | "guest_announcements" | "private";
@@ -38,8 +40,14 @@ export function RoomCreateDialog({
 	eventId,
 	trigger,
 	onSuccess,
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange,
 }: RoomCreateDialogProps) {
-	const [open, setOpen] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
+
+	// Use controlled state if provided, otherwise use internal state
+	const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+	const setOpen = controlledOnOpenChange || setInternalOpen;
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [type, setType] = useState<RoomType>("topic");
@@ -65,7 +73,7 @@ export function RoomCreateDialog({
 		}
 
 		try {
-			await createRoom({
+			const roomId = await createRoom({
 				eventId,
 				name: name.trim(),
 				description: description.trim() || undefined,
@@ -84,7 +92,7 @@ export function RoomCreateDialog({
 			setSelectedVendor(null);
 			setOpen(false);
 
-			onSuccess?.();
+			onSuccess?.(roomId);
 		} catch (error) {
 			console.error("Failed to create room:", error);
 			alert(error instanceof Error ? error.message : "Failed to create room");
@@ -93,14 +101,16 @@ export function RoomCreateDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				{trigger || (
-					<Button>
-						<Plus className="h-4 w-4 mr-2" />
-						Create Room
-					</Button>
-				)}
-			</DialogTrigger>
+			{controlledOpen === undefined && (
+				<DialogTrigger asChild>
+					{trigger || (
+						<Button>
+							<Plus className="h-4 w-4 mr-2" />
+							Create Room
+						</Button>
+					)}
+				</DialogTrigger>
+			)}
 			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Create New Room</DialogTitle>

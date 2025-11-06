@@ -1,8 +1,9 @@
 import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { Archive, Save, Trash2 } from "lucide-react";
+import { Archive, Save, Users } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -15,6 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { AddRoomMembersDialog } from "./add-room-members-dialog";
+import { RoomDeleteDialog } from "./room-delete-dialog";
+import { RoomParticipantsList } from "./room-participants-list";
 
 interface RoomSettingsProps {
 	room: Doc<"rooms"> & {
@@ -38,18 +42,17 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 
 	const updateRoom = useMutation(api.rooms.update);
 	const archiveRoom = useMutation(api.rooms.archive);
-	const deleteRoom = useMutation(api.rooms.deleteRoom);
 
 	const canManage = room.membership?.canManage ?? false;
 
 	const handleSave = async () => {
 		if (!canManage) {
-			alert("You don't have permission to update this room");
+			toast.error("You don't have permission to update this room");
 			return;
 		}
 
 		if (!name.trim()) {
-			alert("Room name is required");
+			toast.error("Room name is required");
 			return;
 		}
 
@@ -63,10 +66,12 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 			});
 
 			onUpdate?.();
-			alert("Room settings updated successfully");
+			toast.success("Room settings updated successfully");
 		} catch (error) {
 			console.error("Failed to update room:", error);
-			alert(error instanceof Error ? error.message : "Failed to update room");
+			toast.error(
+				error instanceof Error ? error.message : "Failed to update room",
+			);
 		} finally {
 			setIsSaving(false);
 		}
@@ -74,7 +79,7 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 
 	const handleArchive = async () => {
 		if (!canManage) {
-			alert("You don't have permission to archive this room");
+			toast.error("You don't have permission to archive this room");
 			return;
 		}
 
@@ -89,43 +94,12 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 		try {
 			await archiveRoom({ roomId: room._id });
 			onUpdate?.();
-			alert("Room archived successfully");
+			toast.success("Room archived successfully");
 		} catch (error) {
 			console.error("Failed to archive room:", error);
-			alert(error instanceof Error ? error.message : "Failed to archive room");
-		}
-	};
-
-	const handleDelete = async () => {
-		if (!canManage) {
-			alert("You don't have permission to delete this room");
-			return;
-		}
-
-		if (
-			!confirm(
-				"Are you sure you want to permanently delete this room? This action cannot be undone. All messages will be lost.",
-			)
-		) {
-			return;
-		}
-
-		// Double confirmation for destructive action
-		if (
-			!confirm(
-				"This is your final warning. Type the room name to confirm deletion.",
-			)
-		) {
-			return;
-		}
-
-		try {
-			await deleteRoom({ roomId: room._id });
-			onUpdate?.();
-			alert("Room deleted successfully");
-		} catch (error) {
-			console.error("Failed to delete room:", error);
-			alert(error instanceof Error ? error.message : "Failed to delete room");
+			toast.error(
+				error instanceof Error ? error.message : "Failed to archive room",
+			);
 		}
 	};
 
@@ -219,6 +193,34 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 				</CardContent>
 			</Card>
 
+			{/* Members Section */}
+			<Card>
+				<CardHeader>
+					<div className="flex items-center justify-between">
+						<div>
+							<CardTitle>Room Members</CardTitle>
+							<CardDescription>
+								Manage who has access to this room
+							</CardDescription>
+						</div>
+						<AddRoomMembersDialog
+							roomId={room._id}
+							eventId={room.eventId}
+							onSuccess={onUpdate}
+							trigger={
+								<Button>
+									<Users className="h-4 w-4 mr-2" />
+									Add Members
+								</Button>
+							}
+						/>
+					</div>
+				</CardHeader>
+				<CardContent>
+					<RoomParticipantsList roomId={room._id} />
+				</CardContent>
+			</Card>
+
 			{/* Danger Zone */}
 			{room.type !== "main" && (
 				<Card className="border-red-200">
@@ -251,10 +253,12 @@ export function RoomSettings({ room, onUpdate }: RoomSettingsProps) {
 									Permanently delete this room and all its messages
 								</p>
 							</div>
-							<Button variant="destructive" onClick={handleDelete}>
-								<Trash2 className="h-4 w-4 mr-2" />
-								Delete
-							</Button>
+							<RoomDeleteDialog
+								roomId={room._id}
+								eventId={room.eventId}
+								redirectAfterDelete={true}
+								onSuccess={onUpdate}
+							/>
 						</div>
 					</CardContent>
 				</Card>

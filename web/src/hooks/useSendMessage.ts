@@ -1,5 +1,5 @@
-import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
+import { useMutation } from "convex/react";
 import { toast } from "sonner";
 
 /**
@@ -21,13 +21,13 @@ export function useSendMessage() {
 
 	const handleSend = async (
 		roomId: Parameters<typeof sendMessage>[0]["roomId"],
-		text: string
+		text: string,
 	) => {
 		try {
 			await sendMessage({ roomId, text });
 		} catch (error) {
 			toast.error(
-				`Failed to send message: ${error instanceof Error ? error.message : "An error occurred"}`
+				`Failed to send message: ${error instanceof Error ? error.message : "An error occurred"}`,
 			);
 			throw error;
 		}
@@ -35,35 +35,35 @@ export function useSendMessage() {
 
 	const handleEdit = async (
 		messageId: Parameters<typeof editMessage>[0]["messageId"],
-		text: string
+		text: string,
 	) => {
 		try {
 			await editMessage({ messageId, text });
 			toast.success("Message updated successfully");
 		} catch (error) {
 			toast.error(
-				`Failed to edit message: ${error instanceof Error ? error.message : "An error occurred"}`
+				`Failed to edit message: ${error instanceof Error ? error.message : "An error occurred"}`,
 			);
 			throw error;
 		}
 	};
 
 	const handleDelete = async (
-		messageId: Parameters<typeof deleteMessage>[0]["messageId"]
+		messageId: Parameters<typeof deleteMessage>[0]["messageId"],
 	) => {
 		try {
 			await deleteMessage({ messageId });
 			toast.success("Message deleted");
 		} catch (error) {
 			toast.error(
-				`Failed to delete message: ${error instanceof Error ? error.message : "An error occurred"}`
+				`Failed to delete message: ${error instanceof Error ? error.message : "An error occurred"}`,
 			);
 			throw error;
 		}
 	};
 
 	const handleMarkAsRead = async (
-		roomId: Parameters<typeof markAsRead>[0]["roomId"]
+		roomId: Parameters<typeof markAsRead>[0]["roomId"],
 	) => {
 		try {
 			await markAsRead({ roomId });

@@ -1,8 +1,7 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { convexQuery } from "@/lib/convex-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	Briefcase,
@@ -12,12 +11,13 @@ import {
 	Settings,
 	Users,
 } from "lucide-react";
-import { RoomSettingsDrawer } from "@/components/rooms/room-settings-drawer";
-import { MessageList } from "@/components/messages/message-list";
+import { useEffect } from "react";
 import { MessageInput } from "@/components/messages/message-input";
+import { MessageList } from "@/components/messages/message-list";
+import { RoomSettingsDrawer } from "@/components/rooms/room-settings-drawer";
 import { Button } from "@/components/ui/button";
 import { useSendMessage } from "@/hooks/useSendMessage";
-import { useEffect } from "react";
+import { convexQuery } from "@/lib/convex-query";
 
 export const Route = createFileRoute("/_authed/events/$eventId/rooms/$roomId")({
 	ssr: false, // Disable SSR - auth token not available during server rendering
@@ -25,30 +25,33 @@ export const Route = createFileRoute("/_authed/events/$eventId/rooms/$roomId")({
 		const eventId = params.eventId as Id<"events">;
 		const roomId = params.roomId as Id<"rooms">;
 
-		// Prefetch event data (for EventContext)
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.events.getById, { eventId })
-		);
-
-		// Prefetch room data
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.rooms.getById, { roomId })
-		);
-
-		// Prefetch room stats
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.rooms.getStats, { roomId })
-		);
-
-		// Prefetch user profile for messaging
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.users.getMyProfile, {})
-		);
-
-		// Prefetch messages for the room
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.messages.listByRoom, { roomId, limit: 50 })
-		);
+		// Prefetch all data in parallel
+		await Promise.all([
+			// Event data for EventContext
+			context.queryClient.ensureQueryData(
+				convexQuery(api.events.getById, { eventId }),
+			),
+			// Room list for sidebar
+			context.queryClient.ensureQueryData(
+				convexQuery(api.rooms.listAccessibleForEvent, { eventId }),
+			),
+			// Current room data
+			context.queryClient.ensureQueryData(
+				convexQuery(api.rooms.getById, { roomId }),
+			),
+			// Room stats
+			context.queryClient.ensureQueryData(
+				convexQuery(api.rooms.getStats, { roomId }),
+			),
+			// User profile for messaging
+			context.queryClient.ensureQueryData(
+				convexQuery(api.users.getMyProfile, {}),
+			),
+			// Messages for the room
+			context.queryClient.ensureQueryData(
+				convexQuery(api.messages.listByRoom, { roomId, limit: 50 }),
+			),
+		]);
 	},
 	component: RoomDetailPage,
 });
@@ -62,18 +65,18 @@ function RoomDetailPage() {
 	const { data: room } = useSuspenseQuery(
 		convexQuery(api.rooms.getById, {
 			roomId: roomId as Id<"rooms">,
-		})
+		}),
 	);
 
 	const { data: stats } = useSuspenseQuery(
 		convexQuery(api.rooms.getStats, {
 			roomId: roomId as Id<"rooms">,
-		})
+		}),
 	);
 
 	// Get current user profile for messaging (SSR-compatible)
 	const { data: userProfile } = useSuspenseQuery(
-		convexQuery(api.users.getMyProfile, {})
+		convexQuery(api.users.getMyProfile, {}),
 	);
 
 	// Get messages with real-time updates (SSR-compatible)
@@ -81,7 +84,7 @@ function RoomDetailPage() {
 		convexQuery(api.messages.listByRoom, {
 			roomId: roomId as Id<"rooms">,
 			limit: 50,
-		})
+		}),
 	);
 
 	// Message mutation handlers
@@ -140,9 +143,9 @@ function RoomDetailPage() {
 	const canManage = room.membership?.canManage ?? false;
 
 	return (
-		<div className="-m-4 flex flex-col pb-4">
+		<div className="flex flex-col h-full">
 			{/* Header */}
-			<header className="flex-shrink-0 border-b bg-card px-4 py-3">
+			<header className="flex-shrink-0 border-b bg-card px-4 py-2">
 				<div className="flex items-center justify-between gap-4">
 					{/* Left: Back button + Room info */}
 					<div className="flex items-center gap-3 min-w-0 flex-1">
@@ -161,7 +164,9 @@ function RoomDetailPage() {
 									</h1>
 									<span className="text-sm text-muted-foreground flex-shrink-0">
 										· {stats.participantCount}{" "}
-										{stats.participantCount === 1 ? "participant" : "participants"}
+										{stats.participantCount === 1
+											? "participant"
+											: "participants"}
 									</span>
 								</div>
 								{room.description && (

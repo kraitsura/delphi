@@ -1,8 +1,7 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { convexQuery } from "@/lib/convex-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { RoomCreateDialog } from "@/components/rooms/room-create-dialog";
 import { RoomList } from "@/components/rooms/room-list";
@@ -14,6 +13,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { convexQuery } from "@/lib/convex-query";
 
 export const Route = createFileRoute("/_authed/events/$eventId/rooms/")({
 	ssr: false, // Disable SSR - auth token not available during server rendering
@@ -22,17 +22,17 @@ export const Route = createFileRoute("/_authed/events/$eventId/rooms/")({
 
 		// Prefetch event data (also used by EventContext)
 		await context.queryClient.ensureQueryData(
-			convexQuery(api.events.getById, { eventId })
+			convexQuery(api.events.getById, { eventId }),
 		);
 
 		// Prefetch rooms list
 		await context.queryClient.ensureQueryData(
-			convexQuery(api.rooms.listByEvent, { eventId })
+			convexQuery(api.rooms.listByEvent, { eventId }),
 		);
 
 		// Prefetch user profile
 		await context.queryClient.ensureQueryData(
-			convexQuery(api.users.getMyProfile, {})
+			convexQuery(api.users.getMyProfile, {}),
 		);
 	},
 	component: RoomsIndexPage,
@@ -45,17 +45,17 @@ function RoomsIndexPage() {
 	const { data: event } = useSuspenseQuery(
 		convexQuery(api.events.getById, {
 			eventId: eventId as Id<"events">,
-		})
+		}),
 	);
 
 	const { data: rooms } = useSuspenseQuery(
 		convexQuery(api.rooms.listByEvent, {
 			eventId: eventId as Id<"events">,
-		})
+		}),
 	);
 
 	const { data: userProfile } = useSuspenseQuery(
-		convexQuery(api.users.getMyProfile, {})
+		convexQuery(api.users.getMyProfile, {}),
 	);
 
 	// Event not found check
@@ -94,8 +94,8 @@ function RoomsIndexPage() {
 		event.coordinatorId === userProfile._id
 			? "coordinator"
 			: event.coCoordinatorIds?.includes(userProfile._id)
-			? "co-coordinator"
-			: "collaborator";
+				? "co-coordinator"
+				: "collaborator";
 
 	return (
 		<div className="container max-w-6xl mx-auto p-6">

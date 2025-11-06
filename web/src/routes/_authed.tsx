@@ -1,18 +1,18 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { Suspense } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
+import { ThemeConvexSync } from "@/components/theme-convex-sync";
 import { Separator } from "@/components/ui/separator";
 import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
+	SidebarInset,
+	SidebarProvider,
+	SidebarTrigger,
+	useSidebar,
 } from "@/components/ui/sidebar";
+import { EventProvider } from "@/contexts/EventContext";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
-import { ThemeConvexSync } from "@/components/theme-convex-sync";
-import { EventProvider } from "@/contexts/EventContext";
 import { useSession } from "@/lib/auth";
-import { Suspense } from "react";
 
 /**
  * Authenticated Layout Route
@@ -29,24 +29,24 @@ import { Suspense } from "react";
  */
 
 export const Route = createFileRoute("/_authed")({
-  beforeLoad: async ({ context, location }) => {
-    // Check if user is authenticated (set by __root.tsx)
-    if (!context.userId) {
-      // Redirect to sign-in with return URL
-      throw redirect({
-        to: "/auth/sign-in",
-        search: {
-          redirect: location.pathname,
-        },
-      });
-    }
+	beforeLoad: async ({ context, location }) => {
+		// Check if user is authenticated (set by __root.tsx)
+		if (!context.userId) {
+			// Redirect to sign-in with return URL
+			throw redirect({
+				to: "/auth/sign-in",
+				search: {
+					redirect: location.pathname,
+				},
+			});
+		}
 
-    // Pass userId to child routes
-    return {
-      userId: context.userId,
-    };
-  },
-  component: AuthenticatedLayout,
+		// Pass userId to child routes
+		return {
+			userId: context.userId,
+		};
+	},
+	component: AuthenticatedLayout,
 });
 
 /**
@@ -54,8 +54,8 @@ export const Route = createFileRoute("/_authed")({
  * Tracks user activity and updates lastActiveAt timestamp
  */
 function ActivityTracker() {
-  useActivityTracker();
-  return null;
+	useActivityTracker();
+	return null;
 }
 
 /**
@@ -63,19 +63,19 @@ function ActivityTracker() {
  * Header that adjusts styling based on sidebar expansion state
  */
 function SidebarAwareHeader() {
-  const { state } = useSidebar();
-  const isInsetExpanded = state === "expanded";
+	const { state } = useSidebar();
+	const isInsetExpanded = state === "expanded";
 
-  return (
-    <header
-      className={`flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-4 ${
-        isInsetExpanded ? "md:-mt-2" : ""
-      }`}
-    >
-      <SidebarTrigger className="-ml-1.5 mt-1" />
-      <div className="flex-1" />
-    </header>
-  );
+	return (
+		<header
+			className={`flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-4 ${
+				isInsetExpanded ? "md:-mt-2" : ""
+			}`}
+		>
+			<SidebarTrigger className="-ml-1.5 mt-1" />
+			<div className="flex-1" />
+		</header>
+	);
 }
 
 /**
@@ -83,45 +83,41 @@ function SidebarAwareHeader() {
  * Wraps children with ConvexProvider, EventProvider, sidebar navigation, and activity tracking
  */
 function AuthenticatedLayout() {
-  const { userId } = Route.useRouteContext();
-  const { data: session } = useSession();
+	const { userId } = Route.useRouteContext();
+	const { data: session } = useSession();
 
-  return (
-    <ConvexProvider>
-      <ActivityTracker />
-      {/* Only sync theme once session is ready to avoid unauthenticated queries */}
-      <Suspense fallback={null}>
-        {session?.user && <ThemeConvexSync />}
-      </Suspense>
-      <Suspense
-        fallback={
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="flex flex-col">
-              <SidebarAwareHeader />
-              <div className="flex-1 overflow-auto">
-                <div className="flex flex-col gap-4 p-4 h-full">
-                  <div>Loading...</div>
-                </div>
-              </div>
-            </SidebarInset>
-          </SidebarProvider>
-        }
-      >
-        <EventProvider userId={userId}>
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="flex flex-col">
-              <SidebarAwareHeader />
-              <div className="flex-1 overflow-auto">
-                <div className="flex flex-col gap-4 p-4 h-full">
-                  <Outlet />
-                </div>
-              </div>
-            </SidebarInset>
-          </SidebarProvider>
-        </EventProvider>
-      </Suspense>
-    </ConvexProvider>
-  );
+	return (
+		<ConvexProvider>
+			<ActivityTracker />
+			{/* Only sync theme once session is ready to avoid unauthenticated queries */}
+			<Suspense fallback={null}>
+				{session?.user && <ThemeConvexSync />}
+			</Suspense>
+			<Suspense
+				fallback={
+					<SidebarProvider>
+						<AppSidebar />
+						<SidebarInset className="flex flex-col">
+							<SidebarAwareHeader />
+							<div className="flex-1 min-h-0 overflow-auto">
+								<div>Loading...</div>
+							</div>
+						</SidebarInset>
+					</SidebarProvider>
+				}
+			>
+				<EventProvider userId={userId}>
+					<SidebarProvider>
+						<AppSidebar />
+						<SidebarInset className="flex flex-col md:mb-2">
+							<SidebarAwareHeader />
+							<div className="flex-1 min-h-0 overflow-auto">
+								<Outlet />
+							</div>
+						</SidebarInset>
+					</SidebarProvider>
+				</EventProvider>
+			</Suspense>
+		</ConvexProvider>
+	);
 }

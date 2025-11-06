@@ -99,3 +99,55 @@ export interface RegistryEntry {
 	component: React.ComponentType<any>;
 	metadata: ComponentMetadata;
 }
+
+// ============================================================================
+// Event System Types
+// ============================================================================
+
+/**
+ * Selection events - emitted when user selects an item
+ */
+export type SelectionEvent =
+	| { type: "taskSelected"; payload: { taskId: string; taskData: any } }
+	| {
+			type: "vendorSelected";
+			payload: { vendorId: string; vendorName: string };
+	  }
+	| { type: "categorySelected"; payload: { category: string } }
+	| { type: "dateSelected"; payload: { date: number } }
+	| { type: "pollSelected"; payload: { pollId: string } }
+	| { type: "eventSelected"; payload: { eventId: string } };
+
+/**
+ * Filter events - emitted when filters change
+ */
+export type FilterEvent =
+	| { type: "statusChanged"; payload: { status: string } }
+	| { type: "assigneeSelected"; payload: { userId: string; userName: string } }
+	| { type: "dateRangeChanged"; payload: { start: number; end: number } }
+	| { type: "priorityChanged"; payload: { priority: string } };
+
+/**
+ * Action events - emitted when items are modified or filters cleared
+ */
+export type ActionEvent =
+	| { type: "itemAdded"; payload: { itemType: string; itemId: string } }
+	| { type: "itemUpdated"; payload: { itemType: string; itemId: string } }
+	| { type: "itemDeleted"; payload: { itemType: string; itemId: string } }
+	| { type: "filterCleared"; payload: { filterType?: string } };
+
+/**
+ * Union of all component events
+ */
+export type ComponentEvent = SelectionEvent | FilterEvent | ActionEvent;
+
+/**
+ * Connection between two components (master-detail relationship)
+ */
+export interface Connection {
+	masterId: string;
+	detailId: string;
+	masterType: string;
+	detailType: string;
+	eventTypes: string[];
+}

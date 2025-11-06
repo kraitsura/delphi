@@ -14,12 +14,21 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie, getRequest } from "@tanstack/react-start/server";
 import { Toaster } from "sonner";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
-import appCss from "../styles.css?url";
-import { NotFound } from "../components/errors/not-found";
+import { scan } from "react-scan";
 import { ErrorBoundary } from "../components/errors/error-boundary";
+import { NotFound } from "../components/errors/not-found";
 import { ThemeSetProvider } from "../components/theme-set-provider";
 import { TooltipProvider } from "../components/ui/tooltip";
+import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import appCss from "../styles.css?url";
+
+// Initialize React Scan only in development
+if (typeof window !== "undefined" && import.meta.env.DEV) {
+	scan({
+		enabled: true,
+		log: false,
+	});
+}
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -76,24 +85,26 @@ function RootComponent() {
 				<HeadContent />
 			</head>
 			<body className="h-full overflow-hidden">
-				<ThemeSetProvider>
-					<TooltipProvider>
-						<Outlet />
-						<Toaster position="top-right" />
-						<TanStackDevtools
-							config={{
-								position: "bottom-right",
-							}}
-							plugins={[
-								{
-									name: "Tanstack Router",
-									render: <TanStackRouterDevtoolsPanel />,
-								},
-								TanStackQueryDevtools,
-							]}
-						/>
-					</TooltipProvider>
-				</ThemeSetProvider>
+				<div className="h-full flex flex-col">
+					<ThemeSetProvider>
+						<TooltipProvider>
+							<Outlet />
+							<Toaster position="top-right" />
+							<TanStackDevtools
+								config={{
+									position: "bottom-right",
+								}}
+								plugins={[
+									{
+										name: "Tanstack Router",
+										render: <TanStackRouterDevtoolsPanel />,
+									},
+									TanStackQueryDevtools,
+								]}
+							/>
+						</TooltipProvider>
+					</ThemeSetProvider>
+				</div>
 				<Scripts />
 			</body>
 		</html>

@@ -1,5 +1,5 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ValidationError } from "@/lib/fluid-ui/types";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface DashboardErrorProps {
 	title: string;

@@ -129,13 +129,112 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     createdBy: v.id("users"),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_coordinator", ["coordinatorId"])
     .index("by_status", ["status"])
     .index("by_date", ["date"])
     .index("by_type", ["type"])
+    .index("by_deleted", ["isDeleted"])
     // Compound index for user's active events
-    .index("by_coordinator_and_status", ["coordinatorId", "status"]),
+    .index("by_coordinator_and_status", ["coordinatorId", "status"])
+    .index("by_coordinator_and_deleted", ["coordinatorId", "isDeleted"]),
+
+  // ==========================================
+  // EVENT MEMBERS (Junction Table)
+  // ==========================================
+
+  /**
+   * Event Members - Junction table for event membership
+   * Tracks all participants of an event with their roles
+   * Separate from room-level access for clearer permissions
+   */
+  eventMembers: defineTable({
+    eventId: v.id("events"),
+    userId: v.id("users"),
+
+    // User's role in this event
+    role: v.union(
+      v.literal("coordinator"),   // Can manage event and invite others
+      v.literal("collaborator"),  // Can participate and contribute
+      v.literal("guest"),          // Limited access, view-only
+      v.literal("vendor")         // Vendor-specific access
+    ),
+
+    // Metadata
+    joinedAt: v.number(),
+    addedBy: v.id("users"), // Who added this member
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_user", ["userId"])
+    .index("by_event_and_user", ["eventId", "userId"]) // For unique membership check
+    .index("by_event_and_role", ["eventId", "role"]) // For role-based queries
+    .index("by_deleted", ["isDeleted"])
+    .index("by_event_and_deleted", ["eventId", "isDeleted"]),
+
+  // ==========================================
+  // EVENT INVITATIONS
+  // ==========================================
+
+  /**
+   * Event Invitations - Invite users to collaborate on events
+   * Generates unique tokens for email-based invitations
+   */
+  eventInvitations: defineTable({
+    eventId: v.id("events"),
+
+    // Invitee Info
+    invitedEmail: v.string(),
+    invitedByUserId: v.id("users"),
+
+    // Role to be assigned when accepted
+    role: v.union(
+      v.literal("coordinator"),   // Co-coordinator with full permissions
+      v.literal("collaborator"),  // Collaborator with limited permissions
+      v.literal("guest")          // Guest with read-only access
+    ),
+
+    // Invitation Status
+    status: v.union(
+      v.literal("pending"),     // Sent but not yet accepted
+      v.literal("accepted"),    // User accepted the invitation
+      v.literal("declined"),    // User declined the invitation
+      v.literal("cancelled"),   // Cancelled by coordinator before acceptance
+      v.literal("expired")      // Invitation expired
+    ),
+
+    // Security
+    token: v.string(), // Unique token for invitation link
+    expiresAt: v.number(), // Expiration timestamp (7 days from creation)
+
+    // Timestamps
+    createdAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+    declinedAt: v.optional(v.number()),
+    cancelledAt: v.optional(v.number()),
+
+    // Optional message from inviter
+    message: v.optional(v.string()),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_email", ["invitedEmail"])
+    .index("by_token", ["token"]) // For invitation link lookups
+    .index("by_status", ["status"])
+    .index("by_event_and_status", ["eventId", "status"])
+    .index("by_invited_by", ["invitedByUserId"])
+    .index("by_deleted", ["isDeleted"])
+    .index("by_event_and_deleted", ["eventId", "isDeleted"]),
 
   // ==========================================
   // ROOMS (Chat Channels)
@@ -166,6 +265,10 @@ export default defineSchema({
     isArchived: v.boolean(),
     allowGuestMessages: v.boolean(), // Can guests post or just read?
 
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
+
     // Metadata
     createdAt: v.number(),
     createdBy: v.id("users"),
@@ -174,7 +277,9 @@ export default defineSchema({
     .index("by_event", ["eventId"])
     .index("by_type", ["type"])
     .index("by_event_and_type", ["eventId", "type"])
-    .index("by_vendor", ["vendorId"]),
+    .index("by_vendor", ["vendorId"])
+    .index("by_deleted", ["isDeleted"])
+    .index("by_event_and_deleted", ["eventId", "isDeleted"]),
 
   // ==========================================
   // ROOM PARTICIPANTS (Many-to-Many)
@@ -207,10 +312,16 @@ export default defineSchema({
     // Metadata
     joinedAt: v.number(),
     addedBy: v.id("users"),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_room", ["roomId"])
     .index("by_user", ["userId"])
-    .index("by_room_and_user", ["roomId", "userId"]), // Uniqueness constraint
+    .index("by_room_and_user", ["roomId", "userId"]) // Uniqueness constraint
+    .index("by_deleted", ["isDeleted"])
+    .index("by_room_and_deleted", ["roomId", "isDeleted"]),
 
   // ==========================================
   // MESSAGES
@@ -249,7 +360,7 @@ export default defineSchema({
     editedAt: v.optional(v.number()),
 
     // Soft delete
-    isDeleted: v.boolean(),
+    isDeleted: v.optional(v.boolean()),
     deletedAt: v.optional(v.number()),
 
     // AI context flags
@@ -344,12 +455,18 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     createdBy: v.id("users"),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_event", ["eventId"])
     .index("by_assignee", ["assigneeId"])
     .index("by_status", ["status"])
     .index("by_event_and_status", ["eventId", "status"])
-    .index("by_due_date", ["dueDate"]),
+    .index("by_due_date", ["dueDate"])
+    .index("by_deleted", ["isDeleted"])
+    .index("by_event_and_deleted", ["eventId", "isDeleted"]),
 
   // ==========================================
   // EXPENSES (Phase 2, but define now)
@@ -385,10 +502,16 @@ export default defineSchema({
     // Metadata
     createdAt: v.number(),
     createdBy: v.id("users"),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_event", ["eventId"])
     .index("by_paid_by", ["paidBy"])
-    .index("by_event_and_category", ["eventId", "category"]),
+    .index("by_event_and_category", ["eventId", "category"])
+    .index("by_deleted", ["isDeleted"])
+    .index("by_event_and_deleted", ["eventId", "isDeleted"]),
 
   // ==========================================
   // POLLS (Phase 2, but define now)
@@ -420,9 +543,15 @@ export default defineSchema({
     // Metadata
     createdAt: v.number(),
     createdBy: v.id("users"),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_event", ["eventId"])
-    .index("by_room", ["roomId"]),
+    .index("by_room", ["roomId"])
+    .index("by_deleted", ["isDeleted"])
+    .index("by_event_and_deleted", ["eventId", "isDeleted"]),
 
   /**
    * PollVotes - Individual poll responses
@@ -434,10 +563,16 @@ export default defineSchema({
 
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_poll", ["pollId"])
     .index("by_user", ["userId"])
-    .index("by_poll_and_user", ["pollId", "userId"]), // One vote per user per poll
+    .index("by_poll_and_user", ["pollId", "userId"]) // One vote per user per poll
+    .index("by_deleted", ["isDeleted"])
+    .index("by_poll_and_deleted", ["pollId", "isDeleted"]),
 
   // ==========================================
   // DASHBOARDS (Fluid UI System)
@@ -456,8 +591,14 @@ export default defineSchema({
     isActive: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
+
+    // Soft delete
+    isDeleted: v.optional(v.boolean()),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_event_and_user", ["eventId", "userId"])
     .index("by_user", ["userId"])
-    .index("by_event", ["eventId"]),
+    .index("by_event", ["eventId"])
+    .index("by_deleted", ["isDeleted"])
+    .index("by_event_and_deleted", ["eventId", "isDeleted"]),
 });

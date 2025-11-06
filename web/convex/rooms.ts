@@ -1,11 +1,15 @@
 import { v } from "convex/values";
-import type { Id } from "./_generated/dataModel";
+import type { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import {
   getAuthenticatedUser,
   requireEventCoordinator,
-  requireRoomParticipant,
+  requireRoomAccess,
+  isRoomEventCoordinator,
+  getCoordinatorRoomPermissions,
+  isEventCoordinator,
 } from "./authHelpers";
+import { softDeleteRoomCascade } from "./cascadeHelpers";
 
 /**
  * Create a new room within an event
@@ -27,7 +31,7 @@ export const create = mutation({
     allowGuestMessages: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Verify user is event coordinator
     await requireEventCoordinator(ctx, args.eventId, userProfile._id);
@@ -46,6 +50,7 @@ export const create = mutation({
       vendorId: args.vendorId,
       isArchived: false,
       allowGuestMessages: args.allowGuestMessages ?? false,
+      isDeleted: false,
       createdAt: Date.now(),
       createdBy: userProfile._id,
       lastMessageAt: undefined,
@@ -63,6 +68,7 @@ export const create = mutation({
       joinedAt: Date.now(),
       addedBy: userProfile._id,
       lastReadAt: undefined,
+      isDeleted: false,
     });
 
     return roomId;
@@ -71,17 +77,33 @@ export const create = mutation({
 
 /**
  * Get room by ID with membership check
+ * Coordinators have implicit access to all rooms
  */
 export const getById = query({
   args: {
     roomId: v.id("rooms"),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const room = await ctx.db.get(args.roomId);
     if (!room) {
       throw new Error("Room not found");
+    }
+
+    // Check if user is event coordinator (implicit access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, args.roomId, userProfile._id);
+
+    if (isCoordinator) {
+      // Return coordinator with implicit permissions
+      return {
+        ...room,
+        membership: {
+          ...getCoordinatorRoomPermissions(),
+          notificationLevel: "all" as const,
+          isCoordinator: true,
+        },
+      };
     }
 
     // Verify user is a participant
@@ -98,13 +120,17 @@ export const getById = query({
 
     return {
       ...room,
-      membership,
+      membership: {
+        ...membership,
+        isCoordinator: false,
+      },
     };
   },
 });
 
 /**
  * List all rooms in an event that the user is a participant of
+ * Coordinators have access to all rooms
  */
 export const listByEvent = query({
   args: {
@@ -112,13 +138,16 @@ export const listByEvent = query({
     includeArchived: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Verify event exists
     const event = await ctx.db.get(args.eventId);
     if (!event) {
       throw new Error("Event not found");
     }
+
+    // Check if user is coordinator (implicit access to all rooms)
+    const isCoordinator = isEventCoordinator(event as Doc<"events">, userProfile._id);
 
     // Get all rooms in the event
     let roomsQuery = ctx.db
@@ -127,23 +156,26 @@ export const listByEvent = query({
 
     const allRooms = await roomsQuery.collect();
 
-    // Filter by archived status if specified
-    const filteredRooms = args.includeArchived
-      ? allRooms
-      : allRooms.filter((room) => !room.isArchived);
+    // Filter out soft-deleted rooms and by archived status if specified
+    const filteredRooms = allRooms.filter((room) => {
+      if (room.isDeleted) return false;
+      if (!args.includeArchived && room.isArchived) return false;
+      return true;
+    });
 
-    // Get user's room memberships
-    const userParticipations = await ctx.db
+    // Get user's room memberships (excluding soft-deleted)
+    const allParticipations = await ctx.db
       .query("roomParticipants")
       .withIndex("by_user", (q) => q.eq("userId", userProfile._id))
       .collect();
 
+    const userParticipations = allParticipations.filter((p) => !p.isDeleted);
     const userRoomIds = new Set(userParticipations.map((p) => p.roomId));
 
-    // Return only rooms user is a participant of
-    const userRooms = filteredRooms.filter((room) =>
-      userRoomIds.has(room._id)
-    );
+    // For coordinators: return all rooms. For others: only rooms they're participants of
+    const userRooms = isCoordinator
+      ? filteredRooms
+      : filteredRooms.filter((room) => userRoomIds.has(room._id));
 
     // Attach membership info to each room
     return Promise.all(
@@ -151,9 +183,25 @@ export const listByEvent = query({
         const membership = userParticipations.find(
           (p) => p.roomId === room._id
         );
+
+        // If coordinator but not explicit participant, use implicit permissions
+        if (isCoordinator && !membership) {
+          return {
+            ...room,
+            membership: {
+              ...getCoordinatorRoomPermissions(),
+              notificationLevel: "all" as const,
+              isCoordinator: true,
+            },
+          };
+        }
+
         return {
           ...room,
-          membership,
+          membership: {
+            ...membership,
+            isCoordinator,
+          },
         };
       })
     );
@@ -162,7 +210,7 @@ export const listByEvent = query({
 
 /**
  * Update room settings
- * Requires canManage permission
+ * Requires canManage permission (coordinators have implicit access)
  */
 export const update = mutation({
   args: {
@@ -172,18 +220,23 @@ export const update = mutation({
     allowGuestMessages: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Check if user can manage this room
-    const membership = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_room_and_user", (q) =>
-        q.eq("roomId", args.roomId).eq("userId", userProfile._id)
-      )
-      .first();
+    // Check if user is coordinator (implicit manage access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, args.roomId, userProfile._id);
 
-    if (!membership?.canManage) {
-      throw new Error("Forbidden: No permission to update room");
+    if (!isCoordinator) {
+      // Check if user can manage this room
+      const membership = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", args.roomId).eq("userId", userProfile._id)
+        )
+        .first();
+
+      if (!membership?.canManage) {
+        throw new Error("Forbidden: No permission to update room");
+      }
     }
 
     // Build update object
@@ -213,7 +266,7 @@ export const archive = mutation({
     roomId: v.id("rooms"),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const room = await ctx.db.get(args.roomId);
     if (!room) {
@@ -240,13 +293,14 @@ export const archive = mutation({
  * Delete a room (hard delete)
  * Requires event coordinator permission
  * Note: This also cascades to delete all participants and messages
+ * @deprecated Use softDelete instead for cascade soft deletion
  */
 export const deleteRoom = mutation({
   args: {
     roomId: v.id("rooms"),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const room = await ctx.db.get(args.roomId);
     if (!room) {
@@ -300,7 +354,53 @@ export const deleteRoom = mutation({
 });
 
 /**
+ * Soft delete a room with cascade
+ * Requires event coordinator permission
+ * Cascades to: roomParticipants, messages
+ */
+export const softDelete = mutation({
+  args: {
+    roomId: v.id("rooms"),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    const room = await ctx.db.get(args.roomId);
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    // Verify user is event coordinator
+    await requireEventCoordinator(ctx, room.eventId, userProfile._id);
+
+    // Prevent deleting main room
+    if (room.type === "main") {
+      throw new Error("Cannot delete main room");
+    }
+
+    // Prevent double deletion
+    if (room.isDeleted) {
+      throw new Error("Room is already deleted");
+    }
+
+    const now = Date.now();
+
+    // Cascade delete all related data using helper function
+    await softDeleteRoomCascade(ctx, args.roomId, now);
+
+    // Soft delete the room itself
+    await ctx.db.patch(args.roomId, {
+      isDeleted: true,
+      deletedAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
  * Get room statistics
+ * Coordinators have implicit access
  */
 export const getStats = query({
   args: {
@@ -308,7 +408,7 @@ export const getStats = query({
   },
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
-    await requireRoomParticipant(ctx, args.roomId, userProfile._id);
+    await requireRoomAccess(ctx, args.roomId, userProfile._id);
 
     const participantCount = await ctx.db
       .query("roomParticipants")
@@ -334,20 +434,23 @@ export const getStats = query({
 /**
  * List accessible rooms for an event with latest message preview
  * Designed for WhatsApp-like chat interface in sidebar
- * Returns only rooms user is a participant of, sorted by activity
+ * Coordinators have access to all rooms
  */
 export const listAccessibleForEvent = query({
   args: {
     eventId: v.id("events"),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Verify event exists
     const event = await ctx.db.get(args.eventId);
     if (!event) {
       throw new Error("Event not found");
     }
+
+    // Check if user is coordinator (implicit access to all rooms)
+    const isCoordinator = isEventCoordinator(event as Doc<"events">, userProfile._id);
 
     // Get all non-archived rooms in the event
     const allRooms = await ctx.db
@@ -365,10 +468,10 @@ export const listAccessibleForEvent = query({
 
     const userRoomIds = new Set(userParticipations.map((p) => p.roomId));
 
-    // Filter to only rooms user is a participant of
-    const accessibleRooms = activeRooms.filter((room) =>
-      userRoomIds.has(room._id)
-    );
+    // For coordinators: include all rooms. For others: only rooms they're participants of
+    const accessibleRooms = isCoordinator
+      ? activeRooms
+      : activeRooms.filter((room) => userRoomIds.has(room._id));
 
     // For each room, get the latest message
     const roomsWithMessages = await Promise.all(
@@ -383,12 +486,32 @@ export const listAccessibleForEvent = query({
           .filter((q) => q.eq(q.field("isDeleted"), false))
           .first();
 
+        // Get author's first name if there's a latest message
+        let latestMessageAuthorFirstName: string | null = null;
+        if (latestMessage?.authorId) {
+          const author = await ctx.db.get(latestMessage.authorId);
+          if (author?.name) {
+            // Extract first name from full name
+            latestMessageAuthorFirstName = author.name.split(" ")[0];
+          }
+        }
+
         // Get membership info
         const membership = userParticipations.find(
           (p) => p.roomId === room._id
         );
 
-        // Get unread count (messages after lastReadAt)
+        // Determine permissions (coordinator implicit or explicit membership)
+        const permissions = isCoordinator && !membership
+          ? getCoordinatorRoomPermissions()
+          : {
+              canPost: membership?.canPost ?? false,
+              canEdit: membership?.canEdit ?? false,
+              canDelete: membership?.canDelete ?? false,
+              canManage: membership?.canManage ?? false,
+            };
+
+        // Get unread count (messages after lastReadAt, excluding own messages)
         // Note: Capped at 100 unread messages for performance.
         // UI can show "99+" for counts at the limit.
         const unreadCount = membership?.lastReadAt
@@ -400,7 +523,8 @@ export const listAccessibleForEvent = query({
               .filter((q) =>
                 q.and(
                   q.gt(q.field("createdAt"), membership.lastReadAt!),
-                  q.eq(q.field("isDeleted"), false)
+                  q.eq(q.field("isDeleted"), false),
+                  q.neq(q.field("authorId"), userProfile._id) // Exclude own messages
                 )
               )
               .take(100) // Limit for performance - show "99+" in UI if at limit
@@ -422,19 +546,18 @@ export const listAccessibleForEvent = query({
           createdBy: room.createdBy,
           lastMessageAt: room.lastMessageAt,
 
-          // Membership permissions (flattened from membership object)
-          canPost: membership?.canPost ?? false,
-          canEdit: membership?.canEdit ?? false,
-          canDelete: membership?.canDelete ?? false,
-          canManage: membership?.canManage ?? false,
+          // Membership permissions (coordinator implicit or explicit)
+          ...permissions,
           notificationLevel: membership?.notificationLevel ?? "all",
           lastReadAt: membership?.lastReadAt,
           joinedAt: membership?.joinedAt,
+          isCoordinator,
 
           // Latest message (flattened)
           latestMessageId: latestMessage?._id ?? null,
           latestMessageText: latestMessage?.text ?? null,
           latestMessageAuthorId: latestMessage?.authorId ?? null,
+          latestMessageAuthorFirstName: latestMessageAuthorFirstName,
           latestMessageCreatedAt: latestMessage?.createdAt ?? null,
           latestMessageIsAI: latestMessage?.isAIGenerated ?? false,
 

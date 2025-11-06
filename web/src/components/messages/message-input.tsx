@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Send } from "lucide-react";
+import { Plus, Send } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -15,6 +15,19 @@ export function MessageInput({
 	placeholder = "Type a message...",
 }: MessageInputProps) {
 	const [text, setText] = useState("");
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+	// Auto-resize textarea based on content
+	useEffect(() => {
+		const textarea = textareaRef.current;
+		if (!textarea) return;
+
+		// Reset to min-height to get accurate scrollHeight
+		textarea.style.height = "48px";
+
+		// Set height to content height (CSS max-height will cap it)
+		textarea.style.height = `${textarea.scrollHeight}px`;
+	}, [text]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -39,34 +52,40 @@ export function MessageInput({
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="border-t bg-background p-4">
-			<div className="flex gap-2 items-end">
-				<div className="flex-1">
+		<form onSubmit={handleSubmit} className="border-t bg-background px-4 py-2">
+			<div className="flex gap-3 items-center">
+				{/* Plus button - left side for future attachments */}
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					className="rounded-full flex-shrink-0"
+					disabled={disabled}
+				>
+					<Plus className="h-5 w-5" />
+				</Button>
+
+				{/* Textarea wrapper with integrated send button */}
+				<div className="relative flex-1">
 					<Textarea
+						ref={textareaRef}
 						value={text}
 						onChange={(e) => setText(e.target.value)}
 						onKeyDown={handleKeyDown}
 						placeholder={placeholder}
 						disabled={disabled}
-						className="min-h-[60px] max-h-[200px] resize-none"
-						rows={2}
+						className="min-h-[48px] max-h-[200px] resize-none overflow-y-auto rounded-2xl py-3 px-4 pr-14"
+						rows={1}
 					/>
-					<p className="text-xs text-muted-foreground mt-1">
-						Press <kbd className="px-1 py-0.5 bg-muted rounded">Enter</kbd> to
-						send,{" "}
-						<kbd className="px-1 py-0.5 bg-muted rounded">Shift+Enter</kbd>{" "}
-						for new line
-					</p>
+					<Button
+						type="submit"
+						disabled={!text.trim() || disabled}
+						size="icon"
+						className="absolute right-1.5 bottom-1.5 rounded-full h-9 w-9"
+					>
+						<Send className="h-4 w-4" />
+					</Button>
 				</div>
-				<Button
-					type="submit"
-					disabled={!text.trim() || disabled}
-					size="lg"
-					className="px-6"
-				>
-					<Send className="h-4 w-4 mr-2" />
-					Send
-				</Button>
 			</div>
 		</form>
 	);

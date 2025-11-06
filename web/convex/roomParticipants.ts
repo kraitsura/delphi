@@ -3,7 +3,10 @@ import type { Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import {
   getAuthenticatedUser,
-  requireRoomParticipant,
+  isRoomEventCoordinator,
+  getCoordinatorRoomPermissions,
+  requireRoomAccess,
+  getUserEventRole,
 } from "./authHelpers";
 
 /**
@@ -24,23 +27,27 @@ export const addParticipant = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const room = await ctx.db.get(args.roomId);
     if (!room) {
       throw new Error("Room not found");
     }
 
-    // Check if requester has manage permission
-    const requesterMembership = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_room_and_user", (q) =>
-        q.eq("roomId", args.roomId).eq("userId", userProfile._id)
-      )
-      .first();
+    // Check if requester has manage permission (coordinators have implicit access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, args.roomId, userProfile._id);
 
-    if (!requesterMembership?.canManage) {
-      throw new Error("Forbidden: No permission to add participants");
+    if (!isCoordinator) {
+      const requesterMembership = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", args.roomId).eq("userId", userProfile._id)
+        )
+        .first();
+
+      if (!requesterMembership?.canManage) {
+        throw new Error("Forbidden: No permission to add participants");
+      }
     }
 
     // Check if user is already a participant
@@ -73,6 +80,7 @@ export const addParticipant = mutation({
       joinedAt: Date.now(),
       addedBy: userProfile._id,
       lastReadAt: undefined,
+      isDeleted: false,
     });
 
     return participantId;
@@ -89,23 +97,27 @@ export const removeParticipant = mutation({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const room = await ctx.db.get(args.roomId);
     if (!room) {
       throw new Error("Room not found");
     }
 
-    // Check if requester has manage permission
-    const requesterMembership = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_room_and_user", (q) =>
-        q.eq("roomId", args.roomId).eq("userId", userProfile._id)
-      )
-      .first();
+    // Check if requester has manage permission (coordinators have implicit access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, args.roomId, userProfile._id);
 
-    if (!requesterMembership?.canManage) {
-      throw new Error("Forbidden: No permission to remove participants");
+    if (!isCoordinator) {
+      const requesterMembership = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", args.roomId).eq("userId", userProfile._id)
+        )
+        .first();
+
+      if (!requesterMembership?.canManage) {
+        throw new Error("Forbidden: No permission to remove participants");
+      }
     }
 
     // Find the participant to remove
@@ -154,18 +166,22 @@ export const updatePermissions = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Check if requester has manage permission
-    const requesterMembership = await ctx.db
-      .query("roomParticipants")
-      .withIndex("by_room_and_user", (q) =>
-        q.eq("roomId", args.roomId).eq("userId", userProfile._id)
-      )
-      .first();
+    // Check if requester has manage permission (coordinators have implicit access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, args.roomId, userProfile._id);
 
-    if (!requesterMembership?.canManage) {
-      throw new Error("Forbidden: No permission to update permissions");
+    if (!isCoordinator) {
+      const requesterMembership = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", args.roomId).eq("userId", userProfile._id)
+        )
+        .first();
+
+      if (!requesterMembership?.canManage) {
+        throw new Error("Forbidden: No permission to update permissions");
+      }
     }
 
     // Find the participant
@@ -233,7 +249,7 @@ export const updateNotificationLevel = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Find user's participation
     const participant = await ctx.db
@@ -257,6 +273,7 @@ export const updateNotificationLevel = mutation({
 
 /**
  * List all participants in a room with user details
+ * Includes coordinators with implicit access
  */
 export const listByRoom = query({
   args: {
@@ -264,9 +281,17 @@ export const listByRoom = query({
   },
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
-    // Verify requester is a participant
-    await requireRoomParticipant(ctx, args.roomId, userProfile._id);
 
+    // Verify requester has access (either as coordinator or participant)
+    await requireRoomAccess(ctx, args.roomId, userProfile._id);
+
+    const room = await ctx.db.get(args.roomId);
+    if (!room) throw new Error("Room not found");
+
+    const event = await ctx.db.get(room.eventId);
+    if (!event) throw new Error("Event not found");
+
+    // Get regular participants
     const participants = await ctx.db
       .query("roomParticipants")
       .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
@@ -279,24 +304,66 @@ export const listByRoom = query({
         return {
           ...participant,
           user,
+          isCoordinator: false,
         };
       })
     );
 
-    // Sort by join date (most recent first)
-    return participantsWithUsers.sort((a, b) => b.joinedAt - a.joinedAt);
+    // Add coordinators (main + co-coordinators) if not already in participants
+    const coordinatorIds = [
+      event.coordinatorId,
+      ...(event.coCoordinatorIds || []),
+    ];
+
+    const participantUserIds = new Set(participants.map(p => p.userId));
+
+    const coordinatorsToAdd = await Promise.all(
+      coordinatorIds
+        .filter(coordId => !participantUserIds.has(coordId))
+        .map(async (coordId) => {
+          const user = await ctx.db.get(coordId);
+          return {
+            _id: `coordinator_${coordId}` as any,
+            _creationTime: Date.now(),
+            roomId: args.roomId,
+            userId: coordId,
+            ...getCoordinatorRoomPermissions(),
+            notificationLevel: "all" as const,
+            joinedAt: event.createdAt,
+            addedBy: event.coordinatorId,
+            lastReadAt: undefined,
+            user,
+            isCoordinator: true,
+          };
+        })
+    );
+
+    // Combine and sort by join date (most recent first)
+    return [...participantsWithUsers, ...coordinatorsToAdd]
+      .sort((a, b) => b.joinedAt - a.joinedAt);
   },
 });
 
 /**
  * Get current user's access level in a room
+ * Includes implicit coordinator permissions
  */
 export const getUserRoomAccess = query({
   args: {
     roomId: v.id("rooms"),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    // Check if user is event coordinator first (implicit full access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, args.roomId, userProfile._id);
+    if (isCoordinator) {
+      return {
+        ...getCoordinatorRoomPermissions(),
+        notificationLevel: "all" as const,
+        isCoordinator: true,
+      };
+    }
 
     const participant = await ctx.db
       .query("roomParticipants")
@@ -315,6 +382,117 @@ export const getUserRoomAccess = query({
       canDelete: participant.canDelete,
       canManage: participant.canManage,
       notificationLevel: participant.notificationLevel,
+      isCoordinator: false,
+    };
+  },
+});
+
+/**
+ * Add multiple event members to a room at once
+ * Automatically sets permissions based on their event role
+ * Requires canManage permission (coordinators have implicit access)
+ */
+export const addMultipleMembersToRoom = mutation({
+  args: {
+    roomId: v.id("rooms"),
+    userIds: v.array(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    const room = await ctx.db.get(args.roomId);
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    // Check if requester has manage permission (coordinators have implicit access)
+    const isCoordinator = await isRoomEventCoordinator(ctx, args.roomId, userProfile._id);
+
+    if (!isCoordinator) {
+      const requesterMembership = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", args.roomId).eq("userId", userProfile._id)
+        )
+        .first();
+
+      if (!requesterMembership?.canManage) {
+        throw new Error("Forbidden: No permission to add participants");
+      }
+    }
+
+    // Get existing participants to avoid duplicates
+    const existingParticipants = await ctx.db
+      .query("roomParticipants")
+      .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
+      .collect();
+
+    const existingUserIds = new Set(existingParticipants.map(p => p.userId));
+
+    const results = [];
+
+    for (const userId of args.userIds) {
+      // Skip if already a participant
+      if (existingUserIds.has(userId)) {
+        results.push({ userId, status: "already_exists" });
+        continue;
+      }
+
+      // Skip if user is a coordinator (they have implicit access)
+      if (await isRoomEventCoordinator(ctx, args.roomId, userId)) {
+        results.push({ userId, status: "is_coordinator" });
+        continue;
+      }
+
+      // Verify user exists
+      const userToAdd = await ctx.db.get(userId);
+      if (!userToAdd) {
+        results.push({ userId, status: "user_not_found" });
+        continue;
+      }
+
+      // Get user's event role to determine default permissions
+      const eventRole = await getUserEventRole(ctx, room.eventId, userId);
+
+      let permissions = {
+        canPost: true,
+        canEdit: true,
+        canDelete: false,
+        canManage: false,
+      };
+
+      // Set permissions based on event role
+      if (eventRole === "coordinator") {
+        // Coordinators have full permissions (though they shouldn't be added explicitly)
+        permissions = { canPost: true, canEdit: true, canDelete: true, canManage: true };
+      } else if (eventRole === "collaborator") {
+        // Collaborators can post and edit
+        permissions = { canPost: true, canEdit: true, canDelete: false, canManage: false };
+      } else if (eventRole === "guest") {
+        // Guests are read-only by default
+        permissions = { canPost: false, canEdit: false, canDelete: false, canManage: false };
+      }
+
+      // Create participant
+      const participantId = await ctx.db.insert("roomParticipants", {
+        roomId: args.roomId,
+        userId: userId,
+        ...permissions,
+        notificationLevel: "all",
+        joinedAt: Date.now(),
+        addedBy: userProfile._id,
+        lastReadAt: undefined,
+        isDeleted: false,
+      });
+
+      results.push({ userId, status: "added", participantId });
+    }
+
+    return {
+      total: args.userIds.length,
+      added: results.filter(r => r.status === "added").length,
+      skipped: results.filter(r => r.status !== "added").length,
+      results,
     };
   },
 });
@@ -327,7 +505,7 @@ export const leaveRoom = mutation({
     roomId: v.id("rooms"),
   },
   handler: async (ctx, args) => {
-    const { user, userProfile } = await getAuthenticatedUser(ctx);
+    const { userProfile } = await getAuthenticatedUser(ctx);
 
     const room = await ctx.db.get(args.roomId);
     if (!room) {

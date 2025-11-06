@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { marked } from "marked";
 import DOMPurify from "dompurify";
+import { marked } from "marked";
+import { useMemo } from "react";
 import type { TextSection } from "@/lib/fluid-ui/types";
 
 interface TextRowProps {
