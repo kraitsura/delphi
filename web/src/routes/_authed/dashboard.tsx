@@ -59,6 +59,9 @@ function Dashboard() {
 			</p>
 
 			<div className="space-y-6">
+				{/* Rate Limiter Demo Section */}
+				<RateLimiterDemoSection />
+
 				{/* Events CRUD Testing Section */}
 				<EventsCRUDSection />
 
@@ -140,6 +143,155 @@ function Dashboard() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+function RateLimiterDemoSection() {
+	const rateLimitStatus = useQuery(api.rateLimiterDemo.getRateLimitStatus);
+	const testAction = useMutation(api.rateLimiterDemo.testAction);
+	const resetRateLimit = useMutation(api.rateLimiterDemo.resetRateLimit);
+	const [isLoading, setIsLoading] = useState(false);
+	const [clickCount, setClickCount] = useState(0);
+
+	const handleTestAction = async () => {
+		setIsLoading(true);
+		try {
+			const result = await testAction({});
+			toast.success(result.message);
+			setClickCount((prev) => prev + 1);
+		} catch (error: any) {
+			toast.error(
+				error.message || "Rate limit exceeded! Please wait before trying again.",
+			);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleReset = async () => {
+		try {
+			const result = await resetRateLimit({});
+			toast.success(result.message);
+			setClickCount(0);
+		} catch (error: any) {
+			toast.error(error.message || "Failed to reset rate limit");
+		}
+	};
+
+	const isRateLimited = rateLimitStatus?.ok === false;
+	const remaining = rateLimitStatus?.remaining ?? 0;
+	const retryAfter = rateLimitStatus?.retryAfter ?? 0;
+	const retrySeconds = Math.ceil(retryAfter / 1000);
+
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex items-center justify-between">
+					<div>
+						<CardTitle>Rate Limiter Demo 🛡️</CardTitle>
+						<CardDescription>
+							Test rate limiting: 10 actions/minute with burst capacity of 3
+						</CardDescription>
+					</div>
+					<Button
+						onClick={handleReset}
+						size="sm"
+						variant="outline"
+						disabled={isLoading}
+					>
+						Reset Limit
+					</Button>
+				</div>
+			</CardHeader>
+			<CardContent className="space-y-6">
+				{/* Status Display */}
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div className="border rounded-lg p-4">
+						<div className="text-sm text-muted-foreground mb-1">Status</div>
+						<div className="flex items-center gap-2">
+							{isRateLimited ? (
+								<>
+									<X className="h-5 w-5 text-destructive" />
+									<span className="font-semibold text-destructive">
+										Rate Limited
+									</span>
+								</>
+							) : (
+								<>
+									<CheckCircle2 className="h-5 w-5 text-green-600" />
+									<span className="font-semibold text-green-600">OK</span>
+								</>
+							)}
+						</div>
+					</div>
+
+					<div className="border rounded-lg p-4">
+						<div className="text-sm text-muted-foreground mb-1">
+							Tokens Remaining
+						</div>
+						<div className="text-2xl font-bold">
+							{rateLimitStatus === undefined ? "..." : remaining}
+						</div>
+						<div className="text-xs text-muted-foreground">out of 13 total</div>
+					</div>
+
+					<div className="border rounded-lg p-4">
+						<div className="text-sm text-muted-foreground mb-1">
+							Actions Taken
+						</div>
+						<div className="text-2xl font-bold">{clickCount}</div>
+						<div className="text-xs text-muted-foreground">
+							this session
+						</div>
+					</div>
+				</div>
+
+				{/* Action Button */}
+				<div className="flex flex-col items-center gap-4 p-6 border rounded-lg bg-muted/30">
+					<Button
+						onClick={handleTestAction}
+						disabled={isLoading || isRateLimited}
+						size="lg"
+						className="w-full md:w-auto"
+					>
+						{isLoading
+							? "Testing..."
+							: isRateLimited
+								? `Rate Limited - Wait ${retrySeconds}s`
+								: `Test Rate Limit (${remaining} remaining)`}
+					</Button>
+
+					{isRateLimited && (
+						<p className="text-sm text-destructive text-center">
+							You've hit the rate limit! Try again in {retrySeconds} seconds, or
+							click "Reset Limit" to clear it.
+						</p>
+					)}
+
+					{!isRateLimited && remaining <= 3 && remaining > 0 && (
+						<p className="text-sm text-amber-600 text-center">
+							Warning: Only {remaining} tokens remaining before rate limit!
+						</p>
+					)}
+				</div>
+
+				{/* Info Section */}
+				<div className="text-sm space-y-2 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+					<p className="font-semibold">How it works:</p>
+					<ul className="list-disc list-inside space-y-1 text-muted-foreground">
+						<li>Token bucket algorithm with 10 tokens/minute refill rate</li>
+						<li>Burst capacity of 3 extra tokens (13 total capacity)</li>
+						<li>
+							Each action consumes 1 token - tokens refill gradually over time
+						</li>
+						<li>
+							When you run out of tokens, you must wait for them to refill
+						</li>
+						<li>Reset button clears your limit for testing purposes</li>
+					</ul>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
 
