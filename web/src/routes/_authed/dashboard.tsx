@@ -8,14 +8,20 @@ import {
 	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
+	Clock,
 	DollarSign,
 	Edit,
+	History,
+	Play,
 	Plus,
+	RotateCcw,
 	Save,
+	Settings,
 	Trash2,
 	UserPlus,
 	Users,
 	X,
+	Zap,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +36,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { useSession } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authed/dashboard")({
@@ -146,64 +154,291 @@ function Dashboard() {
 	);
 }
 
+// Types for action history
+type ActionHistoryItem = {
+	timestamp: number;
+	success: boolean;
+	message: string;
+	remainingTokens: number;
+};
+
+type TestScenario = "single" | "burst" | "gradual";
+
 function RateLimiterDemoSection() {
-	const rateLimitStatus = useQuery(api.rateLimiterDemo.getRateLimitStatus);
-	const testAction = useMutation(api.rateLimiterDemo.testAction);
-	const resetRateLimit = useMutation(api.rateLimiterDemo.resetRateLimit);
+	// Session management
+	const [sessionId, setSessionId] = useState<string>("");
+	const [useSessionIsolation, setUseSessionIsolation] = useState(false);
+
+	// Generate session ID on mount
+	useEffect(() => {
+		setSessionId(crypto.randomUUID());
+	}, []);
+
+	// Queries and mutations (session-aware)
+	const rateLimitStatus = useQuery(
+		api.rateLimiterDemo.getRateLimitStatusWithSession,
+		useSessionIsolation ? { sessionId } : "skip",
+	);
+	const rateLimitStatusNoSession = useQuery(
+		api.rateLimiterDemo.getRateLimitStatus,
+		!useSessionIsolation ? {} : "skip",
+	);
+	const testActionWithSession = useMutation(
+		api.rateLimiterDemo.testActionWithSession,
+	);
+	const resetRateLimitWithSession = useMutation(
+		api.rateLimiterDemo.resetRateLimitWithSession,
+	);
+
+	// Use the appropriate status based on isolation setting
+	const status = useSessionIsolation
+		? rateLimitStatus
+		: rateLimitStatusNoSession;
+
+	// State management
 	const [isLoading, setIsLoading] = useState(false);
 	const [clickCount, setClickCount] = useState(0);
+	const [actionHistory, setActionHistory] = useState<ActionHistoryItem[]>([]);
+	const [showHistory, setShowHistory] = useState(false);
+	const [testScenario, setTestScenario] = useState<TestScenario>("single");
+	const [isBurstTesting, setIsBurstTesting] = useState(false);
+
+	// Auto-reset timer
+	const [autoResetEnabled, setAutoResetEnabled] = useState(false);
+	const [autoResetDelay, setAutoResetDelay] = useState<30 | 60>(30);
+	const [lastActivityTime, setLastActivityTime] = useState(Date.now());
+	const [autoResetCountdown, setAutoResetCountdown] = useState(0);
+
+	// Real-time countdown
+	const [liveRetrySeconds, setLiveRetrySeconds] = useState(0);
+
+	const isRateLimited = status?.ok === false;
+	const remaining = status?.remaining ?? 0;
+	const retryAfter = status?.retryAfter ?? 0;
+
+	// Update live countdown timer
+	useEffect(() => {
+		if (!isRateLimited || retryAfter === 0) {
+			setLiveRetrySeconds(0);
+			return;
+		}
+
+		// Set initial countdown
+		const initialSeconds = Math.ceil(retryAfter / 1000);
+		setLiveRetrySeconds(initialSeconds);
+
+		// Update every second
+		const interval = setInterval(() => {
+			setLiveRetrySeconds((prev) => (prev > 0 ? prev - 1 : 0));
+		}, 1000);
+
+		return () => clearInterval(interval);
+	}, [isRateLimited, retryAfter]);
+
+	// Auto-reset timer logic
+	useEffect(() => {
+		if (!autoResetEnabled) {
+			setAutoResetCountdown(0);
+			return;
+		}
+
+		const updateCountdown = () => {
+			const elapsed = Date.now() - lastActivityTime;
+			const remaining = Math.max(0, autoResetDelay * 1000 - elapsed);
+			setAutoResetCountdown(Math.ceil(remaining / 1000));
+
+			if (remaining === 0 && clickCount > 0) {
+				handleReset(true);
+			}
+		};
+
+		updateCountdown();
+		const interval = setInterval(updateCountdown, 1000);
+
+		return () => clearInterval(interval);
+	}, [autoResetEnabled, lastActivityTime, autoResetDelay, clickCount]);
+
+	// Cleanup on unmount
+	useEffect(() => {
+		return () => {
+			// Reset rate limit when component unmounts
+			if (clickCount > 0) {
+				resetRateLimitWithSession(
+					useSessionIsolation ? { sessionId } : {},
+				).catch(console.error);
+			}
+		};
+	}, [
+		clickCount,
+		sessionId,
+		useSessionIsolation,
+		resetRateLimitWithSession,
+	]);
+
+	const addToHistory = (
+		success: boolean,
+		message: string,
+		remainingTokens: number,
+	) => {
+		const item: ActionHistoryItem = {
+			timestamp: Date.now(),
+			success,
+			message,
+			remainingTokens,
+		};
+		setActionHistory((prev) => [item, ...prev].slice(0, 10));
+	};
 
 	const handleTestAction = async () => {
 		setIsLoading(true);
+		setLastActivityTime(Date.now());
 		try {
-			const result = await testAction({});
+			const result = await testActionWithSession(
+				useSessionIsolation ? { sessionId } : {},
+			);
 			toast.success(result.message);
 			setClickCount((prev) => prev + 1);
+			addToHistory(true, "Action executed", remaining - 1);
 		} catch (error: any) {
 			toast.error(
 				error.message || "Rate limit exceeded! Please wait before trying again.",
 			);
+			addToHistory(false, "Rate limited", remaining);
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
-	const handleReset = async () => {
+	const handleReset = async (isAuto = false) => {
 		try {
-			const result = await resetRateLimit({});
-			toast.success(result.message);
+			const result = await resetRateLimitWithSession(
+				useSessionIsolation ? { sessionId } : {},
+			);
+			toast.success(
+				isAuto ? "Auto-reset triggered!" : result.message,
+			);
 			setClickCount(0);
+			setActionHistory([]);
+			setLastActivityTime(Date.now());
 		} catch (error: any) {
 			toast.error(error.message || "Failed to reset rate limit");
 		}
 	};
 
-	const isRateLimited = rateLimitStatus?.ok === false;
-	const remaining = rateLimitStatus?.remaining ?? 0;
-	const retryAfter = rateLimitStatus?.retryAfter ?? 0;
-	const retrySeconds = Math.ceil(retryAfter / 1000);
+	const handleBurstTest = async () => {
+		setIsBurstTesting(true);
+		toast.info("Running burst test: 15 rapid clicks");
+
+		for (let i = 0; i < 15; i++) {
+			await handleTestAction();
+			await new Promise((resolve) => setTimeout(resolve, 200));
+		}
+
+		setIsBurstTesting(false);
+		toast.success("Burst test completed!");
+	};
+
+	const handleGradualTest = async () => {
+		setIsBurstTesting(true);
+		toast.info("Running gradual test: 5 clicks over 10 seconds");
+
+		for (let i = 0; i < 5; i++) {
+			await handleTestAction();
+			if (i < 4) await new Promise((resolve) => setTimeout(resolve, 2500));
+		}
+
+		setIsBurstTesting(false);
+		toast.success("Gradual test completed!");
+	};
+
+	const progressPercent = (remaining / 13) * 100;
+	const progressColor =
+		remaining > 7
+			? "bg-green-500"
+			: remaining > 3
+				? "bg-yellow-500"
+				: "bg-red-500";
 
 	return (
 		<Card>
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div>
-						<CardTitle>Rate Limiter Demo 🛡️</CardTitle>
+						<CardTitle>Advanced Rate Limiter Demo 🛡️</CardTitle>
 						<CardDescription>
-							Test rate limiting: 10 actions/minute with burst capacity of 3
+							Test rate limiting with session isolation, auto-reset, and
+							scenarios
 						</CardDescription>
 					</div>
-					<Button
-						onClick={handleReset}
-						size="sm"
-						variant="outline"
-						disabled={isLoading}
-					>
-						Reset Limit
-					</Button>
+					<div className="flex gap-2">
+						<Button
+							onClick={() => handleReset(false)}
+							size="sm"
+							variant="outline"
+							disabled={isLoading || isBurstTesting}
+						>
+							<RotateCcw className="h-4 w-4 mr-1" />
+							Reset
+						</Button>
+					</div>
 				</div>
 			</CardHeader>
 			<CardContent className="space-y-6">
+				{/* Settings Section */}
+				<div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<Settings className="h-4 w-4 text-muted-foreground" />
+							<Label htmlFor="session-isolation" className="text-sm font-medium">
+								Session Isolation
+							</Label>
+						</div>
+						<Switch
+							id="session-isolation"
+							checked={useSessionIsolation}
+							onCheckedChange={setUseSessionIsolation}
+						/>
+					</div>
+					{useSessionIsolation && (
+						<p className="text-xs text-muted-foreground">
+							Session ID: {sessionId.slice(0, 8)}... (isolated testing)
+						</p>
+					)}
+
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<Clock className="h-4 w-4 text-muted-foreground" />
+							<Label htmlFor="auto-reset" className="text-sm font-medium">
+								Auto-Reset Timer
+							</Label>
+						</div>
+						<Switch
+							id="auto-reset"
+							checked={autoResetEnabled}
+							onCheckedChange={setAutoResetEnabled}
+						/>
+					</div>
+					{autoResetEnabled && (
+						<div className="flex items-center gap-2">
+							<select
+								value={autoResetDelay}
+								onChange={(e) =>
+									setAutoResetDelay(parseInt(e.target.value) as 30 | 60)
+								}
+								className="flex h-8 rounded-md border border-input bg-transparent px-3 text-sm"
+							>
+								<option value="30">30 seconds</option>
+								<option value="60">60 seconds</option>
+							</select>
+							{autoResetCountdown > 0 && clickCount > 0 && (
+								<span className="text-xs text-muted-foreground">
+									Resets in {autoResetCountdown}s
+								</span>
+							)}
+						</div>
+					)}
+				</div>
+
 				{/* Status Display */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<div className="border rounded-lg p-4">
@@ -223,6 +458,11 @@ function RateLimiterDemoSection() {
 								</>
 							)}
 						</div>
+						{isRateLimited && liveRetrySeconds > 0 && (
+							<div className="text-xs text-destructive mt-1">
+								Retry in {liveRetrySeconds}s
+							</div>
+						)}
 					</div>
 
 					<div className="border rounded-lg p-4">
@@ -230,7 +470,7 @@ function RateLimiterDemoSection() {
 							Tokens Remaining
 						</div>
 						<div className="text-2xl font-bold">
-							{rateLimitStatus === undefined ? "..." : remaining}
+							{status === undefined ? "..." : remaining}
 						</div>
 						<div className="text-xs text-muted-foreground">out of 13 total</div>
 					</div>
@@ -240,54 +480,117 @@ function RateLimiterDemoSection() {
 							Actions Taken
 						</div>
 						<div className="text-2xl font-bold">{clickCount}</div>
-						<div className="text-xs text-muted-foreground">
-							this session
-						</div>
+						<div className="text-xs text-muted-foreground">this session</div>
 					</div>
 				</div>
 
-				{/* Action Button */}
-				<div className="flex flex-col items-center gap-4 p-6 border rounded-lg bg-muted/30">
-					<Button
-						onClick={handleTestAction}
-						disabled={isLoading || isRateLimited}
-						size="lg"
-						className="w-full md:w-auto"
-					>
-						{isLoading
-							? "Testing..."
-							: isRateLimited
-								? `Rate Limited - Wait ${retrySeconds}s`
-								: `Test Rate Limit (${remaining} remaining)`}
-					</Button>
+				{/* Progress Bar */}
+				<div className="space-y-2">
+					<div className="flex justify-between text-sm">
+						<span className="text-muted-foreground">Token Capacity</span>
+						<span className="font-medium">
+							{remaining}/13 ({Math.round(progressPercent)}%)
+						</span>
+					</div>
+					<div className="relative">
+						<Progress value={progressPercent} className="h-3" />
+						<div
+							className={`absolute top-0 left-0 h-3 rounded-full transition-all ${progressColor}`}
+							style={{ width: `${progressPercent}%` }}
+						/>
+					</div>
+				</div>
 
-					{isRateLimited && (
-						<p className="text-sm text-destructive text-center">
-							You've hit the rate limit! Try again in {retrySeconds} seconds, or
-							click "Reset Limit" to clear it.
-						</p>
-					)}
+				{/* Test Scenarios */}
+				<div className="space-y-3">
+					<Label className="text-sm font-medium">Test Scenarios</Label>
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+						<Button
+							onClick={handleTestAction}
+							disabled={isLoading || isRateLimited || isBurstTesting}
+							className="w-full"
+						>
+							<Play className="h-4 w-4 mr-2" />
+							Single Action
+						</Button>
+						<Button
+							onClick={handleBurstTest}
+							disabled={isLoading || isBurstTesting}
+							variant="outline"
+							className="w-full"
+						>
+							<Zap className="h-4 w-4 mr-2" />
+							Burst Test (15x)
+						</Button>
+						<Button
+							onClick={handleGradualTest}
+							disabled={isLoading || isBurstTesting}
+							variant="outline"
+							className="w-full"
+						>
+							<Clock className="h-4 w-4 mr-2" />
+							Gradual Test (5x)
+						</Button>
+					</div>
+				</div>
 
-					{!isRateLimited && remaining <= 3 && remaining > 0 && (
-						<p className="text-sm text-amber-600 text-center">
-							Warning: Only {remaining} tokens remaining before rate limit!
-						</p>
+				{/* Action History */}
+				<div className="space-y-3">
+					<div className="flex items-center justify-between">
+						<Label className="text-sm font-medium">Action History</Label>
+						<Button
+							onClick={() => setShowHistory(!showHistory)}
+							size="sm"
+							variant="ghost"
+						>
+							<History className="h-4 w-4 mr-1" />
+							{showHistory ? "Hide" : "Show"} ({actionHistory.length})
+						</Button>
+					</div>
+					{showHistory && (
+						<div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+							{actionHistory.length === 0 ? (
+								<p className="text-sm text-muted-foreground text-center py-4">
+									No actions yet
+								</p>
+							) : (
+								actionHistory.map((item, idx) => (
+									<div
+										key={idx}
+										className="flex items-center justify-between text-xs p-2 bg-muted/50 rounded"
+									>
+										<div className="flex items-center gap-2">
+											{item.success ? (
+												<CheckCircle2 className="h-3 w-3 text-green-600" />
+											) : (
+												<X className="h-3 w-3 text-destructive" />
+											)}
+											<span>{item.message}</span>
+										</div>
+										<div className="flex items-center gap-2 text-muted-foreground">
+											<span>{item.remainingTokens} tokens</span>
+											<span>
+												{new Date(item.timestamp).toLocaleTimeString()}
+											</span>
+										</div>
+									</div>
+								))
+							)}
+						</div>
 					)}
 				</div>
 
 				{/* Info Section */}
 				<div className="text-sm space-y-2 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
-					<p className="font-semibold">How it works:</p>
+					<p className="font-semibold">Advanced Features:</p>
 					<ul className="list-disc list-inside space-y-1 text-muted-foreground">
-						<li>Token bucket algorithm with 10 tokens/minute refill rate</li>
-						<li>Burst capacity of 3 extra tokens (13 total capacity)</li>
-						<li>
-							Each action consumes 1 token - tokens refill gradually over time
-						</li>
-						<li>
-							When you run out of tokens, you must wait for them to refill
-						</li>
-						<li>Reset button clears your limit for testing purposes</li>
+						<li>Session isolation prevents conflicts between multiple tests</li>
+						<li>Real-time countdown shows exact seconds until tokens refill</li>
+						<li>Visual progress bar with color-coded capacity zones</li>
+						<li>Action history tracks last 10 actions with timestamps</li>
+						<li>Automated test scenarios (burst, gradual)</li>
+						<li>Auto-reset timer clears limits after inactivity</li>
+						<li>Cleanup on unmount ensures proper test isolation</li>
 					</ul>
 				</div>
 			</CardContent>
