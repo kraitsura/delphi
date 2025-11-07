@@ -5,12 +5,59 @@
  */
 
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
 /**
+ * Internal mutation called by Better Auth trigger on user creation
+ * Creates user profile automatically when Better Auth user is created
+ */
+export const createUserProfile = internalMutation({
+  args: {
+    email: v.string(),
+    name: v.optional(v.string()),
+    image: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Check if profile already exists (idempotent)
+    const existingProfile = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .unique();
+
+    if (existingProfile) {
+      console.log(`Profile already exists for ${args.email}, skipping creation`);
+      return existingProfile._id;
+    }
+
+    // Create new extended profile
+    const profileId = await ctx.db.insert("users", {
+      email: args.email,
+      name: args.name || args.email.split("@")[0],
+      avatar: args.image || undefined,
+      role: "guest", // Default role for new users
+      preferences: {
+        notifications: true,
+        themeSet: "default", // Monochrome theme
+        accent: "amber", // Warm amber accent
+        themeMode: "light", // Light mode by default
+        timezone: "UTC", // Default to UTC, user can update later
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      lastActiveAt: Date.now(),
+      isActive: true,
+    });
+
+    console.log(`Created user profile for ${args.email} with ID ${profileId}`);
+    return profileId;
+  },
+});
+
+/**
  * Create or update extended user profile
- * Should be called after user signs up via Better Auth
+ * Note: Profile is automatically created via Better Auth onCreate trigger
+ * This function serves as a fallback for existing users or manual profile updates
  */
 export const createOrUpdateProfile = mutation({
   args: {},
@@ -46,9 +93,9 @@ export const createOrUpdateProfile = mutation({
       role: "guest", // Default role for new users
       preferences: {
         notifications: true,
-        themeSet: "default",
-        accent: "indigo",
-        themeMode: "system",
+        themeSet: "default", // Monochrome theme
+        accent: "amber", // Warm amber accent
+        themeMode: "light", // Light mode by default
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
       },
       createdAt: Date.now(),

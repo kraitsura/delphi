@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeConvexSync } from "@/components/theme-convex-sync";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +13,8 @@ import { EventProvider } from "@/contexts/EventContext";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
 import { useSession } from "@/lib/auth";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@convex/_generated/api";
 
 /**
  * Authenticated Layout Route
@@ -41,6 +43,15 @@ export const Route = createFileRoute("/_authed")({
 			});
 		}
 
+		// Check if user's email is verified
+		// Note: context.user is set by __root.tsx from Better Auth session
+		if (context.user && !context.user.emailVerified) {
+			// Redirect unverified users to verification prompt
+			throw redirect({
+				to: "/verify-email",
+			});
+		}
+
 		// Pass userId to child routes
 		return {
 			userId: context.userId,
@@ -55,6 +66,57 @@ export const Route = createFileRoute("/_authed")({
  */
 function ActivityTracker() {
 	useActivityTracker();
+	return null;
+}
+
+/**
+ * ProfileCreator Component
+ * Fallback mechanism to create user profile if Better Auth trigger failed
+ * Triggers should create profile automatically, but this ensures profile exists
+ * Waits for session to be ready before attempting profile creation
+ */
+function ProfileCreator() {
+	const { data: session } = useSession();
+	const userProfile = useQuery(api.users.getMyProfile);
+	const createProfile = useMutation(api.users.createOrUpdateProfile);
+	const isCreatingRef = useRef(false);
+
+	useEffect(() => {
+		// Wait for session to be fully loaded before checking profile
+		if (!session?.user) {
+			console.log("[ProfileCreator] Waiting for session to load...");
+			return;
+		}
+
+		console.log("[ProfileCreator] Session loaded:", {
+			email: session.user.email,
+			verified: session.user.emailVerified,
+			profileStatus: userProfile === undefined ? "loading" : userProfile === null ? "missing" : "exists"
+		});
+
+		// If profile is still loading, wait
+		if (userProfile === undefined) {
+			return;
+		}
+
+		// If user is loaded and profile doesn't exist, create it
+		// Guard against multiple simultaneous calls
+		if (userProfile === null && !isCreatingRef.current) {
+			console.log("[ProfileCreator] Creating profile for:", session.user.email);
+			isCreatingRef.current = true;
+			createProfile({})
+				.then(() => {
+					console.log("[ProfileCreator] Profile created successfully");
+				})
+				.catch((error) => {
+					console.error("[ProfileCreator] Failed to create user profile:", error);
+					isCreatingRef.current = false; // Reset on error to allow retry
+				});
+		} else if (userProfile) {
+			console.log("[ProfileCreator] Profile already exists, skipping creation");
+		}
+	}, [session, userProfile, createProfile]);
+
 	return null;
 }
 
@@ -89,6 +151,7 @@ function AuthenticatedLayout() {
 	return (
 		<ConvexProvider>
 			<ActivityTracker />
+			<ProfileCreator />
 			{/* Only sync theme once session is ready to avoid unauthenticated queries */}
 			<Suspense fallback={null}>
 				{session?.user && <ThemeConvexSync />}

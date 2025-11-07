@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifySuccessRouteImport } from './routes/verify-success'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as PlansRouteImport } from './routes/plans'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as AuthedRouteImport } from './routes/_authed'
@@ -27,6 +29,16 @@ import { Route as AuthedEventsEventIdIndexRouteImport } from './routes/_authed/e
 import { Route as AuthedEventsEventIdRoomsIndexRouteImport } from './routes/_authed/events.$eventId.rooms.index'
 import { Route as AuthedEventsEventIdRoomsRoomIdRouteImport } from './routes/_authed/events.$eventId.rooms.$roomId'
 
+const VerifySuccessRoute = VerifySuccessRouteImport.update({
+  id: '/verify-success',
+  path: '/verify-success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PlansRoute = PlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -119,6 +131,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/features': typeof FeaturesRoute
   '/plans': typeof PlansRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/verify-success': typeof VerifySuccessRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
@@ -137,6 +151,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/features': typeof FeaturesRoute
   '/plans': typeof PlansRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/verify-success': typeof VerifySuccessRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
@@ -156,6 +172,8 @@ export interface FileRoutesById {
   '/_authed': typeof AuthedRouteWithChildren
   '/features': typeof FeaturesRoute
   '/plans': typeof PlansRoute
+  '/verify-email': typeof VerifyEmailRoute
+  '/verify-success': typeof VerifySuccessRoute
   '/_authed/dashboard': typeof AuthedDashboardRoute
   '/_authed/invitations': typeof AuthedInvitationsRoute
   '/_authed/profile': typeof AuthedProfileRoute
@@ -176,6 +194,8 @@ export interface FileRouteTypes {
     | '/'
     | '/features'
     | '/plans'
+    | '/verify-email'
+    | '/verify-success'
     | '/dashboard'
     | '/invitations'
     | '/profile'
@@ -194,6 +214,8 @@ export interface FileRouteTypes {
     | '/'
     | '/features'
     | '/plans'
+    | '/verify-email'
+    | '/verify-success'
     | '/dashboard'
     | '/invitations'
     | '/profile'
@@ -212,6 +234,8 @@ export interface FileRouteTypes {
     | '/_authed'
     | '/features'
     | '/plans'
+    | '/verify-email'
+    | '/verify-success'
     | '/_authed/dashboard'
     | '/_authed/invitations'
     | '/_authed/profile'
@@ -232,6 +256,8 @@ export interface RootRouteChildren {
   AuthedRoute: typeof AuthedRouteWithChildren
   FeaturesRoute: typeof FeaturesRoute
   PlansRoute: typeof PlansRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
+  VerifySuccessRoute: typeof VerifySuccessRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   InvitationsTokenRoute: typeof InvitationsTokenRoute
@@ -240,6 +266,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-success': {
+      id: '/verify-success'
+      path: '/verify-success'
+      fullPath: '/verify-success'
+      preLoaderRoute: typeof VerifySuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/plans': {
       id: '/plans'
       path: '/plans'
@@ -403,6 +443,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthedRoute: AuthedRouteWithChildren,
   FeaturesRoute: FeaturesRoute,
   PlansRoute: PlansRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
+  VerifySuccessRoute: VerifySuccessRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   InvitationsTokenRoute: InvitationsTokenRoute,

@@ -43,9 +43,9 @@ type ThemeSetProviderState = {
 const initialState: ThemeSetProviderState = {
 	themeSet: "default",
 	setThemeSet: () => null,
-	accent: "indigo",
+	accent: "amber",
 	setAccent: () => null,
-	mode: "system",
+	mode: "light",
 	setMode: () => null,
 	resolvedMode: "light",
 	updateFromExternal: () => null,
@@ -84,8 +84,8 @@ export function setStoredTheme(preferences: StoredThemePreferences) {
 export function ThemeSetProvider({
 	children,
 	defaultThemeSet = "default",
-	defaultAccent = "indigo",
-	defaultMode = "system",
+	defaultAccent = "amber",
+	defaultMode = "light",
 	...props
 }: ThemeSetProviderProps) {
 	// Initialize from localStorage or defaults

@@ -21,6 +21,7 @@ export function SignUpForm() {
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [showVerifyMessage, setShowVerifyMessage] = useState(false);
 
 	const handleEmailSignUp = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -28,16 +29,18 @@ export function SignUpForm() {
 		setError(null);
 
 		try {
-			await authClient.signUp.email({
+			// Sign up with Better Auth
+			// User profile is created automatically via Better Auth onCreate trigger
+			const result = await authClient.signUp.email({
 				name,
 				email,
 				password,
-				callbackURL: "/dashboard",
 			});
-			// Navigation handled by Better Auth
+
+			// Show verification message
+			setShowVerifyMessage(true);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Sign up failed");
-		} finally {
 			setLoading(false);
 		}
 	};
@@ -53,6 +56,66 @@ export function SignUpForm() {
 			setError(err instanceof Error ? err.message : "Google sign up failed");
 		}
 	};
+
+	// Show verification message after successful signup
+	if (showVerifyMessage) {
+		return (
+			<Card className="w-full max-w-md mx-auto">
+				<CardHeader>
+					<CardTitle>Check Your Email</CardTitle>
+					<CardDescription>We've sent you a verification link</CardDescription>
+				</CardHeader>
+				<CardContent className="space-y-4">
+					<div className="text-center space-y-4">
+						<div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+							<svg
+								className="w-8 h-8 text-primary"
+								fill="none"
+								stroke="currentColor"
+								viewBox="0 0 24 24"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+								/>
+							</svg>
+						</div>
+						<div>
+							<p className="text-sm text-muted-foreground">
+								We've sent a verification email to:
+							</p>
+							<p className="font-medium mt-1">{email}</p>
+						</div>
+						<p className="text-sm text-muted-foreground">
+							Click the link in the email to verify your account and start using
+							Delphi.
+						</p>
+					</div>
+					<div className="pt-4 border-t">
+						<p className="text-xs text-muted-foreground text-center">
+							Didn't receive the email? Check your spam folder or{" "}
+							<button
+								className="text-primary hover:underline"
+								onClick={() => setShowVerifyMessage(false)}
+							>
+								try again
+							</button>
+						</p>
+					</div>
+				</CardContent>
+				<CardFooter className="flex justify-center">
+					<Button
+						variant="link"
+						onClick={() => navigate({ to: "/auth/sign-in" })}
+					>
+						Back to sign in
+					</Button>
+				</CardFooter>
+			</Card>
+		);
+	}
 
 	return (
 		<Card className="w-full max-w-md mx-auto">
