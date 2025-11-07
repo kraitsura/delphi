@@ -34,6 +34,13 @@ interface MyRouterContext {
 	queryClient: QueryClient;
 	userId?: string;
 	token?: string;
+	user?: {
+		id: string;
+		email: string;
+		emailVerified: boolean;
+		name?: string;
+		image?: string;
+	};
 }
 
 // Server function to fetch auth session
@@ -42,7 +49,17 @@ const fetchAuth = createServerFn({ method: "GET" }).handler(async () => {
 	const { session } = await fetchSession(getRequest());
 	const sessionCookieName = getCookieName(createAuth);
 	const token = getCookie(sessionCookieName);
-	return { userId: session?.user.id, token };
+	return {
+		userId: session?.user.id,
+		token,
+		user: session?.user ? {
+			id: session.user.id,
+			email: session.user.email,
+			emailVerified: session.user.emailVerified,
+			name: session.user.name,
+			image: session.user.image,
+		} : undefined,
+	};
 });
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -69,8 +86,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 	// SSR authentication
 	beforeLoad: async () => {
-		const { userId, token } = await fetchAuth();
-		return { userId, token };
+		const { userId, token, user } = await fetchAuth();
+		return { userId, token, user };
 	},
 
 	component: RootComponent,

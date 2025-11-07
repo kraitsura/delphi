@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import { getAuthenticatedUser, requireEventCoordinator } from "./authHelpers";
+import { internal } from "./_generated/api";
 
 /**
  * Generate a secure random token for invitation links
@@ -84,6 +85,27 @@ export const sendInvitation = mutation({
       createdAt: now,
       message: args.message,
       isDeleted: false,
+    });
+
+    // Send invitation email
+    const inviteLink = `${process.env.SITE_URL || "http://localhost:3001"}/invitations/${token}`;
+    const eventDate = event.date
+      ? new Date(event.date).toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : undefined;
+
+    await ctx.scheduler.runAfter(0, internal.emails.sendEventInvitation, {
+      to: args.invitedEmail,
+      invitedByName: userProfile.name,
+      eventName: event.name,
+      eventDate,
+      role: args.role,
+      inviteLink,
+      message: args.message,
     });
 
     return {
@@ -341,6 +363,33 @@ export const resendInvitation = mutation({
       expiresAt,
       status: "pending",
       createdAt: now, // Reset creation time
+    });
+
+    // Get event and inviter details for email
+    const event = await ctx.db.get(invitation.eventId);
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    // Resend invitation email
+    const inviteLink = `${process.env.SITE_URL || "http://localhost:3001"}/invitations/${token}`;
+    const eventDate = event.date
+      ? new Date(event.date).toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : undefined;
+
+    await ctx.scheduler.runAfter(0, internal.emails.sendEventInvitation, {
+      to: invitation.invitedEmail,
+      invitedByName: userProfile.name,
+      eventName: event.name,
+      eventDate,
+      role: invitation.role,
+      inviteLink,
+      message: invitation.message,
     });
 
     return {

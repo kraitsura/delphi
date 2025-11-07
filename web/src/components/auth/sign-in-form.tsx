@@ -14,7 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { authClient } from "@/lib/auth";
 
-export function SignInForm() {
+interface SignInFormProps {
+	verified?: boolean;
+}
+
+export function SignInForm({ verified = false }: SignInFormProps) {
 	const navigate = useNavigate();
 	const emailId = useId();
 	const passwordId = useId();
@@ -36,7 +40,15 @@ export function SignInForm() {
 			});
 			// Navigation handled by Better Auth
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Sign in failed");
+			const errorMessage = err instanceof Error ? err.message : "Sign in failed";
+
+			// Check if error is related to email verification
+			if (errorMessage.toLowerCase().includes("verify") ||
+			    errorMessage.toLowerCase().includes("verification")) {
+				setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+			} else {
+				setError(errorMessage);
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -61,6 +73,13 @@ export function SignInForm() {
 				<CardDescription>Sign in to your account to continue</CardDescription>
 			</CardHeader>
 			<CardContent>
+				{verified && (
+					<div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+						<p className="text-sm text-green-800 dark:text-green-200">
+							✓ Email verified successfully! You can now sign in.
+						</p>
+					</div>
+				)}
 				<form onSubmit={handleEmailSignIn} className="space-y-4">
 					<div className="space-y-2">
 						<Label htmlFor={emailId}>Email</Label>
