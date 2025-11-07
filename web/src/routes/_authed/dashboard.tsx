@@ -12,10 +12,12 @@ import {
 	DollarSign,
 	Edit,
 	History,
+	Mail,
 	Play,
 	Plus,
 	RotateCcw,
 	Save,
+	Send,
 	Settings,
 	Trash2,
 	UserPlus,
@@ -48,16 +50,9 @@ function Dashboard() {
 	const { data: session } = useSession();
 	const currentUser = useQuery(api.auth.getCurrentUser);
 	const userProfile = useQuery(api.users.getMyProfile);
-	const createOrUpdateProfile = useMutation(api.users.createOrUpdateProfile);
 
-	// Ensure extended profile exists for authenticated users
-	useEffect(() => {
-		if (currentUser && userProfile === null) {
-			createOrUpdateProfile({}).catch((error) => {
-				console.error("Failed to create user profile:", error);
-			});
-		}
-	}, [currentUser, userProfile, createOrUpdateProfile]);
+	// Profile is automatically created by ProfileCreator in _authed.tsx
+	// on first access to any authenticated route
 
 	return (
 		<div className="container mx-auto p-6 max-w-7xl">
@@ -67,9 +62,11 @@ function Dashboard() {
 			</p>
 
 			<div className="space-y-6">
+				{/* Email Testing Section */}
+				<EmailTestingSection />
+
 				{/* Rate Limiter Demo Section */}
 				<RateLimiterDemoSection />
-
 				{/* Events CRUD Testing Section */}
 				<EventsCRUDSection />
 
@@ -268,12 +265,7 @@ function RateLimiterDemoSection() {
 				).catch(console.error);
 			}
 		};
-	}, [
-		clickCount,
-		sessionId,
-		useSessionIsolation,
-		resetRateLimitWithSession,
-	]);
+	}, [clickCount, sessionId, useSessionIsolation, resetRateLimitWithSession]);
 
 	const addToHistory = (
 		success: boolean,
@@ -301,7 +293,8 @@ function RateLimiterDemoSection() {
 			addToHistory(true, "Action executed", remaining - 1);
 		} catch (error: any) {
 			toast.error(
-				error.message || "Rate limit exceeded! Please wait before trying again.",
+				error.message ||
+					"Rate limit exceeded! Please wait before trying again.",
 			);
 			addToHistory(false, "Rate limited", remaining);
 		} finally {
@@ -314,9 +307,7 @@ function RateLimiterDemoSection() {
 			const result = await resetRateLimitWithSession(
 				useSessionIsolation ? { sessionId } : {},
 			);
-			toast.success(
-				isAuto ? "Auto-reset triggered!" : result.message,
-			);
+			toast.success(isAuto ? "Auto-reset triggered!" : result.message);
 			setClickCount(0);
 			setActionHistory([]);
 			setLastActivityTime(Date.now());
@@ -389,7 +380,10 @@ function RateLimiterDemoSection() {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<Settings className="h-4 w-4 text-muted-foreground" />
-							<Label htmlFor="session-isolation" className="text-sm font-medium">
+							<Label
+								htmlFor="session-isolation"
+								className="text-sm font-medium"
+							>
 								Session Isolation
 							</Label>
 						</div>
@@ -1018,5 +1012,97 @@ function EventItem({ event }: { event: any }) {
 				</div>
 			)}
 		</div>
+	);
+}
+
+/**
+ * Email Testing Section Component
+ * Allows testing the Resend integration from the dashboard
+ */
+function EmailTestingSection() {
+	const [emailTo, setEmailTo] = useState("");
+	const [isSending, setIsSending] = useState(false);
+	const sendTestEmail = useMutation(api.emails.sendTestEmail);
+
+	const handleSendTest = async () => {
+		if (!emailTo || !emailTo.includes("@")) {
+			toast.error("Please enter a valid email address");
+			return;
+		}
+
+		setIsSending(true);
+		try {
+			const result = await sendTestEmail({ to: emailTo });
+			toast.success(
+				`Test email sent successfully! Email ID: ${result.emailId}`,
+			);
+			setEmailTo("");
+		} catch (error) {
+			console.error("Failed to send test email:", error);
+			toast.error(`Failed to send email: ${error}`);
+		} finally {
+			setIsSending(false);
+		}
+	};
+
+	return (
+		<Card>
+			<CardHeader>
+				<div className="flex items-center justify-between">
+					<div>
+						<CardTitle className="flex items-center gap-2">
+							<Mail className="h-5 w-5 text-primary" />
+							Email Testing (Resend Integration)
+						</CardTitle>
+						<CardDescription>
+							Test the Resend email integration in test mode
+						</CardDescription>
+					</div>
+				</div>
+			</CardHeader>
+			<CardContent>
+				<div className="space-y-4">
+					<div className="grid gap-2">
+						<Label htmlFor="test-email">Recipient Email</Label>
+						<div className="flex gap-2">
+							<Input
+								id="test-email"
+								type="email"
+								placeholder="test@example.com or delivered@resend.dev"
+								value={emailTo}
+								onChange={(e) => setEmailTo(e.target.value)}
+								disabled={isSending}
+							/>
+							<Button onClick={handleSendTest} disabled={isSending || !emailTo}>
+								{isSending ? (
+									<>
+										<RotateCcw className="h-4 w-4 mr-2 animate-spin" />
+										Sending...
+									</>
+								) : (
+									<>
+										<Send className="h-4 w-4 mr-2" />
+										Send Test
+									</>
+								)}
+							</Button>
+						</div>
+					</div>
+
+					<div className="p-4 bg-muted rounded-lg space-y-2">
+						<p className="text-sm font-medium">Test Mode Active</p>
+						<p className="text-xs text-muted-foreground">
+							Currently running in Resend test mode. Use delivered@resend.dev to
+							test email delivery, or any email address to see how emails are
+							formatted.
+						</p>
+						<p className="text-xs text-muted-foreground">
+							To enable production mode, set testMode: false in convex/emails.ts
+							and configure a verified domain in Resend.
+						</p>
+					</div>
+				</div>
+			</CardContent>
+		</Card>
 	);
 }
