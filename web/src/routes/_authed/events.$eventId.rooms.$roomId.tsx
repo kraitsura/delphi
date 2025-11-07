@@ -112,7 +112,7 @@ function RoomDetailPage() {
 		}
 	};
 
-	const getRoomTypeLabel = (type: RoomType) => {
+	const _getRoomTypeLabel = (type: RoomType) => {
 		switch (type) {
 			case "main":
 				return "Main Planning";

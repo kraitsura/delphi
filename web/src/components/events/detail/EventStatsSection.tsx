@@ -1,6 +1,6 @@
 import type { Id } from "@convex/_generated/dataModel";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, DollarSign, MessageSquare } from "lucide-react";
+import { DollarSign, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "../StatCard";
 

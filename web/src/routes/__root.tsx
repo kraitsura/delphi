@@ -13,8 +13,8 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie, getRequest } from "@tanstack/react-start/server";
-import { Toaster } from "sonner";
 import { scan } from "react-scan";
+import { Toaster } from "sonner";
 import { ErrorBoundary } from "../components/errors/error-boundary";
 import { NotFound } from "../components/errors/not-found";
 import { ThemeSetProvider } from "../components/theme-set-provider";

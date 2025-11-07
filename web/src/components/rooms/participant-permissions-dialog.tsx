@@ -47,7 +47,7 @@ export function ParticipantPermissionsDialog({
 	// Reset permissions when dialog opens with new user
 	useEffect(() => {
 		setPermissions(currentPermissions);
-	}, [currentPermissions, open]);
+	}, [currentPermissions]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

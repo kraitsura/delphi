@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 
 export function ErrorBoundary({ error, reset }: ErrorComponentProps) {
-	const router = useRouter();
+	const _router = useRouter();
 	const isDev = import.meta.env.DEV;
 
 	const handleReset = () => {

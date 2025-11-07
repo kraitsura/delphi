@@ -7,7 +7,6 @@ import {
 	Calendar,
 	Check,
 	Mail,
-	MapPin,
 	Shield,
 	User,
 	X,
@@ -15,7 +14,6 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
 	Card,

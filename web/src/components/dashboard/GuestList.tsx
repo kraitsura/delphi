@@ -1,7 +1,5 @@
 import type { Id } from "convex/_generated/dataModel";
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface GuestListProps {
@@ -12,7 +10,7 @@ export interface GuestListProps {
 	showFilters?: boolean;
 }
 
-export function GuestList(props: GuestListProps) {
+export function GuestList(_props: GuestListProps) {
 	// Placeholder: This component requires a guests table in the schema
 	// For now, we'll show a placeholder message
 

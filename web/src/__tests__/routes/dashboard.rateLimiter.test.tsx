@@ -1,7 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { toast } from "sonner";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock Convex hooks
 vi.mock("convex/react", () => ({
@@ -30,11 +28,8 @@ vi.mock("@/lib/auth", () => ({
 	})),
 }));
 
-import { useQuery, useMutation } from "convex/react";
-import {
-	rateLimitTestScenarios,
-	createMockUseMutation,
-} from "@/test/mocks/convex";
+import { useMutation, useQuery } from "convex/react";
+import { rateLimitTestScenarios } from "@/test/mocks/convex";
 
 // Import the component (we'll need to extract it or test the whole dashboard)
 // For now, we'll test the logic and rendering patterns
@@ -55,7 +50,7 @@ describe("RateLimiterDemoSection", () => {
 
 	describe("Rendering and Initial State", () => {
 		it("should render with full token capacity", () => {
-			mockUseQuery.mockImplementation((api, args) => {
+			mockUseQuery.mockImplementation((_api, args) => {
 				if (args === "skip") return undefined;
 				return rateLimitTestScenarios.full;
 			});
@@ -72,7 +67,7 @@ describe("RateLimiterDemoSection", () => {
 
 	describe("Rate Limit Status Display", () => {
 		it("should show OK status when tokens available", () => {
-			mockUseQuery.mockImplementation((api, args) => {
+			mockUseQuery.mockImplementation((_api, args) => {
 				if (args === "skip") return undefined;
 				return rateLimitTestScenarios.full;
 			});
@@ -82,7 +77,7 @@ describe("RateLimiterDemoSection", () => {
 		});
 
 		it("should show Rate Limited status when no tokens", () => {
-			mockUseQuery.mockImplementation((api, args) => {
+			mockUseQuery.mockImplementation((_api, args) => {
 				if (args === "skip") return undefined;
 				return rateLimitTestScenarios.limited;
 			});
@@ -92,7 +87,7 @@ describe("RateLimiterDemoSection", () => {
 		});
 
 		it("should display correct remaining token count", () => {
-			mockUseQuery.mockImplementation((api, args) => {
+			mockUseQuery.mockImplementation((_api, args) => {
 				if (args === "skip") return undefined;
 				return rateLimitTestScenarios.half;
 			});

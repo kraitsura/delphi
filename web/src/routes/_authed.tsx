@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeConvexSync } from "@/components/theme-convex-sync";
-import { Separator } from "@/components/ui/separator";
 import {
 	SidebarInset,
 	SidebarProvider,

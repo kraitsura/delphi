@@ -60,7 +60,7 @@ export function detectConnections(
 
 			// Find shared event types
 			const sharedEvents = masterMetadata.connections.emits.filter((event) =>
-				detailMetadata.connections!.listensTo!.includes(event),
+				detailMetadata.connections?.listensTo?.includes(event),
 			);
 
 			if (sharedEvents.length > 0) {

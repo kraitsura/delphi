@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
-import React, { useMemo, useState } from "react";
+import { useQuery } from "convex/react";
+import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -106,7 +106,7 @@ export function TasksList(props: TasksListProps) {
 			(date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
 		);
 
-		const isOverdue = diffDays < 0;
+		const _isOverdue = diffDays < 0;
 
 		if (diffDays < 0) {
 			return { text: `${Math.abs(diffDays)}d overdue`, isOverdue: true };

@@ -1,5 +1,4 @@
 import type { Id } from "convex/_generated/dataModel";
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
@@ -9,7 +8,7 @@ export interface RSVPStatusProps {
 	showBreakdown?: boolean;
 }
 
-export function RSVPStatus(props: RSVPStatusProps) {
+export function RSVPStatus(_props: RSVPStatusProps) {
 	// Placeholder: This component requires a guests table in the schema
 
 	return (

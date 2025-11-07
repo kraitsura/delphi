@@ -1,5 +1,4 @@
 import { api } from "@convex/_generated/api";
-import type { Id } from "@convex/_generated/dataModel";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import {
@@ -18,7 +17,6 @@ import {
 	Save,
 	Settings,
 	Trash2,
-	UserPlus,
 	Users,
 	X,
 	Zap,
@@ -35,9 +33,9 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authed/dashboard")({
@@ -200,7 +198,7 @@ function RateLimiterDemoSection() {
 	const [clickCount, setClickCount] = useState(0);
 	const [actionHistory, setActionHistory] = useState<ActionHistoryItem[]>([]);
 	const [showHistory, setShowHistory] = useState(false);
-	const [testScenario, setTestScenario] = useState<TestScenario>("single");
+	const [_testScenario, _setTestScenario] = useState<TestScenario>("single");
 	const [isBurstTesting, setIsBurstTesting] = useState(false);
 
 	// Auto-reset timer
@@ -236,6 +234,7 @@ function RateLimiterDemoSection() {
 	}, [isRateLimited, retryAfter]);
 
 	// Auto-reset timer logic
+	// biome-ignore lint/correctness/useExhaustiveDependencies: handleReset is stable enough for this use case
 	useEffect(() => {
 		if (!autoResetEnabled) {
 			setAutoResetCountdown(0);
@@ -268,12 +267,7 @@ function RateLimiterDemoSection() {
 				).catch(console.error);
 			}
 		};
-	}, [
-		clickCount,
-		sessionId,
-		useSessionIsolation,
-		resetRateLimitWithSession,
-	]);
+	}, [clickCount, sessionId, useSessionIsolation, resetRateLimitWithSession]);
 
 	const addToHistory = (
 		success: boolean,
@@ -301,7 +295,8 @@ function RateLimiterDemoSection() {
 			addToHistory(true, "Action executed", remaining - 1);
 		} catch (error: any) {
 			toast.error(
-				error.message || "Rate limit exceeded! Please wait before trying again.",
+				error.message ||
+					"Rate limit exceeded! Please wait before trying again.",
 			);
 			addToHistory(false, "Rate limited", remaining);
 		} finally {
@@ -314,9 +309,7 @@ function RateLimiterDemoSection() {
 			const result = await resetRateLimitWithSession(
 				useSessionIsolation ? { sessionId } : {},
 			);
-			toast.success(
-				isAuto ? "Auto-reset triggered!" : result.message,
-			);
+			toast.success(isAuto ? "Auto-reset triggered!" : result.message);
 			setClickCount(0);
 			setActionHistory([]);
 			setLastActivityTime(Date.now());
@@ -389,7 +382,10 @@ function RateLimiterDemoSection() {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<Settings className="h-4 w-4 text-muted-foreground" />
-							<Label htmlFor="session-isolation" className="text-sm font-medium">
+							<Label
+								htmlFor="session-isolation"
+								className="text-sm font-medium"
+							>
 								Session Isolation
 							</Label>
 						</div>
@@ -423,7 +419,7 @@ function RateLimiterDemoSection() {
 							<select
 								value={autoResetDelay}
 								onChange={(e) =>
-									setAutoResetDelay(parseInt(e.target.value) as 30 | 60)
+									setAutoResetDelay(parseInt(e.target.value, 10) as 30 | 60)
 								}
 								className="flex h-8 rounded-md border border-input bg-transparent px-3 text-sm"
 							>
@@ -664,7 +660,7 @@ function QuickCreateForm({ onSuccess }: { onSuccess: () => void }) {
 				type,
 				date: date ? new Date(date).getTime() : undefined,
 				budget: parseFloat(budget) || 0,
-				expectedGuests: parseInt(guests) || 0,
+				expectedGuests: parseInt(guests, 10) || 0,
 			});
 			toast.success("Event created! Main room auto-created.");
 			setName("");
@@ -784,7 +780,7 @@ function EventItem({ event }: { event: any }) {
 				name: editName,
 				description: editDescription || undefined,
 				budget: { total: parseFloat(editBudget) },
-				guestCount: { expected: parseInt(editGuests) },
+				guestCount: { expected: parseInt(editGuests, 10) },
 			});
 			toast.success("Event updated!");
 			setIsEditing(false);

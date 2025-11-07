@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
@@ -35,7 +35,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 		const now = Date.now();
 
 		// Calculate days from event
-		const daysToEvent = (eventDate - now) / (1000 * 60 * 60 * 24);
+		const _daysToEvent = (eventDate - now) / (1000 * 60 * 60 * 24);
 
 		// Define standard milestones based on event date
 		const standardMilestones: Milestone[] = [

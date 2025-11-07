@@ -81,7 +81,7 @@ export function EventEditDialog({
 				description: description.trim() || undefined,
 				budget: budget ? { total: parseFloat(budget) } : undefined,
 				guestCount: expectedGuests
-					? { expected: parseInt(expectedGuests) }
+					? { expected: parseInt(expectedGuests, 10) }
 					: undefined,
 				date: date ? new Date(date).getTime() : undefined,
 				location:

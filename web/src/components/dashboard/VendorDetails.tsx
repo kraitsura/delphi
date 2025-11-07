@@ -1,5 +1,4 @@
 import type { Id } from "convex/_generated/dataModel";
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
@@ -8,7 +7,7 @@ export interface VendorDetailsProps {
 	vendorId: Id<"users">;
 }
 
-export function VendorDetails(props: VendorDetailsProps) {
+export function VendorDetails(_props: VendorDetailsProps) {
 	// Placeholder: This component requires vendor relationship schema
 
 	return (

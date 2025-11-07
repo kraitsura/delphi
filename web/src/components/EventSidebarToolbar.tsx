@@ -42,6 +42,11 @@ export function EventSidebarToolbar() {
 		setMode(mode === "light" ? "dark" : "light");
 	};
 
+	// Don't render if no eventId (shouldn't happen in event context routes)
+	if (!eventId) {
+		return null;
+	}
+
 	return (
 		<div className="flex items-center justify-between gap-1 px-2 pt-0.5 pb-2">
 			<TooltipProvider delayDuration={0}>
@@ -131,13 +136,13 @@ export function EventSidebarToolbar() {
 
 			{/* Room Create Dialog */}
 			<RoomCreateDialog
-				eventId={eventId! as Id<"events">}
+				eventId={eventId as Id<"events">}
 				open={createDialogOpen}
 				onOpenChange={setCreateDialogOpen}
 				onSuccess={(roomId) => {
 					navigate({
 						to: "/events/$eventId/rooms/$roomId",
-						params: { eventId: eventId!, roomId },
+						params: { eventId, roomId },
 					});
 				}}
 			/>

@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +24,7 @@ export function ExpensesList(props: ExpensesListProps) {
 		paymentStatus = "all",
 		limit,
 		sortBy = "date",
-		showFilters = false,
+		showFilters: _showFilters = false,
 	} = props;
 
 	const expenses = useQuery(api.expenses.listByEvent, {
@@ -55,8 +55,8 @@ export function ExpensesList(props: ExpensesListProps) {
 		if (props.dateRange) {
 			filtered = filtered.filter(
 				(e) =>
-					e._creationTime >= props.dateRange!.start &&
-					e._creationTime <= props.dateRange!.end,
+					e._creationTime >= props.dateRange?.start &&
+					e._creationTime <= props.dateRange?.end,
 			);
 		}
 
