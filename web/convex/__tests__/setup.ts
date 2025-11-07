@@ -1,8 +1,9 @@
 import { convexTest } from "convex-test";
 import { vi } from "vitest";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import schema from "../schema";
 import type { Doc, Id } from "../_generated/dataModel";
+import { authComponent } from "../auth";
 
 /**
  * Create a Convex test environment with schema
@@ -13,25 +14,52 @@ export const setupConvexTest = () => {
 };
 
 /**
- * Mock authenticated user context
- * Use this to simulate authenticated requests
+ * Register Better Auth mock for tests
+ * Call this to mock authComponent.getAuthUser
  */
-export const mockAuthUser = (userId: Id<"users">) => {
-  return {
-    getUserIdentity: vi.fn().mockResolvedValue({
-      subject: userId,
-      tokenIdentifier: `mock-token-${userId}`,
-    }),
-  };
+export const registerBetterAuthMock = (
+  t: ReturnType<typeof convexTest>,
+  authUser: { email: string; id: string; name?: string; image?: string } | null
+) => {
+  vi.spyOn(authComponent, "getAuthUser").mockResolvedValue(authUser as any);
 };
 
 /**
- * Mock unauthenticated context
+ * Create a test user with auth profile
+ * Returns both the Better Auth user mock and the Convex user profile
  */
-export const mockUnauthenticatedUser = () => {
-  return {
-    getUserIdentity: vi.fn().mockResolvedValue(null),
+export const createTestUser = async (
+  t: ReturnType<typeof convexTest>,
+  overrides?: {
+    email?: string;
+    name?: string;
+    role?: "coordinator" | "collaborator" | "guest" | "vendor";
+    isActive?: boolean;
+  }
+) => {
+  const email = overrides?.email || `test-${Date.now()}@example.com`;
+  const name = overrides?.name || "Test User";
+
+  // Create the user profile in the database
+  const userId = await t.run(async (ctx) => {
+    return await ctx.db.insert("users", {
+      email,
+      name,
+      role: overrides?.role || "collaborator",
+      isActive: overrides?.isActive !== undefined ? overrides.isActive : true,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  });
+
+  // Create mock Better Auth user
+  const authUser = {
+    id: `auth-${userId}`,
+    email,
+    name,
   };
+
+  return { authUser, userId };
 };
 
 /**

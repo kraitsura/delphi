@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "../schema";
 import {
@@ -23,8 +23,20 @@ import {
 } from "../authHelpers";
 import { factories } from "../../src/test/factories";
 import type { Id } from "../_generated/dataModel";
+import { authComponent } from "../auth";
+
+// Mock authComponent.getAuthUser for all tests
+vi.mock("../auth", () => ({
+  authComponent: {
+    getAuthUser: vi.fn(),
+  },
+}));
 
 describe("authHelpers", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe("getAuthenticatedUser", () => {
     it("should return user and userProfile for authenticated user", async () => {
       const t = convexTest(schema);
@@ -41,11 +53,9 @@ describe("authHelpers", () => {
         });
       });
 
-      // Mock auth context
+      // Mock auth
       const authUser = { email: "test@example.com", id: "auth-123" };
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(authUser),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(authUser as any);
 
       const result = await t.run(async (ctx) => {
         return await getAuthenticatedUser(ctx);
@@ -59,9 +69,7 @@ describe("authHelpers", () => {
     it("should throw error if user is not authenticated", async () => {
       const t = convexTest(schema);
 
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(null),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(null as any);
 
       await expect(
         t.run(async (ctx) => {
@@ -74,9 +82,7 @@ describe("authHelpers", () => {
       const t = convexTest(schema);
 
       const authUser = { email: "nonexistent@example.com", id: "auth-123" };
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(authUser),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(authUser as any);
 
       await expect(
         t.run(async (ctx) => {
@@ -100,9 +106,7 @@ describe("authHelpers", () => {
       });
 
       const authUser = { email: "inactive@example.com", id: "auth-123" };
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(authUser),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(authUser as any);
 
       await expect(
         t.run(async (ctx) => {
@@ -128,9 +132,7 @@ describe("authHelpers", () => {
       });
 
       const authUser = { email: "test@example.com", id: "auth-123" };
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(authUser),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(authUser as any);
 
       const result = await t.run(async (ctx) => {
         return await getOptionalUser(ctx);
@@ -143,9 +145,7 @@ describe("authHelpers", () => {
     it("should return null for unauthenticated user", async () => {
       const t = convexTest(schema);
 
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(null),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(null as any);
 
       const result = await t.run(async (ctx) => {
         return await getOptionalUser(ctx);
@@ -158,9 +158,7 @@ describe("authHelpers", () => {
       const t = convexTest(schema);
 
       const authUser = { email: "nonexistent@example.com", id: "auth-123" };
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(authUser),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(authUser as any);
 
       const result = await t.run(async (ctx) => {
         return await getOptionalUser(ctx);
@@ -184,9 +182,7 @@ describe("authHelpers", () => {
       });
 
       const authUser = { email: "inactive@example.com", id: "auth-123" };
-      t.registerAuth({
-        getAuthUser: vi.fn().mockResolvedValue(authUser),
-      });
+      vi.mocked(authComponent.getAuthUser).mockResolvedValue(authUser as any);
 
       const result = await t.run(async (ctx) => {
         return await getOptionalUser(ctx);
