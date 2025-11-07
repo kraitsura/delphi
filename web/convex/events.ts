@@ -3,7 +3,6 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
 import {
   getAuthenticatedUser,
-  requireEventCoordinator,
   canManageEvent,
   getUserEventRole,
   requireEventMember,
@@ -481,7 +480,7 @@ export const getStats = query({
     const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Use helper function for access control
-    const event = await requireEventAccess(ctx, args.eventId, userProfile._id);
+    const _event = await requireEventAccess(ctx, args.eventId, userProfile._id);
 
     // Count tasks
     // Note: Limited to 5000 for performance. For events with more tasks,

@@ -149,7 +149,7 @@ function RoomDetailPage() {
 				<div className="flex items-center justify-between gap-4">
 					{/* Left: Back button + Room info */}
 					<div className="flex items-center gap-3 min-w-0 flex-1">
-						<Link to="/events/$eventId/" params={{ eventId }}>
+						<Link to="/events/$eventId" params={{ eventId }}>
 							<Button variant="ghost" size="icon" className="flex-shrink-0">
 								<ArrowLeft className="h-5 w-5" />
 							</Button>

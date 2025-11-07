@@ -34,7 +34,7 @@ export function SignUpForm() {
 		try {
 			// Sign up with Better Auth
 			// User profile is created automatically via Better Auth onCreate trigger
-			const result = await authClient.signUp.email({
+			const _result = await authClient.signUp.email({
 				name,
 				email,
 				password,
@@ -76,7 +76,9 @@ export function SignUpForm() {
 								fill="none"
 								stroke="currentColor"
 								viewBox="0 0 24 24"
+								aria-label="Email envelope icon"
 							>
+								<title>Email envelope icon</title>
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"
@@ -100,6 +102,7 @@ export function SignUpForm() {
 						<p className="text-xs text-muted-foreground text-center">
 							Didn't receive the email? Check your spam folder or{" "}
 							<button
+								type="button"
 								className="text-primary hover:underline"
 								onClick={() => setShowVerifyMessage(false)}
 							>
@@ -111,7 +114,12 @@ export function SignUpForm() {
 				<CardFooter className="flex justify-center">
 					<Button
 						variant="link"
-						onClick={() => navigate({ to: "/auth/sign-in" })}
+						onClick={() =>
+							navigate({
+								to: "/auth/sign-in",
+								search: { verified: false, redirect: undefined },
+							})
+						}
 					>
 						Back to sign in
 					</Button>
@@ -219,7 +227,12 @@ export function SignUpForm() {
 					<Button
 						variant="link"
 						className="p-0 h-auto font-normal"
-						onClick={() => navigate({ to: "/auth/sign-in" })}
+						onClick={() =>
+							navigate({
+								to: "/auth/sign-in",
+								search: { verified: false, redirect: undefined },
+							})
+						}
 					>
 						Sign in
 					</Button>

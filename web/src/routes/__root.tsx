@@ -52,13 +52,15 @@ const fetchAuth = createServerFn({ method: "GET" }).handler(async () => {
 	return {
 		userId: session?.user.id,
 		token,
-		user: session?.user ? {
-			id: session.user.id,
-			email: session.user.email,
-			emailVerified: session.user.emailVerified,
-			name: session.user.name,
-			image: session.user.image,
-		} : undefined,
+		user: session?.user
+			? {
+					id: session.user.id,
+					email: session.user.email,
+					emailVerified: session.user.emailVerified,
+					name: session.user.name,
+					image: session.user.image,
+				}
+			: undefined,
 	};
 });
 

@@ -44,6 +44,7 @@ export function HeroSection() {
 							</Link>
 							<Link
 								to="/auth/sign-in"
+								search={{ verified: false, redirect: undefined }}
 								preload="intent"
 								className="w-full sm:w-auto px-12 py-4 bg-white dark:bg-black text-black dark:text-white font-mono font-bold text-sm uppercase tracking-wider border-2 border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
 							>

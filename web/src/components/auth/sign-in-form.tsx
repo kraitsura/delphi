@@ -40,12 +40,17 @@ export function SignInForm({ verified = false }: SignInFormProps) {
 			});
 			// Navigation handled by Better Auth
 		} catch (err) {
-			const errorMessage = err instanceof Error ? err.message : "Sign in failed";
+			const errorMessage =
+				err instanceof Error ? err.message : "Sign in failed";
 
 			// Check if error is related to email verification
-			if (errorMessage.toLowerCase().includes("verify") ||
-			    errorMessage.toLowerCase().includes("verification")) {
-				setError("Please verify your email address before signing in. Check your inbox for the verification link.");
+			if (
+				errorMessage.toLowerCase().includes("verify") ||
+				errorMessage.toLowerCase().includes("verification")
+			) {
+				setError(
+					"Please verify your email address before signing in. Check your inbox for the verification link.",
+				);
 			} else {
 				setError(errorMessage);
 			}

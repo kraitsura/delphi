@@ -15,7 +15,9 @@ export const createMockUseQuery = <T,>(mockData?: T) => {
  * Returns a mock async function that can be spied on
  */
 export const createMockUseMutation = <TArgs = unknown, TReturn = unknown>() => {
-	const mutationFn = vi.fn<[TArgs], Promise<TReturn>>().mockResolvedValue({} as TReturn);
+	const mutationFn = vi
+		.fn<[TArgs], Promise<TReturn>>()
+		.mockResolvedValue({} as TReturn);
 	return vi.fn(() => mutationFn);
 };
 
@@ -24,7 +26,9 @@ export const createMockUseMutation = <TArgs = unknown, TReturn = unknown>() => {
  * Returns a mock async function that can be spied on
  */
 export const createMockUseAction = <TArgs = unknown, TReturn = unknown>() => {
-	const actionFn = vi.fn<[TArgs], Promise<TReturn>>().mockResolvedValue({} as TReturn);
+	const actionFn = vi
+		.fn<[TArgs], Promise<TReturn>>()
+		.mockResolvedValue({} as TReturn);
 	return vi.fn(() => actionFn);
 };
 

@@ -131,7 +131,8 @@ export function RoomListItem({ room, eventId }: RoomListItemProps) {
 							)}
 						>
 							<Link
-								to={`/events/${eventId}/rooms/${room._id}`}
+								to="/events/$eventId/rooms/$roomId"
+								params={{ eventId, roomId: room._id }}
 								className="block"
 							>
 								<div className="flex items-start gap-3 w-full min-w-0 group-data-[collapsible=icon]:gap-0">
@@ -160,6 +161,7 @@ export function RoomListItem({ room, eventId }: RoomListItemProps) {
 										</div>
 
 										{/* Latest message preview */}
+										{/* biome-ignore lint/a11y/noStaticElementInteractions: Hover effects for UI feedback only */}
 										<div
 											className="flex items-center justify-between gap-2"
 											onMouseEnter={() => setIsHovering(true)}

@@ -35,7 +35,7 @@ export function RoomList() {
 			<SidebarGroup className="group-data-[collapsible=icon]:p-0">
 				<SidebarGroupLabel>
 					<Link
-						to="/events/$eventId/rooms/"
+						to="/events/$eventId/rooms"
 						params={{ eventId }}
 						className="hover:text-foreground transition-colors"
 					>
@@ -68,7 +68,7 @@ export function RoomList() {
 			<SidebarGroup className="group-data-[collapsible=icon]:p-0">
 				<SidebarGroupLabel>
 					<Link
-						to="/events/$eventId/rooms/"
+						to="/events/$eventId/rooms"
 						params={{ eventId }}
 						className="hover:text-foreground transition-colors"
 					>
@@ -95,7 +95,7 @@ export function RoomList() {
 		<SidebarGroup className="group-data-[collapsible=icon]:p-0">
 			<SidebarGroupLabel>
 				<Link
-					to="/events/$eventId/rooms/"
+					to="/events/$eventId/rooms"
 					params={{ eventId }}
 					className="hover:text-foreground transition-colors"
 				>

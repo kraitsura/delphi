@@ -73,7 +73,9 @@ export function EventDetails(props: EventDetailsProps) {
 							<span className="text-xs text-muted-foreground uppercase tracking-wide">
 								Date
 							</span>
-							<span className="text-base">{formatDate(event.date)}</span>
+							<span className="text-base">
+								{event.date ? formatDate(event.date) : "TBD"}
+							</span>
 						</div>
 
 						{/* Location */}
@@ -82,7 +84,11 @@ export function EventDetails(props: EventDetailsProps) {
 								<span className="text-xs text-muted-foreground uppercase tracking-wide">
 									Location
 								</span>
-								<span className="text-base">{event.location}</span>
+								<span className="text-base">
+									{typeof event.location === "string"
+										? event.location
+										: event.location.address}
+								</span>
 							</div>
 						)}
 
@@ -91,7 +97,11 @@ export function EventDetails(props: EventDetailsProps) {
 							<span className="text-xs text-muted-foreground uppercase tracking-wide">
 								Expected Guests
 							</span>
-							<span className="text-base">{event.guestCount || "TBD"}</span>
+							<span className="text-base">
+								{typeof event.guestCount === "object"
+									? `${event.guestCount.confirmed}/${event.guestCount.expected}`
+									: event.guestCount || "TBD"}
+							</span>
 						</div>
 					</div>
 				)}

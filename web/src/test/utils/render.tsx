@@ -1,7 +1,6 @@
-import { render, type RenderOptions } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { type RenderOptions, render } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { MemoryRouter } from "react-router-dom";
 import { MockConvexProvider } from "../mocks/convex";
 
 /**
@@ -41,11 +40,6 @@ export const createTestQueryClient = () => {
 				retry: false, // Don't retry failed mutations in tests
 			},
 		},
-		logger: {
-			log: console.log,
-			warn: console.warn,
-			error: () => {}, // Suppress error logs in tests
-		},
 	});
 };
 
@@ -67,9 +61,7 @@ export const renderWithProviders = (
 		return (
 			<MockConvexProvider>
 				<QueryClientProvider client={queryClient}>
-					<MemoryRouter initialEntries={initialEntries}>
-						{children}
-					</MemoryRouter>
+					{children}
 				</QueryClientProvider>
 			</MockConvexProvider>
 		);
@@ -94,7 +86,9 @@ export const renderWithQuery = (
 	const Wrapper = ({ children }: { children: React.ReactNode }) => {
 		return (
 			<MockConvexProvider>
-				<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+				<QueryClientProvider client={queryClient}>
+					{children}
+				</QueryClientProvider>
 			</MockConvexProvider>
 		);
 	};
@@ -109,7 +103,8 @@ export const renderWithQuery = (
  * Wait for all pending promises to resolve
  * Useful after triggering async operations in tests
  */
-export const waitForAsync = () => new Promise((resolve) => setTimeout(resolve, 0));
+export const waitForAsync = () =>
+	new Promise((resolve) => setTimeout(resolve, 0));
 
 /**
  * Re-export everything from @testing-library/react

@@ -24,19 +24,15 @@ type CalendarEvent = {
 };
 
 export function CalendarView(props: CalendarViewProps) {
-	const {
-		view = "month",
-		showTasks = true,
-		showMilestones = true,
-		onDateSelect,
-	} = props;
+	const { showTasks: _showTasks = true, onDateSelect } = props;
 
 	const [currentDate, setCurrentDate] = useState(
 		props.currentDate || Date.now(),
 	);
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
-	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
+	// TODO: Implement tasks API
+	const tasks: unknown[] = [];
 
 	const calendarEvents = useMemo(() => {
 		if (!event || !tasks) return [];
@@ -44,34 +40,37 @@ export function CalendarView(props: CalendarViewProps) {
 		const events: CalendarEvent[] = [];
 
 		// Add event date
-		events.push({
-			date: event.date,
-			type: "event",
-			title: event.name,
-			color: "bg-yellow-500",
-		});
-
-		// Add task due dates
-		if (showTasks) {
-			tasks.forEach((task) => {
-				if (task.dueDate) {
-					events.push({
-						date: task.dueDate,
-						type: "task",
-						title: task.title,
-						color:
-							task.status === "completed"
-								? "bg-green-500"
-								: task.status === "blocked"
-									? "bg-red-500"
-									: "bg-blue-500",
-					});
-				}
+		if (event?.date) {
+			events.push({
+				date: event.date,
+				type: "event",
+				title: event.name,
+				color: "bg-yellow-500",
 			});
 		}
 
+		// Add task due dates
+		// TODO: Re-enable when tasks API is implemented
+		// if (_showTasks) {
+		// 	tasks.forEach((task) => {
+		// 		if (task.dueDate) {
+		// 			events.push({
+		// 				date: task.dueDate,
+		// 				type: "task",
+		// 				title: task.title,
+		// 				color:
+		// 					task.status === "completed"
+		// 						? "bg-green-500"
+		// 						: task.status === "blocked"
+		// 							? "bg-red-500"
+		// 							: "bg-blue-500",
+		// 			});
+		// 		}
+		// 	});
+		// }
+
 		return events;
-	}, [event, tasks, showTasks]);
+	}, [event]);
 
 	const { daysInMonth, firstDayOfMonth, monthName, year } = useMemo(() => {
 		const date = new Date(currentDate);
@@ -177,9 +176,10 @@ export function CalendarView(props: CalendarViewProps) {
 						const today = isToday(day);
 
 						return (
-							<div
+							<button
 								key={day}
-								className={`aspect-square border border-border rounded-md p-1 hover:bg-accent/50 transition-colors cursor-pointer ${
+								type="button"
+								className={`aspect-square border border-border rounded-md p-1 hover:bg-accent/50 transition-colors ${
 									today ? "ring-2 ring-primary" : ""
 								}`}
 								onClick={() => {
@@ -207,7 +207,7 @@ export function CalendarView(props: CalendarViewProps) {
 										)}
 									</div>
 								)}
-							</div>
+							</button>
 						);
 					})}
 				</div>

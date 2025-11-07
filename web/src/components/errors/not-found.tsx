@@ -32,7 +32,7 @@ export function NotFound() {
 						</Link>
 					</Button>
 					<Button asChild variant="outline" className="w-full">
-						<button onClick={() => window.history.back()}>
+						<button type="button" onClick={() => window.history.back()}>
 							<ArrowLeft className="mr-2 h-4 w-4" />
 							Go Back
 						</button>

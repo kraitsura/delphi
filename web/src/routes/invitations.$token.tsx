@@ -82,7 +82,10 @@ function InvitationPage() {
 							onClick={() =>
 								navigate({
 									to: "/auth/sign-in",
-									search: { redirect: `/invitations/${token}` },
+									search: {
+										verified: false,
+										redirect: `/invitations/${token}`,
+									},
 								})
 							}
 							className="flex-1"
@@ -94,7 +97,10 @@ function InvitationPage() {
 							onClick={() =>
 								navigate({
 									to: "/auth/sign-up",
-									search: { redirect: `/invitations/${token}` },
+									search: {
+										verified: false,
+										redirect: `/invitations/${token}`,
+									},
 								})
 							}
 							className="flex-1"

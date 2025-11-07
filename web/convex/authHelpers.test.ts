@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { convexTest } from "convex-test";
-import schema from "../schema";
+import schema from "./schema";
+import * as authHelpersModule from "./authHelpers";
+import * as authModule from "./auth";
 import {
   getAuthenticatedUser,
   getOptionalUser,
@@ -20,13 +22,13 @@ import {
   canPostInRoom,
   requireCanPostInRoom,
   updateLastActive,
-} from "../authHelpers";
-import { factories } from "../../src/test/factories";
-import type { Id } from "../_generated/dataModel";
-import { authComponent } from "../auth";
+} from "./authHelpers";
+import { factories } from "../src/test/factories";
+import type { Id } from "./_generated/dataModel";
+import { authComponent } from "./auth";
 
 // Mock authComponent.getAuthUser for all tests
-vi.mock("../auth", () => ({
+vi.mock("./auth", () => ({
   authComponent: {
     getAuthUser: vi.fn(),
   },

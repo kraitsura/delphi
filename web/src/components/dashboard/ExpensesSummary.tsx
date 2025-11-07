@@ -16,9 +16,8 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 	const { showChart = true, showCategories = true } = props;
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
-	const expenses = useQuery(api.expenses.listByEvent, {
-		eventId: props.eventId,
-	});
+	// TODO: Implement expenses API
+	const expenses: unknown[] = [];
 
 	const summary = useMemo(() => {
 		if (!event || !expenses) return null;
@@ -31,10 +30,11 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 		// Category breakdown
 		const categoryTotals = new Map<string, number>();
 		expenses.forEach((expense) => {
-			const category = expense.category || "Other";
+			const exp = expense as Record<string, unknown>;
+			const category = (exp.category as string) || "Other";
 			categoryTotals.set(
 				category,
-				(categoryTotals.get(category) || 0) + expense.amount,
+				(categoryTotals.get(category) || 0) + (exp.amount as number),
 			);
 		});
 
@@ -54,7 +54,7 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 			percentageUsed: total > 0 ? ((spent + committed) / total) * 100 : 0,
 			categoryBreakdown,
 		};
-	}, [event, expenses]);
+	}, [event]);
 
 	if (event === undefined || expenses === undefined) {
 		return <ExpensesSummarySkeleton />;

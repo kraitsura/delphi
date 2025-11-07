@@ -1,6 +1,4 @@
-import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
-import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,9 +25,8 @@ export function ExpensesList(props: ExpensesListProps) {
 		showFilters: _showFilters = false,
 	} = props;
 
-	const expenses = useQuery(api.expenses.listByEvent, {
-		eventId: props.eventId,
-	});
+	// TODO: Implement expenses API
+	const expenses: unknown[] = [];
 
 	const filteredAndSorted = useMemo(() => {
 		if (!expenses) return [];
@@ -38,25 +35,33 @@ export function ExpensesList(props: ExpensesListProps) {
 
 		// Filter by status
 		if (paymentStatus !== "all") {
-			filtered = filtered.filter((e) => e.status === paymentStatus);
+			filtered = filtered.filter(
+				(e) => (e as Record<string, unknown>).status === paymentStatus,
+			);
 		}
 
 		// Filter by category
 		if (props.category) {
-			filtered = filtered.filter((e) => e.category === props.category);
+			filtered = filtered.filter(
+				(e) => (e as Record<string, unknown>).category === props.category,
+			);
 		}
 
 		// Filter by vendor
 		if (props.vendor) {
-			filtered = filtered.filter((e) => e.paidBy === props.vendor);
+			filtered = filtered.filter(
+				(e) => (e as Record<string, unknown>).paidBy === props.vendor,
+			);
 		}
 
 		// Filter by date range
-		if (props.dateRange) {
+		if (props.dateRange?.start && props.dateRange?.end) {
+			const start = props.dateRange.start;
+			const end = props.dateRange.end;
 			filtered = filtered.filter(
 				(e) =>
-					e._creationTime >= props.dateRange?.start &&
-					e._creationTime <= props.dateRange?.end,
+					(e as Record<string, unknown>)._creationTime >= start &&
+					(e as Record<string, unknown>)._creationTime <= end,
 			);
 		}
 
@@ -77,7 +82,6 @@ export function ExpensesList(props: ExpensesListProps) {
 		// Limit
 		return limit ? sorted.slice(0, limit) : sorted;
 	}, [
-		expenses,
 		paymentStatus,
 		props.category,
 		props.vendor,

@@ -17,6 +17,7 @@ export const Route = createFileRoute("/verify-email")({
 		if (!context.userId) {
 			throw redirect({
 				to: "/auth/sign-in",
+				search: { verified: false, redirect: undefined },
 			});
 		}
 
@@ -83,6 +84,7 @@ function VerifyEmailPage() {
 								stroke="currentColor"
 								viewBox="0 0 24 24"
 							>
+								<title>Email Icon</title>
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"

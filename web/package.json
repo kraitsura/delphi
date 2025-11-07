@@ -62,6 +62,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
+    "@edge-runtime/vm": "^5.0.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.2.0",

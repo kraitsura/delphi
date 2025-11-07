@@ -72,7 +72,8 @@ export function EventList({ status }: EventListProps) {
 						{/* Header with title, status, and actions */}
 						<div className="flex items-start justify-between mb-4">
 							<Link
-								to={`/events/${event._id}`}
+								to="/events/$eventId"
+								params={{ eventId: event._id }}
 								className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
 							>
 								<h3 className="font-semibold text-lg line-clamp-1">

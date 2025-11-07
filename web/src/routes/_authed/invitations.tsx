@@ -144,7 +144,10 @@ function InvitationsPage() {
 												</span>
 											</div>
 
-											<Link to={`/invitations/${invitation.token}`}>
+											<Link
+												to="/invitations/$token"
+												params={{ token: invitation.token }}
+											>
 												<Button>
 													<CheckCircle className="h-4 w-4 mr-2" />
 													View Invitation
