@@ -106,7 +106,7 @@ export function MessageItem({
 			{/* Avatar - only show for others' messages and first in group */}
 			{!isOwnMessage && isFirstInGroup && (
 				<Avatar className="h-8 w-8 flex-shrink-0">
-					<AvatarImage src={message.author?.avatarUrl} />
+					<AvatarImage src={message.author?.avatar} />
 					<AvatarFallback className="bg-blue-500 text-white text-xs">
 						{message.author?.name ? getInitials(message.author.name) : "?"}
 					</AvatarFallback>

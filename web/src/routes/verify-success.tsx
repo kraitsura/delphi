@@ -20,7 +20,10 @@ function VerifySuccessPage() {
 	// Auto-redirect to sign-in after 5 seconds
 	useEffect(() => {
 		const timer = setTimeout(() => {
-			navigate({ to: "/auth/sign-in" });
+			navigate({
+				to: "/auth/sign-in",
+				search: { verified: true, redirect: undefined },
+			});
 		}, 5000);
 
 		return () => clearTimeout(timer);
@@ -42,6 +45,7 @@ function VerifySuccessPage() {
 								stroke="currentColor"
 								viewBox="0 0 24 24"
 							>
+								<title>Success Checkmark</title>
 								<path
 									strokeLinecap="round"
 									strokeLinejoin="round"
@@ -68,7 +72,12 @@ function VerifySuccessPage() {
 				<CardFooter className="flex justify-center">
 					<Button
 						className="w-full"
-						onClick={() => navigate({ to: "/auth/sign-in" })}
+						onClick={() =>
+							navigate({
+								to: "/auth/sign-in",
+								search: { verified: true, redirect: undefined },
+							})
+						}
 					>
 						Sign In Now
 					</Button>

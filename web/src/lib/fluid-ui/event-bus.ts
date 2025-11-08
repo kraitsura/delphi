@@ -10,7 +10,7 @@ import type { ComponentEvent } from "./types";
 /**
  * Event callback function type
  */
-type EventCallback<T = any> = (event: ComponentEvent) => void;
+type EventCallback<_T = any> = (event: ComponentEvent) => void;
 
 /**
  * Subscription object
@@ -48,7 +48,7 @@ export class EventBus {
 		}
 
 		const subscription: Subscription = { eventType, callback, componentId };
-		this.subscriptions.get(eventType)!.add(subscription);
+		this.subscriptions.get(eventType)?.add(subscription);
 
 		// Return unsubscribe function
 		return () => {

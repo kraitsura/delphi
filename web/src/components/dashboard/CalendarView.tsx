@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,54 +24,53 @@ type CalendarEvent = {
 };
 
 export function CalendarView(props: CalendarViewProps) {
-	const {
-		view = "month",
-		showTasks = true,
-		showMilestones = true,
-		onDateSelect,
-	} = props;
+	const { showTasks: _showTasks = true, onDateSelect } = props;
 
 	const [currentDate, setCurrentDate] = useState(
 		props.currentDate || Date.now(),
 	);
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
-	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
+	// TODO: Implement tasks API
+	const tasks: unknown[] = [];
 
 	const calendarEvents = useMemo(() => {
-		if (!event || !tasks) return [];
+		if (!event) return [];
 
 		const events: CalendarEvent[] = [];
 
 		// Add event date
-		events.push({
-			date: event.date,
-			type: "event",
-			title: event.name,
-			color: "bg-yellow-500",
-		});
-
-		// Add task due dates
-		if (showTasks) {
-			tasks.forEach((task) => {
-				if (task.dueDate) {
-					events.push({
-						date: task.dueDate,
-						type: "task",
-						title: task.title,
-						color:
-							task.status === "completed"
-								? "bg-green-500"
-								: task.status === "blocked"
-									? "bg-red-500"
-									: "bg-blue-500",
-					});
-				}
+		if (event?.date) {
+			events.push({
+				date: event.date,
+				type: "event",
+				title: event.name,
+				color: "bg-yellow-500",
 			});
 		}
 
+		// Add task due dates
+		// TODO: Re-enable when tasks API is implemented
+		// if (_showTasks) {
+		// 	tasks.forEach((task) => {
+		// 		if (task.dueDate) {
+		// 			events.push({
+		// 				date: task.dueDate,
+		// 				type: "task",
+		// 				title: task.title,
+		// 				color:
+		// 					task.status === "completed"
+		// 						? "bg-green-500"
+		// 						: task.status === "blocked"
+		// 							? "bg-red-500"
+		// 							: "bg-blue-500",
+		// 			});
+		// 		}
+		// 	});
+		// }
+
 		return events;
-	}, [event, tasks, showTasks]);
+	}, [event]);
 
 	const { daysInMonth, firstDayOfMonth, monthName, year } = useMemo(() => {
 		const date = new Date(currentDate);
@@ -167,7 +166,8 @@ export function CalendarView(props: CalendarViewProps) {
 				<div className="grid grid-cols-7 gap-1">
 					{/* Empty cells for days before month starts */}
 					{Array.from({ length: firstDayOfMonth }).map((_, i) => (
-						<div key={`empty-${i}`} className="aspect-square" />
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static placeholder cells with positional meaning
+						<div key={`empty-start-${i}`} className="aspect-square" />
 					))}
 
 					{/* Days of the month */}
@@ -177,9 +177,10 @@ export function CalendarView(props: CalendarViewProps) {
 						const today = isToday(day);
 
 						return (
-							<div
+							<button
 								key={day}
-								className={`aspect-square border border-border rounded-md p-1 hover:bg-accent/50 transition-colors cursor-pointer ${
+								type="button"
+								className={`aspect-square border border-border rounded-md p-1 hover:bg-accent/50 transition-colors ${
 									today ? "ring-2 ring-primary" : ""
 								}`}
 								onClick={() => {
@@ -195,7 +196,7 @@ export function CalendarView(props: CalendarViewProps) {
 									<div className="flex flex-wrap gap-0.5 mt-1">
 										{dayEvents.slice(0, 3).map((evt, idx) => (
 											<div
-												key={idx}
+												key={`${evt.type}-${evt.title}-${idx}`}
 												className={`w-1.5 h-1.5 rounded-full ${evt.color}`}
 												title={evt.title}
 											/>
@@ -207,7 +208,7 @@ export function CalendarView(props: CalendarViewProps) {
 										)}
 									</div>
 								)}
-							</div>
+							</button>
 						);
 					})}
 				</div>
@@ -225,7 +226,11 @@ function CalendarViewSkeleton() {
 			<CardContent>
 				<div className="grid grid-cols-7 gap-1">
 					{Array.from({ length: 35 }).map((_, i) => (
-						<Skeleton key={i} className="aspect-square" />
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
+						<Skeleton
+							key={`calendar-skeleton-${i}`}
+							className="aspect-square"
+						/>
 					))}
 				</div>
 			</CardContent>

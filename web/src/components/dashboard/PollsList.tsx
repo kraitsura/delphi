@@ -1,7 +1,6 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +15,12 @@ export interface PollsListProps {
 }
 
 export function PollsList(props: PollsListProps) {
-	const { status = "active", sortBy = "deadline", limit, onPollSelect } = props;
+	const {
+		status = "active",
+		sortBy: _sortBy = "deadline",
+		limit,
+		onPollSelect,
+	} = props;
 
 	const polls = useQuery(api.polls.listByEvent, { eventId: props.eventId });
 
@@ -51,9 +55,10 @@ export function PollsList(props: PollsListProps) {
 			<CardContent className="fluid-component-content">
 				<div className="space-y-3">
 					{limitedPolls.map((poll) => (
-						<div
+						<button
+							type="button"
 							key={poll._id}
-							className="p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
+							className="w-full text-left p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
 							onClick={() => onPollSelect?.(poll._id)}
 						>
 							<div className="flex items-start justify-between gap-4">
@@ -71,7 +76,7 @@ export function PollsList(props: PollsListProps) {
 									</div>
 								</div>
 							</div>
-						</div>
+						</button>
 					))}
 				</div>
 

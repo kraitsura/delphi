@@ -1,8 +1,4 @@
-import {
-	type ErrorComponentProps,
-	Link,
-	useRouter,
-} from "@tanstack/react-router";
+import { type ErrorComponentProps, Link } from "@tanstack/react-router";
 import { AlertCircle, Home, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +10,6 @@ import {
 } from "@/components/ui/card";
 
 export function ErrorBoundary({ error, reset }: ErrorComponentProps) {
-	const router = useRouter();
 	const isDev = import.meta.env.DEV;
 
 	const handleReset = () => {

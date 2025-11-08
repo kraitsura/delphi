@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,7 +15,7 @@ export interface UpcomingPaymentsProps {
 }
 
 export function UpcomingPayments(props: UpcomingPaymentsProps) {
-	const { daysAhead = 30, showOnlyOverdue = false, groupBy = "date" } = props;
+	const { daysAhead = 30, showOnlyOverdue = false } = props;
 
 	const expenses = useQuery(api.expenses.listByEvent, {
 		eventId: props.eventId,
@@ -127,7 +127,9 @@ export function UpcomingPayments(props: UpcomingPaymentsProps) {
 				</h4>
 				<div className="space-y-2">
 					{payments.map((payment) => {
-						const dueInfo = formatDueDate(payment.dueDate!);
+						const dueInfo = payment.dueDate
+							? formatDueDate(payment.dueDate)
+							: { text: "No due date", isOverdue: false };
 
 						return (
 							<div

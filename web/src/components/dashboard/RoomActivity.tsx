@@ -1,7 +1,6 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,14 +77,15 @@ export function RoomActivity(props: RoomActivityProps) {
 							<div className="flex gap-3">
 								<Avatar className="h-8 w-8 shrink-0">
 									<AvatarFallback className="text-xs">
-										{message.userId.substring(0, 2).toUpperCase()}
+										{message.author?.name?.substring(0, 2).toUpperCase() ||
+											message.authorId.substring(0, 2).toUpperCase()}
 									</AvatarFallback>
 								</Avatar>
 
 								<div className="flex-1 min-w-0">
 									<div className="flex items-baseline justify-between gap-2">
 										<span className="font-normal text-sm">
-											{message.userId}
+											{message.author?.name || message.authorId}
 										</span>
 										<span className="text-xs text-muted-foreground shrink-0">
 											{formatTimestamp(message._creationTime)}
@@ -99,7 +99,7 @@ export function RoomActivity(props: RoomActivityProps) {
 									)}
 
 									<p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-										{message.content}
+										{message.text}
 									</p>
 								</div>
 							</div>

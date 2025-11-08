@@ -33,7 +33,12 @@ export function UserMenu() {
 			<div className="flex gap-2">
 				<Button
 					variant="ghost"
-					onClick={() => navigate({ to: "/auth/sign-in" })}
+					onClick={() =>
+						navigate({
+							to: "/auth/sign-in",
+							search: { verified: false, redirect: undefined },
+						})
+					}
 				>
 					Sign In
 				</Button>

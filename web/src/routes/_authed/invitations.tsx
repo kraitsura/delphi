@@ -6,7 +6,7 @@ import { Calendar, CheckCircle, Clock, Mail, Shield, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authed/invitations")({
 	component: InvitationsPage,
@@ -144,7 +144,10 @@ function InvitationsPage() {
 												</span>
 											</div>
 
-											<Link to={`/invitations/${invitation.token}`}>
+											<Link
+												to="/invitations/$token"
+												params={{ token: invitation.token }}
+											>
 												<Button>
 													<CheckCircle className="h-4 w-4 mr-2" />
 													View Invitation

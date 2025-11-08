@@ -21,6 +21,7 @@ export function TextRow({ section }: TextRowProps) {
 	return (
 		<div
 			className={`fluid-text-row fluid-text-row--${spacing}`}
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: Content is sanitized with DOMPurify
 			dangerouslySetInnerHTML={{ __html: html }}
 		/>
 	);

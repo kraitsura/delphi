@@ -1,5 +1,5 @@
 import { api } from "@convex/_generated/api";
-import type { Id } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { createContext, type ReactNode, useContext } from "react";
@@ -9,35 +9,7 @@ import { convexQuery } from "@/lib/convex-query";
 /**
  * Event type from Convex schema
  */
-interface Event {
-	_id: Id<"events">;
-	name: string;
-	description?: string;
-	type: "wedding" | "corporate" | "party" | "destination" | "other";
-	date?: number;
-	location?: {
-		address: string;
-		city: string;
-		state: string;
-		country: string;
-		coordinates?: { lat: number; lng: number };
-	};
-	budget: {
-		total: number;
-		spent: number;
-		committed: number;
-	};
-	guestCount: {
-		expected: number;
-		confirmed: number;
-	};
-	coordinatorId: Id<"users">;
-	coCoordinatorIds?: Id<"users">[];
-	status: "planning" | "in_progress" | "completed" | "cancelled" | "archived";
-	createdAt: number;
-	updatedAt: number;
-	createdBy: Id<"users">;
-}
+type Event = Doc<"events">;
 
 /**
  * User role within the event context
@@ -93,14 +65,16 @@ export function EventProvider({ children, userId }: EventProviderProps) {
 
 	// Fetch event data when in event context AND session is ready
 	// This prevents unauthenticated queries during initialization
-	const { data: event } = useSuspenseQuery(
+	const { data } = useSuspenseQuery(
 		eventId && session?.user
 			? convexQuery(api.events.getById, { eventId: eventId as Id<"events"> })
-			: {
+			: ({
 					queryKey: ["no-event"],
 					queryFn: () => Promise.resolve(null),
-				},
+				} as any),
 	);
+
+	const event = data as Event | null;
 
 	// Suspense handles loading, so no isLoading needed
 	const isLoading = false;

@@ -117,7 +117,9 @@ export function useComponentEventListener(
 		);
 
 		return () => {
-			unsubscribes.forEach((unsub) => unsub());
+			for (const unsub of unsubscribes) {
+				unsub();
+			}
 		};
 	}, [eventBus, eventTypes, componentId]);
 }

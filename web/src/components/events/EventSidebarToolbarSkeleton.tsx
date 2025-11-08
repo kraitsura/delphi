@@ -14,14 +14,22 @@ export function EventSidebarToolbarSkeleton() {
 				<div className="flex items-center gap-1">
 					{/* Profile, Dashboard, Events buttons */}
 					{[...Array(3)].map((_, i) => (
-						<Skeleton key={i} className="h-8 w-8 rounded-md" />
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
+						<Skeleton
+							key={`nav-skeleton-${i}`}
+							className="h-8 w-8 rounded-md"
+						/>
 					))}
 				</div>
 
 				<div className="flex items-center gap-1">
 					{/* Theme and Sign Out buttons */}
 					{[...Array(2)].map((_, i) => (
-						<Skeleton key={i} className="h-8 w-8 rounded-md" />
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
+						<Skeleton
+							key={`action-skeleton-${i}`}
+							className="h-8 w-8 rounded-md"
+						/>
 					))}
 				</div>
 			</TooltipProvider>

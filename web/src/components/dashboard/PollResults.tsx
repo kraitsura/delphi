@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
@@ -13,7 +13,7 @@ export interface PollResultsProps {
 }
 
 export function PollResults(props: PollResultsProps) {
-	const { showVoters = false, showPercentages = true } = props;
+	const { showVoters: _showVoters = false, showPercentages = true } = props;
 
 	const poll = useQuery(api.polls.getById, { pollId: props.pollId });
 	const votes = useQuery(api.pollVotes.listByPoll, { pollId: props.pollId });
@@ -23,12 +23,18 @@ export function PollResults(props: PollResultsProps) {
 
 		const totalVotes = votes.length;
 
+		// Initialize counts using option IDs
 		const optionCounts = new Map<string, number>();
-		poll.options.forEach((option) => optionCounts.set(option, 0));
+		for (const option of poll.options) {
+			optionCounts.set(option.id, 0);
+		}
 
+		// Count votes - votes.optionIds is an array
 		votes.forEach((vote) => {
-			const current = optionCounts.get(vote.option) || 0;
-			optionCounts.set(vote.option, current + 1);
+			vote.optionIds.forEach((optionId) => {
+				const current = optionCounts.get(optionId) || 0;
+				optionCounts.set(optionId, current + 1);
+			});
 		});
 
 		const maxVotes = Math.max(...Array.from(optionCounts.values()));
@@ -36,12 +42,12 @@ export function PollResults(props: PollResultsProps) {
 		return {
 			totalVotes,
 			options: poll.options.map((option) => {
-				const count = optionCounts.get(option) || 0;
+				const count = optionCounts.get(option.id) || 0;
 				const percentage = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
 				const isWinner = count === maxVotes && count > 0;
 
 				return {
-					option,
+					option: option.text,
 					count,
 					percentage,
 					isWinner,

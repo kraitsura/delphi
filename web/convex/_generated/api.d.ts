@@ -16,14 +16,18 @@ import type * as emails from "../emails.js";
 import type * as eventInvitations from "../eventInvitations.js";
 import type * as eventMembers from "../eventMembers.js";
 import type * as events from "../events.js";
+import type * as expenses from "../expenses.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as model_events from "../model/events.js";
 import type * as model_permissions from "../model/permissions.js";
+import type * as pollVotes from "../pollVotes.js";
+import type * as polls from "../polls.js";
 import type * as rateLimiterDemo from "../rateLimiterDemo.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as roomParticipants from "../roomParticipants.js";
 import type * as rooms from "../rooms.js";
+import type * as tasks from "../tasks.js";
 import type * as users from "../users.js";
 
 import type {
@@ -49,14 +53,18 @@ declare const fullApi: ApiFromModules<{
   eventInvitations: typeof eventInvitations;
   eventMembers: typeof eventMembers;
   events: typeof events;
+  expenses: typeof expenses;
   http: typeof http;
   messages: typeof messages;
   "model/events": typeof model_events;
   "model/permissions": typeof model_permissions;
+  pollVotes: typeof pollVotes;
+  polls: typeof polls;
   rateLimiterDemo: typeof rateLimiterDemo;
   rateLimits: typeof rateLimits;
   roomParticipants: typeof roomParticipants;
   rooms: typeof rooms;
+  tasks: typeof tasks;
   users: typeof users;
 }>;
 declare const fullApiWithMounts: typeof fullApi;

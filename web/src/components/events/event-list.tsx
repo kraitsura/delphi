@@ -72,7 +72,8 @@ export function EventList({ status }: EventListProps) {
 						{/* Header with title, status, and actions */}
 						<div className="flex items-start justify-between mb-4">
 							<Link
-								to={`/events/${event._id}`}
+								to="/events/$eventId"
+								params={{ eventId: event._id }}
 								className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
 							>
 								<h3 className="font-semibold text-lg line-clamp-1">
@@ -123,7 +124,11 @@ export function EventList({ status }: EventListProps) {
 						</div>
 
 						{/* Rest of card content - wrapped in Link */}
-						<Link to={`/events/${event._id}`} className="block">
+						<Link
+							to="/events/$eventId"
+							params={{ eventId: event._id }}
+							className="block"
+						>
 							{event.description && (
 								<p className="text-sm text-muted-foreground line-clamp-2 mb-4">
 									{event.description}

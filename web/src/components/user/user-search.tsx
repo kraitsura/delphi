@@ -5,14 +5,16 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+type UserSearchResult = {
+	_id: Doc<"users">["_id"];
+	name: string;
+	email: string;
+	avatar?: string;
+	role: Doc<"users">["role"];
+};
+
 interface UserSearchProps {
-	onSelectUser?: (user: {
-		_id: string;
-		name: string;
-		email: string;
-		avatar?: string;
-		role: Doc<"users">["role"];
-	}) => void;
+	onSelectUser?: (user: UserSearchResult) => void;
 	placeholder?: string;
 	limit?: number;
 }
@@ -42,9 +44,7 @@ export function UserSearch({
 			: "skip",
 	);
 
-	const handleSelectUser = (
-		user: typeof results extends any[] ? (typeof results)[0] : never,
-	) => {
+	const handleSelectUser = (user: UserSearchResult) => {
 		if (onSelectUser && user) {
 			onSelectUser(user);
 			setSearchTerm(""); // Clear search after selection

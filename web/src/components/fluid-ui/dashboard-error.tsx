@@ -15,7 +15,7 @@ export function DashboardError({ title, errors }: DashboardErrorProps) {
 			<CardContent>
 				<ul className="space-y-2">
 					{errors.map((error, index) => (
-						<li key={index} className="text-sm">
+						<li key={`${error.code}-${index}`} className="text-sm">
 							<span className="font-semibold">{error.code}:</span>{" "}
 							{error.message}
 							{error.path && (

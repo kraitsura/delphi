@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
-import type { Id } from "convex/_generated/dataModel";
+import type { Doc, Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +24,7 @@ export function ExpensesList(props: ExpensesListProps) {
 		paymentStatus = "all",
 		limit,
 		sortBy = "date",
-		showFilters = false,
+		showFilters: _showFilters = false,
 	} = props;
 
 	const expenses = useQuery(api.expenses.listByEvent, {
@@ -52,27 +52,29 @@ export function ExpensesList(props: ExpensesListProps) {
 		}
 
 		// Filter by date range
-		if (props.dateRange) {
+		if (props.dateRange?.start && props.dateRange?.end) {
+			const start = props.dateRange.start;
+			const end = props.dateRange.end;
 			filtered = filtered.filter(
-				(e) =>
-					e._creationTime >= props.dateRange!.start &&
-					e._creationTime <= props.dateRange!.end,
+				(e) => e._creationTime >= start && e._creationTime <= end,
 			);
 		}
 
 		// Sort
-		const sorted = [...filtered].sort((a, b) => {
-			switch (sortBy) {
-				case "date":
-					return b._creationTime - a._creationTime;
-				case "amount":
-					return b.amount - a.amount;
-				case "category":
-					return (a.category || "").localeCompare(b.category || "");
-				default:
-					return 0;
-			}
-		});
+		const sorted = [...filtered].sort(
+			(a: Doc<"expenses">, b: Doc<"expenses">) => {
+				switch (sortBy) {
+					case "date":
+						return b._creationTime - a._creationTime;
+					case "amount":
+						return b.amount - a.amount;
+					case "category":
+						return (a.category || "").localeCompare(b.category || "");
+					default:
+						return 0;
+				}
+			},
+		);
 
 		// Limit
 		return limit ? sorted.slice(0, limit) : sorted;
@@ -87,7 +89,10 @@ export function ExpensesList(props: ExpensesListProps) {
 	]);
 
 	const totalAmount = useMemo(() => {
-		return filteredAndSorted.reduce((sum, e) => sum + e.amount, 0);
+		return filteredAndSorted.reduce(
+			(sum: number, e: Doc<"expenses">) => sum + e.amount,
+			0,
+		);
 	}, [filteredAndSorted]);
 
 	if (expenses === undefined) {

@@ -71,7 +71,7 @@ export function StatCard({
 
 	if (isClickable && onClick) {
 		return (
-			<button onClick={onClick} className="text-left w-full">
+			<button type="button" onClick={onClick} className="text-left w-full">
 				<Card className={cardClassName}>{content}</Card>
 			</button>
 		);

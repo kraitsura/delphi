@@ -27,7 +27,7 @@ export function MessageInput({
 
 		// Set height to content height (CSS max-height will cap it)
 		textarea.style.height = `${textarea.scrollHeight}px`;
-	}, [text]);
+	}, []);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();

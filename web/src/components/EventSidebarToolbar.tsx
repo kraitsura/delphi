@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import type { Id } from "convex/_generated/dataModel";
 import { Calendar, Home, Moon, Plus, Sun } from "lucide-react";
 import { useState } from "react";
 import { RoomCreateDialog } from "@/components/rooms/room-create-dialog";
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ProfileSettingsDialog } from "@/components/user/profile-settings-dialog";
 import { useEvent } from "@/contexts/EventContext";
-import type { Id } from "@/convex/_generated/dataModel";
 
 /**
  * EventSidebarToolbar Component
@@ -41,6 +41,11 @@ export function EventSidebarToolbar() {
 	const handleToggleMode = () => {
 		setMode(mode === "light" ? "dark" : "light");
 	};
+
+	// Don't render if no eventId (shouldn't happen in event context routes)
+	if (!eventId) {
+		return null;
+	}
 
 	return (
 		<div className="flex items-center justify-between gap-1 px-2 pt-0.5 pb-2">
@@ -131,13 +136,13 @@ export function EventSidebarToolbar() {
 
 			{/* Room Create Dialog */}
 			<RoomCreateDialog
-				eventId={eventId! as Id<"events">}
+				eventId={eventId as Id<"events">}
 				open={createDialogOpen}
 				onOpenChange={setCreateDialogOpen}
 				onSuccess={(roomId) => {
 					navigate({
 						to: "/events/$eventId/rooms/$roomId",
-						params: { eventId: eventId!, roomId },
+						params: { eventId, roomId },
 					});
 				}}
 			/>

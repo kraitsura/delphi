@@ -57,7 +57,7 @@ export const createAuth = (
     emailVerification: {
       sendOnSignUp: true, // Automatically send verification email on signup
       autoSignInAfterVerification: true, // Auto sign-in after email verification
-      sendVerificationEmail: async ({ user, url }, request) => {
+      sendVerificationEmail: async ({ user, url }, _request) => {
         // Send verification email via Resend
         // Better Auth runs in HTTP/action context, so we send email synchronously
         // using Resend's HTTP API directly

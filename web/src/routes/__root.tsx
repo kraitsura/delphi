@@ -13,8 +13,8 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie, getRequest } from "@tanstack/react-start/server";
-import { Toaster } from "sonner";
 import { scan } from "react-scan";
+import { Toaster } from "sonner";
 import { ErrorBoundary } from "../components/errors/error-boundary";
 import { NotFound } from "../components/errors/not-found";
 import { ThemeSetProvider } from "../components/theme-set-provider";
@@ -52,13 +52,15 @@ const fetchAuth = createServerFn({ method: "GET" }).handler(async () => {
 	return {
 		userId: session?.user.id,
 		token,
-		user: session?.user ? {
-			id: session.user.id,
-			email: session.user.email,
-			emailVerified: session.user.emailVerified,
-			name: session.user.name,
-			image: session.user.image,
-		} : undefined,
+		user: session?.user
+			? {
+					id: session.user.id,
+					email: session.user.email,
+					emailVerified: session.user.emailVerified,
+					name: session.user.name,
+					image: session.user.image,
+				}
+			: undefined,
 	};
 });
 

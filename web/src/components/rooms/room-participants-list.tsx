@@ -182,7 +182,7 @@ export function RoomParticipantsList({ roomId }: RoomParticipantsListProps) {
 									onClick={() =>
 										setEditingParticipant({
 											userId: participant.userId,
-											userName: participant.user!.name,
+											userName: participant.user?.name ?? "Unknown User",
 											permissions: {
 												canPost: participant.canPost,
 												canEdit: participant.canEdit,
@@ -198,7 +198,10 @@ export function RoomParticipantsList({ roomId }: RoomParticipantsListProps) {
 									variant="outline"
 									size="sm"
 									onClick={() =>
-										handleRemove(participant.userId, participant.user!.name)
+										handleRemove(
+											participant.userId,
+											participant.user?.name ?? "Unknown User",
+										)
 									}
 								>
 									<UserMinus className="h-4 w-4" />

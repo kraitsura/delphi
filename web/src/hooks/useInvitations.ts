@@ -30,12 +30,12 @@ export function useInvitations(eventId?: Id<"events">) {
 
 	// Queries
 	const pendingInvitations = useQuery(
-		eventId ? api.eventInvitations.listPendingByEvent : undefined,
+		api.eventInvitations.listPendingByEvent,
 		eventId ? { eventId } : "skip",
 	);
 
 	const allInvitations = useQuery(
-		eventId ? api.eventInvitations.listAllByEvent : undefined,
+		api.eventInvitations.listAllByEvent,
 		eventId ? { eventId } : "skip",
 	);
 

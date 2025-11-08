@@ -24,14 +24,19 @@ export function RoomList() {
 	const { eventId } = useEvent();
 	const rooms = useEventRooms();
 
+	// Don't render if no eventId (shouldn't happen in event context routes)
+	if (!eventId) {
+		return null;
+	}
+
 	// Loading state
 	if (rooms === undefined) {
 		return (
 			<SidebarGroup className="group-data-[collapsible=icon]:p-0">
 				<SidebarGroupLabel>
 					<Link
-						to="/events/$eventId/rooms/"
-						params={{ eventId: eventId! }}
+						to="/events/$eventId/rooms"
+						params={{ eventId }}
 						className="hover:text-foreground transition-colors"
 					>
 						Rooms
@@ -41,6 +46,7 @@ export function RoomList() {
 					<SidebarMenu>
 						<div className="space-y-2 px-2">
 							{[...Array(3)].map((_, i) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton array
 								<div key={i} className="flex items-start gap-3">
 									<Skeleton className="h-10 w-10 rounded-full shrink-0" />
 									<div className="flex-1 space-y-2">
@@ -62,8 +68,8 @@ export function RoomList() {
 			<SidebarGroup className="group-data-[collapsible=icon]:p-0">
 				<SidebarGroupLabel>
 					<Link
-						to="/events/$eventId/rooms/"
-						params={{ eventId: eventId! }}
+						to="/events/$eventId/rooms"
+						params={{ eventId }}
 						className="hover:text-foreground transition-colors"
 					>
 						Rooms
@@ -89,8 +95,8 @@ export function RoomList() {
 		<SidebarGroup className="group-data-[collapsible=icon]:p-0">
 			<SidebarGroupLabel>
 				<Link
-					to="/events/$eventId/rooms/"
-					params={{ eventId: eventId! }}
+					to="/events/$eventId/rooms"
+					params={{ eventId }}
 					className="hover:text-foreground transition-colors"
 				>
 					Rooms
@@ -99,7 +105,7 @@ export function RoomList() {
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{rooms.map((room) => (
-						<RoomListItem key={room._id} room={room} eventId={eventId!} />
+						<RoomListItem key={room._id} room={room} eventId={eventId} />
 					))}
 				</SidebarMenu>
 			</SidebarGroupContent>

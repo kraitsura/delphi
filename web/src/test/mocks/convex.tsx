@@ -1,5 +1,6 @@
-import { vi } from "vitest";
+import type { Id } from "@convex/_generated/dataModel";
 import type { ReactNode } from "react";
+import { vi } from "vitest";
 
 /**
  * Mock Convex query hook
@@ -13,8 +14,22 @@ export const createMockUseQuery = <T,>(mockData?: T) => {
  * Mock Convex mutation hook
  * Returns a mock async function that can be spied on
  */
-export const createMockUseMutation = () => {
-	return vi.fn(() => vi.fn().mockResolvedValue({}));
+export const createMockUseMutation = <TArgs = unknown, TReturn = unknown>() => {
+	const mutationFn = vi
+		.fn<(args: TArgs) => Promise<TReturn>>()
+		.mockResolvedValue({} as Awaited<TReturn>);
+	return vi.fn(() => mutationFn);
+};
+
+/**
+ * Mock Convex action hook
+ * Returns a mock async function that can be spied on
+ */
+export const createMockUseAction = <TArgs = unknown, TReturn = unknown>() => {
+	const actionFn = vi
+		.fn<(args: TArgs) => Promise<TReturn>>()
+		.mockResolvedValue({} as Awaited<TReturn>);
+	return vi.fn(() => actionFn);
 };
 
 /**
@@ -55,4 +70,40 @@ export const rateLimitTestScenarios = {
 		retryAfter: 30000,
 	}),
 	empty: createMockRateLimitStatus({ ok: true, remaining: 0, retryAfter: 0 }),
+};
+
+/**
+ * Mock authenticated session
+ */
+export const createMockAuthSession = (userId: Id<"users">) => {
+	return {
+		user: {
+			id: userId,
+			email: `test-${userId}@example.com`,
+			name: "Test User",
+		},
+		session: {
+			token: `mock-token-${userId}`,
+			expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+		},
+	};
+};
+
+/**
+ * Mock unauthenticated session
+ */
+export const mockUnauthenticatedSession = {
+	user: null,
+	session: null,
+};
+
+/**
+ * Create a complete mock Convex client
+ */
+export const createMockConvexClient = () => {
+	return {
+		query: vi.fn().mockResolvedValue(undefined),
+		mutation: vi.fn().mockResolvedValue(undefined),
+		action: vi.fn().mockResolvedValue(undefined),
+	};
 };

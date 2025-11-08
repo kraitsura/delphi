@@ -10,7 +10,6 @@ import { RoomList } from "@/components/RoomList";
 import { ThemeSetToggle } from "@/components/theme-set-toggle";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
 	Sidebar,
 	SidebarContent,

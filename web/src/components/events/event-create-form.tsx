@@ -43,7 +43,7 @@ export function EventCreateForm() {
 				description: description || undefined,
 				type,
 				budget: parseFloat(budget) || 0,
-				expectedGuests: parseInt(expectedGuests) || 0,
+				expectedGuests: parseInt(expectedGuests, 10) || 0,
 				date: date ? new Date(date).getTime() : undefined,
 				location:
 					address && city && state && country

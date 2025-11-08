@@ -1,8 +1,9 @@
+import { api } from "@convex/_generated/api";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useMutation, useQuery } from "convex/react";
 import { Suspense, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { ThemeConvexSync } from "@/components/theme-convex-sync";
-import { Separator } from "@/components/ui/separator";
 import {
 	SidebarInset,
 	SidebarProvider,
@@ -13,8 +14,6 @@ import { EventProvider } from "@/contexts/EventContext";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
 import { useSession } from "@/lib/auth";
-import { useMutation, useQuery } from "convex/react";
-import { api } from "@convex/_generated/api";
 
 /**
  * Authenticated Layout Route
@@ -38,6 +37,7 @@ export const Route = createFileRoute("/_authed")({
 			throw redirect({
 				to: "/auth/sign-in",
 				search: {
+					verified: false,
 					redirect: location.pathname,
 				},
 			});
@@ -91,7 +91,12 @@ function ProfileCreator() {
 		console.log("[ProfileCreator] Session loaded:", {
 			email: session.user.email,
 			verified: session.user.emailVerified,
-			profileStatus: userProfile === undefined ? "loading" : userProfile === null ? "missing" : "exists"
+			profileStatus:
+				userProfile === undefined
+					? "loading"
+					: userProfile === null
+						? "missing"
+						: "exists",
 		});
 
 		// If profile is still loading, wait
@@ -109,7 +114,10 @@ function ProfileCreator() {
 					console.log("[ProfileCreator] Profile created successfully");
 				})
 				.catch((error) => {
-					console.error("[ProfileCreator] Failed to create user profile:", error);
+					console.error(
+						"[ProfileCreator] Failed to create user profile:",
+						error,
+					);
 					isCreatingRef.current = false; // Reset on error to allow retry
 				});
 		} else if (userProfile) {

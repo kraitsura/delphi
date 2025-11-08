@@ -1,5 +1,4 @@
 import type { Id } from "convex/_generated/dataModel";
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
@@ -11,7 +10,7 @@ export interface VendorsListProps {
 	onVendorSelect?: (vendorId: Id<"users">) => void;
 }
 
-export function VendorsList(props: VendorsListProps) {
+export function VendorsList(_props: VendorsListProps) {
 	// Placeholder: This component requires vendor relationship schema
 	// Vendors will be users with vendor role linked to events
 

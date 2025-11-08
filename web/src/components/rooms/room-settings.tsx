@@ -1,5 +1,5 @@
 import { api } from "@convex/_generated/api";
-import type { Doc, Id } from "@convex/_generated/dataModel";
+import type { Doc } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { Archive, Save, Users } from "lucide-react";
 import { useState } from "react";

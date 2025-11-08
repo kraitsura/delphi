@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
-import { useMutation, useQuery } from "convex/react";
-import React, { useMemo, useState } from "react";
+import { useQuery } from "convex/react";
+import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ export function TasksList(props: TasksListProps) {
 
 		// Filter by assignee
 		if (props.assignee) {
-			filtered = filtered.filter((t) => t.assignedTo === props.assignee);
+			filtered = filtered.filter((t) => t.assigneeId === props.assignee);
 		}
 
 		// Filter by category
@@ -97,16 +97,16 @@ export function TasksList(props: TasksListProps) {
 		return <TasksListEmpty />;
 	}
 
-	const formatDate = (timestamp: number | undefined) => {
-		if (!timestamp) return "No due date";
+	const formatDate = (
+		timestamp: number | undefined,
+	): { text: string; isOverdue: boolean } => {
+		if (!timestamp) return { text: "No due date", isOverdue: false };
 
 		const date = new Date(timestamp);
 		const now = new Date();
 		const diffDays = Math.ceil(
 			(date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
 		);
-
-		const isOverdue = diffDays < 0;
 
 		if (diffDays < 0) {
 			return { text: `${Math.abs(diffDays)}d overdue`, isOverdue: true };
@@ -170,9 +170,10 @@ export function TasksList(props: TasksListProps) {
 					{filteredAndSorted.map((task) => {
 						const dueInfo = formatDate(task.dueDate);
 						return (
-							<div
+							<button
+								type="button"
 								key={task._id}
-								className="p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
+								className="w-full text-left p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
 								onClick={() => onTaskSelect?.(task._id)}
 							>
 								<div className="flex items-start gap-3">
@@ -221,15 +222,15 @@ export function TasksList(props: TasksListProps) {
 									</div>
 
 									{/* Assignee */}
-									{task.assignedTo && (
+									{task.assigneeId && (
 										<Avatar className="h-8 w-8">
 											<AvatarFallback className="text-xs">
-												{task.assignedTo.substring(0, 2).toUpperCase()}
+												{task.assigneeId.substring(0, 2).toUpperCase()}
 											</AvatarFallback>
 										</Avatar>
 									)}
 								</div>
-							</div>
+							</button>
 						);
 					})}
 				</div>

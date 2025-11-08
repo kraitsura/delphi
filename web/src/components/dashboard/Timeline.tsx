@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,7 +26,7 @@ type TimelineItem = {
 };
 
 export function Timeline(props: TimelineProps) {
-	const { showTasks = true, showMilestones = true, showEvents = true } = props;
+	const { showTasks = true, showEvents = true } = props;
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
@@ -37,7 +37,7 @@ export function Timeline(props: TimelineProps) {
 		const items: TimelineItem[] = [];
 
 		// Add event date
-		if (showEvents) {
+		if (showEvents && event.date) {
 			items.push({
 				id: event._id,
 				type: "event",
@@ -123,7 +123,7 @@ export function Timeline(props: TimelineProps) {
 
 					{/* Timeline items */}
 					<div className="space-y-6">
-						{timelineItems.map((item, index) => (
+						{timelineItems.map((item, _index) => (
 							<div
 								key={item.id}
 								className="relative pl-12 hover:bg-accent/30 -ml-2 p-2 rounded-md transition-colors cursor-pointer"
