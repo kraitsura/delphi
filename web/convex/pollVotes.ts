@@ -96,6 +96,11 @@ export const cast = mutation({
       throw new Error("This poll only allows selecting one option");
     }
 
+    // Validate: at least one option must be selected
+    if (args.optionIds.length === 0) {
+      throw new Error("You must select at least one option");
+    }
+
     // Validate: all option IDs are valid
     const validOptionIds = poll.options.map((opt) => opt.id);
     for (const optionId of args.optionIds) {

@@ -15,7 +15,10 @@ export function EventSidebarToolbarSkeleton() {
 					{/* Profile, Dashboard, Events buttons */}
 					{[...Array(3)].map((_, i) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
-						<Skeleton key={`nav-skeleton-${i}`} className="h-8 w-8 rounded-md" />
+						<Skeleton
+							key={`nav-skeleton-${i}`}
+							className="h-8 w-8 rounded-md"
+						/>
 					))}
 				</div>
 
@@ -23,7 +26,10 @@ export function EventSidebarToolbarSkeleton() {
 					{/* Theme and Sign Out buttons */}
 					{[...Array(2)].map((_, i) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
-						<Skeleton key={`action-skeleton-${i}`} className="h-8 w-8 rounded-md" />
+						<Skeleton
+							key={`action-skeleton-${i}`}
+							className="h-8 w-8 rounded-md"
+						/>
 					))}
 				</div>
 			</TooltipProvider>

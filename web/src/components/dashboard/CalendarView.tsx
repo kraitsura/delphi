@@ -227,7 +227,10 @@ function CalendarViewSkeleton() {
 				<div className="grid grid-cols-7 gap-1">
 					{Array.from({ length: 35 }).map((_, i) => (
 						// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
-						<Skeleton key={`calendar-skeleton-${i}`} className="aspect-square" />
+						<Skeleton
+							key={`calendar-skeleton-${i}`}
+							className="aspect-square"
+						/>
 					))}
 				</div>
 			</CardContent>

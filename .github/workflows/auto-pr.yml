@@ -44,7 +44,7 @@ jobs:
           BRANCH_NAME="${{ github.ref_name }}"
 
           # Remove special characters and convert to lowercase
-          CLEAN_NAME=$(echo "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/_/ /g' | sed 's/-/ /g')
+          CLEAN_NAME=$(echo "$BRANCH_NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[_\/-]/ /g')
 
           # Determine semantic prefix based on branch name pattern
           if [[ "$BRANCH_NAME" == feature/* ]]; then
