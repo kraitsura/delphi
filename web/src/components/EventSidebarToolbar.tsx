@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import type { Id } from "convex/_generated/dataModel";
 import { Calendar, Home, Moon, Plus, Sun } from "lucide-react";
 import { useState } from "react";
 import { RoomCreateDialog } from "@/components/rooms/room-create-dialog";
@@ -12,7 +13,6 @@ import {
 } from "@/components/ui/tooltip";
 import { ProfileSettingsDialog } from "@/components/user/profile-settings-dialog";
 import { useEvent } from "@/contexts/EventContext";
-import type { Id } from "@/convex/_generated/dataModel";
 
 /**
  * EventSidebarToolbar Component

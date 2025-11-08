@@ -1,8 +1,6 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
-import * as authHelpersModule from "./authHelpers";
-import * as authModule from "./auth";
 import {
   getAuthenticatedUser,
   getOptionalUser,
@@ -13,12 +11,8 @@ import {
   isEventCoordinator,
   canManageEvent,
   requireEventCoordinator,
-  requireEventMember,
   getUserEventRole,
-  isRoomParticipant,
-  requireRoomParticipant,
   requireRoomAccess,
-  isRoomEventCoordinator,
   canPostInRoom,
   requireCanPostInRoom,
   updateLastActive,

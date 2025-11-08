@@ -33,7 +33,11 @@ export default defineSchema({
       themeSet: v.optional(v.union(
         v.literal("default"),
         v.literal("patagonia"),
-        v.literal("redwood")
+        v.literal("redwood"),
+        v.literal("flare"),
+        v.literal("ocean"),
+        v.literal("twilight"),
+        v.literal("moss")
       )),
       accent: v.optional(v.union(
         v.literal("indigo"),
@@ -482,6 +486,16 @@ export default defineSchema({
     description: v.string(),
     amount: v.number(),
     category: v.optional(v.string()),
+
+    // Status - for tracking upcoming bills vs paid expenses
+    status: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("paid"),
+      v.literal("overdue")
+    )),
+
+    // Due date - for upcoming bills
+    dueDate: v.optional(v.number()),
 
     // Payment
     paidBy: v.id("users"),

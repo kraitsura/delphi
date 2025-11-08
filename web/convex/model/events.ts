@@ -5,7 +5,7 @@
  * API handlers in convex/events.ts should be thin wrappers that call these functions.
  */
 
-import { QueryCtx, MutationCtx } from "../_generated/server";
+import { QueryCtx } from "../_generated/server";
 import { Doc, Id } from "../_generated/dataModel";
 
 type EventStatus =

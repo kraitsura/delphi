@@ -87,7 +87,7 @@ export function EventDetails(props: EventDetailsProps) {
 								<span className="text-base">
 									{typeof event.location === "string"
 										? event.location
-										: event.location.address}
+										: event.location?.address || "Location not specified"}
 								</span>
 							</div>
 						)}
@@ -98,7 +98,8 @@ export function EventDetails(props: EventDetailsProps) {
 								Expected Guests
 							</span>
 							<span className="text-base">
-								{typeof event.guestCount === "object"
+								{typeof event.guestCount === "object" &&
+								event.guestCount !== null
 									? `${event.guestCount.confirmed}/${event.guestCount.expected}`
 									: event.guestCount || "TBD"}
 							</span>

@@ -34,8 +34,17 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 		const eventDate = event.date;
 		const now = Date.now();
 
-		// Calculate days from event
-		const _daysToEvent = (eventDate - now) / (1000 * 60 * 60 * 24);
+		// If no event date is set, return empty milestones or use task-based status
+		if (!eventDate) {
+			return (
+				props.customMilestones?.map((m) => ({
+					...m,
+					status: "not_started" as const,
+					tasksCompleted: 0,
+					tasksTotal: 0,
+				})) || []
+			);
+		}
 
 		// Define standard milestones based on event date
 		const standardMilestones: Milestone[] = [
@@ -202,9 +211,9 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 					<div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
 
 					<div className="space-y-4">
-						{milestones.map((milestone, index) => (
+						{milestones.map((milestone) => (
 							<div
-								key={index}
+								key={`${milestone.category}-${milestone.name}`}
 								className="relative pl-12 hover:bg-accent/30 -ml-2 p-2 rounded-md transition-colors"
 							>
 								{/* Status marker */}

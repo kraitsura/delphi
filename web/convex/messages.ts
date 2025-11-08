@@ -364,3 +364,72 @@ export const getById = query({
     };
   },
 });
+
+/**
+ * Get recent messages across all rooms in an event
+ * Used for activity feeds and dashboards
+ */
+export const getRecentByEvent = query({
+  args: {
+    eventId: v.id("events"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    // Get all rooms for this event
+    const rooms = await ctx.db
+      .query("rooms")
+      .withIndex("by_event_and_deleted", (q) =>
+        q.eq("eventId", args.eventId).eq("isDeleted", false)
+      )
+      .collect();
+
+    // Filter rooms user has access to (coordinator or participant)
+    const accessibleRoomIds: typeof rooms[number]["_id"][] = [];
+    for (const room of rooms) {
+      try {
+        await requireRoomAccess(ctx, room._id, userProfile._id);
+        accessibleRoomIds.push(room._id);
+      } catch {
+        // User doesn't have access to this room, skip it
+        continue;
+      }
+    }
+
+    // Get recent messages from all accessible rooms
+    const messagesPerRoom = await Promise.all(
+      accessibleRoomIds.map((roomId) =>
+        ctx.db
+          .query("messages")
+          .withIndex("by_room_and_created", (q) => q.eq("roomId", roomId))
+          .order("desc")
+          .filter((q) => q.eq(q.field("isDeleted"), false))
+          .take(5) // Get last 5 messages per room
+      )
+    );
+
+    // Flatten and sort all messages by creation time
+    const allMessages = messagesPerRoom
+      .flat()
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, args.limit || 20);
+
+    // Batch fetch authors and rooms
+    const authorIds = Array.from(new Set(allMessages.map((m) => m.authorId)));
+    const roomIds = Array.from(new Set(allMessages.map((m) => m.roomId)));
+
+    const authors = await Promise.all(authorIds.map((id) => ctx.db.get(id)));
+    const roomDetails = await Promise.all(roomIds.map((id) => ctx.db.get(id)));
+
+    const authorMap = new Map(authors.filter((a) => a !== null).map((a) => [a!._id, a]));
+    const roomMap = new Map(roomDetails.filter((r) => r !== null).map((r) => [r!._id, r]));
+
+    // Combine messages with author and room data
+    return allMessages.map((m) => ({
+      ...m,
+      author: authorMap.get(m.authorId),
+      room: roomMap.get(m.roomId),
+    }));
+  },
+});

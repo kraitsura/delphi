@@ -208,8 +208,10 @@ function RateLimiterDemoSection() {
 	const [liveRetrySeconds, setLiveRetrySeconds] = useState(0);
 
 	const isRateLimited = status?.ok === false;
-	const remaining = status?.remaining ?? 0;
-	const retryAfter = status?.retryAfter ?? 0;
+	const remaining: number =
+		typeof status?.remaining === "number" ? status.remaining : 0;
+	const retryAfter: number =
+		typeof status?.retryAfter === "number" ? status.retryAfter : 0;
 
 	// Update live countdown timer
 	useEffect(() => {
@@ -341,8 +343,8 @@ function RateLimiterDemoSection() {
 		toast.success("Gradual test completed!");
 	};
 
-	const progressPercent = (remaining / 13) * 100;
-	const progressColor =
+	const progressPercent: number = (remaining / 13) * 100;
+	const progressColor: string =
 		remaining > 7
 			? "bg-green-500"
 			: remaining > 3

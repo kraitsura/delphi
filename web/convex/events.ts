@@ -480,7 +480,7 @@ export const getStats = query({
     const { userProfile } = await getAuthenticatedUser(ctx);
 
     // Use helper function for access control
-    const _event = await requireEventAccess(ctx, args.eventId, userProfile._id);
+    await requireEventAccess(ctx, args.eventId, userProfile._id);
 
     // Count tasks
     // Note: Limited to 5000 for performance. For events with more tasks,

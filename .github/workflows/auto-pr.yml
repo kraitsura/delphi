@@ -27,7 +27,7 @@ jobs:
           BRANCH_NAME="${{ github.ref_name }}"
 
           # Check if PR exists for this branch
-          PR_NUMBER=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number')
+          PR_NUMBER=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number // empty')
 
           if [ -n "$PR_NUMBER" ]; then
             echo "PR #$PR_NUMBER already exists for branch $BRANCH_NAME"
@@ -94,18 +94,20 @@ jobs:
         id: generate_body
         run: |
           BRANCH_NAME="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+          RUN_ID="${{ github.run_id }}"
 
           # Get commit messages since branching from main
           COMMITS=$(git log --oneline origin/main..HEAD --pretty=format:"- %s" || echo "- Initial commit")
 
-          # Create PR body using template format
-          cat > pr_body.md << 'EOF'
+          # Create PR body using template format with direct variable substitution
+          cat > pr_body.md << EOF
           ## Description
 
-          This PR was automatically created from the `${{ github.ref_name }}` branch.
+          This PR was automatically created from the \`${BRANCH_NAME}\` branch.
 
           ### Commits in this PR:
-          $COMMITS
+          ${COMMITS}
 
           ## Type of Change
 
@@ -136,14 +138,8 @@ jobs:
 
           ---
 
-          *Automatically created by [Auto PR Workflow](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})*
+          *Automatically created by [Auto PR Workflow](https://github.com/${REPO}/actions/runs/${RUN_ID})*
           EOF
-
-          # Replace placeholder with actual commits
-          sed -i "s|\$COMMITS|$COMMITS|g" pr_body.md
-          sed -i "s|\${{ github.ref_name }}|$BRANCH_NAME|g" pr_body.md
-          sed -i "s|\${{ github.repository }}|${{ github.repository }}|g" pr_body.md
-          sed -i "s|\${{ github.run_id }}|${{ github.run_id }}|g" pr_body.md
 
           echo "PR body generated successfully"
 

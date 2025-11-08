@@ -26,11 +26,13 @@ export function LayoutController({ config, eventId }: LayoutControllerProps) {
 		<div className="fluid-dashboard" data-event-id={eventId}>
 			{config.sections.map((section, index) => {
 				if (section.type === "text") {
+					// biome-ignore lint/suspicious/noArrayIndexKey: Section order defines layout structure, no unique IDs available
 					return <TextRow key={`text-${index}`} section={section} />;
 				}
 
 				if (section.type === "row") {
 					return (
+						// biome-ignore lint/suspicious/noArrayIndexKey: Section order defines layout structure, no unique IDs available
 						<GridRow key={`row-${index}`} section={section} eventId={eventId} />
 					);
 				}

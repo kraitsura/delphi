@@ -7,32 +7,48 @@
  */
 
 // Calendar Component
-export { CalendarView, CalendarViewMetadata } from "./CalendarView";
+import { CalendarView, CalendarViewMetadata } from "./CalendarView";
 // Event Components
-export { EventDetails, EventDetailsMetadata } from "./EventDetails";
-export { ExpensesList, ExpensesListMetadata } from "./ExpensesList";
+import { EventDetails, EventDetailsMetadata } from "./EventDetails";
+import { ExpensesList, ExpensesListMetadata } from "./ExpensesList";
 // Budget Components
-export { ExpensesSummary, ExpensesSummaryMetadata } from "./ExpensesSummary";
-export { GuestList, GuestListMetadata } from "./GuestList";
-export { MilestoneTracker, MilestoneTrackerMetadata } from "./MilestoneTracker";
-export { PollResults, PollResultsMetadata } from "./PollResults";
-export { PollsList, PollsListMetadata } from "./PollsList";
+import { ExpensesSummary, ExpensesSummaryMetadata } from "./ExpensesSummary";
+import { GuestList, GuestListMetadata } from "./GuestList";
+import { MilestoneTracker, MilestoneTrackerMetadata } from "./MilestoneTracker";
+import { PollResults, PollResultsMetadata } from "./PollResults";
+import { PollsList, PollsListMetadata } from "./PollsList";
 // Collaboration Components
-export { RoomActivity, RoomActivityMetadata } from "./RoomActivity";
-export { RSVPStatus, RSVPStatusMetadata } from "./RSVPStatus";
-export { TasksKanban, TasksKanbanMetadata } from "./TasksKanban";
+import { RoomActivity, RoomActivityMetadata } from "./RoomActivity";
+import { RSVPStatus, RSVPStatusMetadata } from "./RSVPStatus";
+import { TasksKanban, TasksKanbanMetadata } from "./TasksKanban";
 // Task Components
-export { TasksList, TasksListMetadata } from "./TasksList";
+import { TasksList, TasksListMetadata } from "./TasksList";
 // Timeline Components
-export { Timeline, TimelineMetadata } from "./Timeline";
-export { UpcomingEvents, UpcomingEventsMetadata } from "./UpcomingEvents";
-export {
-	UpcomingPayments,
-	UpcomingPaymentsMetadata,
-} from "./UpcomingPayments";
-export { VendorDetails, VendorDetailsMetadata } from "./VendorDetails";
+import { Timeline, TimelineMetadata } from "./Timeline";
+import { UpcomingEvents, UpcomingEventsMetadata } from "./UpcomingEvents";
+import { UpcomingPayments, UpcomingPaymentsMetadata } from "./UpcomingPayments";
+import { VendorDetails, VendorDetailsMetadata } from "./VendorDetails";
 // People Components
-export { VendorsList, VendorsListMetadata } from "./VendorsList";
+import { VendorsList, VendorsListMetadata } from "./VendorsList";
+
+// Re-export all components and metadata
+export { CalendarView, CalendarViewMetadata };
+export { EventDetails, EventDetailsMetadata };
+export { ExpensesList, ExpensesListMetadata };
+export { ExpensesSummary, ExpensesSummaryMetadata };
+export { GuestList, GuestListMetadata };
+export { MilestoneTracker, MilestoneTrackerMetadata };
+export { PollResults, PollResultsMetadata };
+export { PollsList, PollsListMetadata };
+export { RoomActivity, RoomActivityMetadata };
+export { RSVPStatus, RSVPStatusMetadata };
+export { TasksKanban, TasksKanbanMetadata };
+export { TasksList, TasksListMetadata };
+export { Timeline, TimelineMetadata };
+export { UpcomingEvents, UpcomingEventsMetadata };
+export { UpcomingPayments, UpcomingPaymentsMetadata };
+export { VendorDetails, VendorDetailsMetadata };
+export { VendorsList, VendorsListMetadata };
 
 /**
  * Register all dashboard components with the Fluid UI registry

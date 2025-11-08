@@ -139,7 +139,11 @@ export const updateMyProfile = mutation({
         themeSet: v.optional(v.union(
           v.literal("default"),
           v.literal("patagonia"),
-          v.literal("redwood")
+          v.literal("redwood"),
+          v.literal("flare"),
+          v.literal("ocean"),
+          v.literal("twilight"),
+          v.literal("moss")
         )),
         accent: v.optional(v.union(
           v.literal("indigo"),
@@ -197,7 +201,11 @@ export const updateThemePreferences = mutation({
     themeSet: v.optional(v.union(
       v.literal("default"),
       v.literal("patagonia"),
-      v.literal("redwood")
+      v.literal("redwood"),
+      v.literal("flare"),
+      v.literal("ocean"),
+      v.literal("twilight"),
+      v.literal("moss")
     )),
     accent: v.optional(v.union(
       v.literal("indigo"),

@@ -34,7 +34,7 @@ export function SignUpForm() {
 		try {
 			// Sign up with Better Auth
 			// User profile is created automatically via Better Auth onCreate trigger
-			const _result = await authClient.signUp.email({
+			await authClient.signUp.email({
 				name,
 				email,
 				password,

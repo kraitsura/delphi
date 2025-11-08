@@ -35,7 +35,7 @@ export function CalendarView(props: CalendarViewProps) {
 	const tasks: unknown[] = [];
 
 	const calendarEvents = useMemo(() => {
-		if (!event || !tasks) return [];
+		if (!event) return [];
 
 		const events: CalendarEvent[] = [];
 
@@ -166,7 +166,8 @@ export function CalendarView(props: CalendarViewProps) {
 				<div className="grid grid-cols-7 gap-1">
 					{/* Empty cells for days before month starts */}
 					{Array.from({ length: firstDayOfMonth }).map((_, i) => (
-						<div key={`empty-${i}`} className="aspect-square" />
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static placeholder cells with positional meaning
+						<div key={`empty-start-${i}`} className="aspect-square" />
 					))}
 
 					{/* Days of the month */}
@@ -195,7 +196,7 @@ export function CalendarView(props: CalendarViewProps) {
 									<div className="flex flex-wrap gap-0.5 mt-1">
 										{dayEvents.slice(0, 3).map((evt, idx) => (
 											<div
-												key={idx}
+												key={`${evt.type}-${evt.title}-${idx}`}
 												className={`w-1.5 h-1.5 rounded-full ${evt.color}`}
 												title={evt.title}
 											/>
@@ -225,7 +226,8 @@ function CalendarViewSkeleton() {
 			<CardContent>
 				<div className="grid grid-cols-7 gap-1">
 					{Array.from({ length: 35 }).map((_, i) => (
-						<Skeleton key={i} className="aspect-square" />
+						// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
+						<Skeleton key={`calendar-skeleton-${i}`} className="aspect-square" />
 					))}
 				</div>
 			</CardContent>

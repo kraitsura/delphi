@@ -55,9 +55,10 @@ export function PollsList(props: PollsListProps) {
 			<CardContent className="fluid-component-content">
 				<div className="space-y-3">
 					{limitedPolls.map((poll) => (
-						<div
+						<button
+							type="button"
 							key={poll._id}
-							className="p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
+							className="w-full text-left p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
 							onClick={() => onPollSelect?.(poll._id)}
 						>
 							<div className="flex items-start justify-between gap-4">
@@ -75,7 +76,7 @@ export function PollsList(props: PollsListProps) {
 									</div>
 								</div>
 							</div>
-						</div>
+						</button>
 					))}
 				</div>
 

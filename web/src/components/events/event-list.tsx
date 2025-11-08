@@ -124,7 +124,11 @@ export function EventList({ status }: EventListProps) {
 						</div>
 
 						{/* Rest of card content - wrapped in Link */}
-						<Link to={`/events/${event._id}`} className="block">
+						<Link
+							to="/events/$eventId"
+							params={{ eventId: event._id }}
+							className="block"
+						>
 							{event.description && (
 								<p className="text-sm text-muted-foreground line-clamp-2 mb-4">
 									{event.description}

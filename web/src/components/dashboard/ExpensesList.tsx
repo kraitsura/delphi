@@ -1,4 +1,6 @@
-import type { Id } from "convex/_generated/dataModel";
+import { api } from "convex/_generated/api";
+import type { Doc, Id } from "convex/_generated/dataModel";
+import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,8 +27,9 @@ export function ExpensesList(props: ExpensesListProps) {
 		showFilters: _showFilters = false,
 	} = props;
 
-	// TODO: Implement expenses API
-	const expenses: unknown[] = [];
+	const expenses = useQuery(api.expenses.listByEvent, {
+		eventId: props.eventId,
+	});
 
 	const filteredAndSorted = useMemo(() => {
 		if (!expenses) return [];
@@ -35,23 +38,17 @@ export function ExpensesList(props: ExpensesListProps) {
 
 		// Filter by status
 		if (paymentStatus !== "all") {
-			filtered = filtered.filter(
-				(e) => (e as Record<string, unknown>).status === paymentStatus,
-			);
+			filtered = filtered.filter((e) => e.status === paymentStatus);
 		}
 
 		// Filter by category
 		if (props.category) {
-			filtered = filtered.filter(
-				(e) => (e as Record<string, unknown>).category === props.category,
-			);
+			filtered = filtered.filter((e) => e.category === props.category);
 		}
 
 		// Filter by vendor
 		if (props.vendor) {
-			filtered = filtered.filter(
-				(e) => (e as Record<string, unknown>).paidBy === props.vendor,
-			);
+			filtered = filtered.filter((e) => e.paidBy === props.vendor);
 		}
 
 		// Filter by date range
@@ -59,29 +56,30 @@ export function ExpensesList(props: ExpensesListProps) {
 			const start = props.dateRange.start;
 			const end = props.dateRange.end;
 			filtered = filtered.filter(
-				(e) =>
-					(e as Record<string, unknown>)._creationTime >= start &&
-					(e as Record<string, unknown>)._creationTime <= end,
+				(e) => e._creationTime >= start && e._creationTime <= end,
 			);
 		}
 
 		// Sort
-		const sorted = [...filtered].sort((a, b) => {
-			switch (sortBy) {
-				case "date":
-					return b._creationTime - a._creationTime;
-				case "amount":
-					return b.amount - a.amount;
-				case "category":
-					return (a.category || "").localeCompare(b.category || "");
-				default:
-					return 0;
-			}
-		});
+		const sorted = [...filtered].sort(
+			(a: Doc<"expenses">, b: Doc<"expenses">) => {
+				switch (sortBy) {
+					case "date":
+						return b._creationTime - a._creationTime;
+					case "amount":
+						return b.amount - a.amount;
+					case "category":
+						return (a.category || "").localeCompare(b.category || "");
+					default:
+						return 0;
+				}
+			},
+		);
 
 		// Limit
 		return limit ? sorted.slice(0, limit) : sorted;
 	}, [
+		expenses,
 		paymentStatus,
 		props.category,
 		props.vendor,
@@ -91,7 +89,10 @@ export function ExpensesList(props: ExpensesListProps) {
 	]);
 
 	const totalAmount = useMemo(() => {
-		return filteredAndSorted.reduce((sum, e) => sum + e.amount, 0);
+		return filteredAndSorted.reduce(
+			(sum: number, e: Doc<"expenses">) => sum + e.amount,
+			0,
+		);
 	}, [filteredAndSorted]);
 
 	if (expenses === undefined) {

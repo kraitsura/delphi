@@ -44,10 +44,12 @@ export function ParticipantPermissionsDialog({
 
 	const updatePermissions = useMutation(api.roomParticipants.updatePermissions);
 
-	// Reset permissions when dialog opens with new user
+	// Reset permissions when dialog opens or when user changes
 	useEffect(() => {
-		setPermissions(currentPermissions);
-	}, [currentPermissions]);
+		if (open) {
+			setPermissions(currentPermissions);
+		}
+	}, [open, currentPermissions]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();

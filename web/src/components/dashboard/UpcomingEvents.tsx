@@ -24,7 +24,7 @@ export function UpcomingEvents(props: UpcomingEventsProps) {
 		onEventSelect,
 	} = props;
 
-	const events = useQuery(api.events.listUserEvents);
+	const events = useQuery(api.events.listUserEvents, {});
 
 	const filteredAndSorted = useMemo(() => {
 		if (!events) return [];
@@ -40,6 +40,8 @@ export function UpcomingEvents(props: UpcomingEventsProps) {
 		const sorted = [...filtered].sort((a, b) => {
 			switch (sortBy) {
 				case "date":
+					if (!a.date) return 1;
+					if (!b.date) return -1;
 					return a.date - b.date;
 				case "name":
 					return a.name.localeCompare(b.name);
@@ -62,7 +64,9 @@ export function UpcomingEvents(props: UpcomingEventsProps) {
 		return <UpcomingEventsEmpty />;
 	}
 
-	const formatDate = (timestamp: number) => {
+	const formatDate = (timestamp: number | undefined) => {
+		if (!timestamp) return "No date set";
+
 		const date = new Date(timestamp);
 		const now = new Date();
 		const diffDays = Math.ceil(
@@ -101,9 +105,10 @@ export function UpcomingEvents(props: UpcomingEventsProps) {
 			<CardContent className="fluid-component-content">
 				<div className="space-y-3">
 					{filteredAndSorted.map((event) => (
-						<div
+						<button
+							type="button"
 							key={event._id}
-							className="p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
+							className="w-full text-left p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
 							onClick={() => onEventSelect?.(event._id)}
 						>
 							<div className="flex items-start justify-between gap-4">
@@ -133,7 +138,7 @@ export function UpcomingEvents(props: UpcomingEventsProps) {
 									{event.description}
 								</p>
 							)}
-						</div>
+						</button>
 					))}
 				</div>
 

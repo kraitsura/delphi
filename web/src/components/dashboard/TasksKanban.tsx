@@ -1,5 +1,5 @@
 import { api } from "convex/_generated/api";
-import type { Id } from "convex/_generated/dataModel";
+import type { Doc, Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -67,7 +67,7 @@ export function TasksKanban(props: TasksKanbanProps) {
 					: groupBy === "priority"
 						? task.priority
 						: groupBy === "assignee"
-							? task.assignedTo || "unassigned"
+							? task.assigneeId || "unassigned"
 							: task.category || "uncategorized";
 
 			const existing = groups.get(key) || [];
@@ -136,13 +136,14 @@ export function TasksKanban(props: TasksKanbanProps) {
 
 								{/* Column content */}
 								<div className="flex-1 space-y-2 overflow-y-auto">
-									{columnTasks.map((task) => {
+									{columnTasks.map((task: Doc<"tasks">) => {
 										const dueInfo = formatDate(task.dueDate);
 
 										return (
-											<div
+											<button
+												type="button"
 												key={task._id}
-												className="p-3 rounded-md border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+												className="w-full text-left p-3 rounded-md border border-border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
 												onClick={() => onTaskSelect?.(task._id)}
 											>
 												<h4 className="font-normal text-sm line-clamp-2">
@@ -176,16 +177,16 @@ export function TasksKanban(props: TasksKanbanProps) {
 												</div>
 
 												{/* Assignee */}
-												{task.assignedTo && (
+												{task.assigneeId && (
 													<div className="mt-2 flex items-center gap-2">
 														<Avatar className="h-6 w-6">
 															<AvatarFallback className="text-xs">
-																{task.assignedTo.substring(0, 2).toUpperCase()}
+																{task.assigneeId.substring(0, 2).toUpperCase()}
 															</AvatarFallback>
 														</Avatar>
 													</div>
 												)}
-											</div>
+											</button>
 										);
 									})}
 

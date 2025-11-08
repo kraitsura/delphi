@@ -25,7 +25,7 @@ const EventBusContext = createContext<EventBus | null>(null);
  * ```
  */
 export function EventBusProvider({ children }: { children: React.ReactNode }) {
-	const eventBusRef = useRef<EventBus>();
+	const eventBusRef = useRef<EventBus | undefined>(undefined);
 
 	// Create event bus once
 	if (!eventBusRef.current) {

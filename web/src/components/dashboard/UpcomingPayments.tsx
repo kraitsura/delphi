@@ -15,7 +15,7 @@ export interface UpcomingPaymentsProps {
 }
 
 export function UpcomingPayments(props: UpcomingPaymentsProps) {
-	const { daysAhead = 30, showOnlyOverdue = false, groupBy = "date" } = props;
+	const { daysAhead = 30, showOnlyOverdue = false } = props;
 
 	const expenses = useQuery(api.expenses.listByEvent, {
 		eventId: props.eventId,
@@ -127,7 +127,9 @@ export function UpcomingPayments(props: UpcomingPaymentsProps) {
 				</h4>
 				<div className="space-y-2">
 					{payments.map((payment) => {
-						const dueInfo = formatDueDate(payment.dueDate!);
+						const dueInfo = payment.dueDate
+							? formatDueDate(payment.dueDate)
+							: { text: "No due date", isOverdue: false };
 
 						return (
 							<div

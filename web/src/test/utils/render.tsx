@@ -50,12 +50,7 @@ export const renderWithProviders = (
 	ui: ReactElement,
 	options: CustomRenderOptions = {},
 ) => {
-	const {
-		queryClient = createTestQueryClient(),
-		initialRoute = "/",
-		initialEntries = [initialRoute],
-		...renderOptions
-	} = options;
+	const { queryClient = createTestQueryClient(), ...renderOptions } = options;
 
 	const Wrapper = ({ children }: { children: React.ReactNode }) => {
 		return (

@@ -29,7 +29,8 @@ export function RoomListSkeleton() {
 				<SidebarMenu>
 					<div className="space-y-2 px-2">
 						{[...Array(3)].map((_, i) => (
-							<div key={i} className="flex items-start gap-3">
+							// biome-ignore lint/suspicious/noArrayIndexKey: Static skeleton loader placeholders
+							<div key={`room-skeleton-${i}`} className="flex items-start gap-3">
 								<Skeleton className="h-10 w-10 rounded-full shrink-0" />
 								<div className="flex-1 space-y-2">
 									<Skeleton className="h-4 w-3/4" />

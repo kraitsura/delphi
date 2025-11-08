@@ -1,6 +1,6 @@
+import type { Id } from "@convex/_generated/dataModel";
 import type { ReactNode } from "react";
 import { vi } from "vitest";
-import type { Id } from "../../convex/_generated/dataModel";
 
 /**
  * Mock Convex query hook
@@ -16,8 +16,8 @@ export const createMockUseQuery = <T,>(mockData?: T) => {
  */
 export const createMockUseMutation = <TArgs = unknown, TReturn = unknown>() => {
 	const mutationFn = vi
-		.fn<[TArgs], Promise<TReturn>>()
-		.mockResolvedValue({} as TReturn);
+		.fn<(args: TArgs) => Promise<TReturn>>()
+		.mockResolvedValue({} as Awaited<TReturn>);
 	return vi.fn(() => mutationFn);
 };
 
@@ -27,8 +27,8 @@ export const createMockUseMutation = <TArgs = unknown, TReturn = unknown>() => {
  */
 export const createMockUseAction = <TArgs = unknown, TReturn = unknown>() => {
 	const actionFn = vi
-		.fn<[TArgs], Promise<TReturn>>()
-		.mockResolvedValue({} as TReturn);
+		.fn<(args: TArgs) => Promise<TReturn>>()
+		.mockResolvedValue({} as Awaited<TReturn>);
 	return vi.fn(() => actionFn);
 };
 

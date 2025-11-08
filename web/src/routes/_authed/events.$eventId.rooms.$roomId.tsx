@@ -112,23 +112,6 @@ function RoomDetailPage() {
 		}
 	};
 
-	const _getRoomTypeLabel = (type: RoomType) => {
-		switch (type) {
-			case "main":
-				return "Main Planning";
-			case "private":
-				return "Private";
-			case "guest_announcements":
-				return "Guest Announcements";
-			case "vendor":
-				return "Vendor";
-			case "topic":
-				return "Topic";
-			default:
-				return "Other";
-		}
-	};
-
 	// Room not found check
 	if (!room) {
 		return (
@@ -136,6 +119,15 @@ function RoomDetailPage() {
 				<p className="text-muted-foreground">
 					Room not found or you don't have access to it
 				</p>
+			</div>
+		);
+	}
+
+	// User profile not found check
+	if (!userProfile) {
+		return (
+			<div className="flex items-center justify-center min-h-[400px]">
+				<p className="text-muted-foreground">Unable to load user profile</p>
 			</div>
 		);
 	}

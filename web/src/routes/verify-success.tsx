@@ -22,7 +22,7 @@ function VerifySuccessPage() {
 		const timer = setTimeout(() => {
 			navigate({
 				to: "/auth/sign-in",
-				search: { verified: false, redirect: undefined },
+				search: { verified: true, redirect: undefined },
 			});
 		}, 5000);
 
@@ -75,7 +75,7 @@ function VerifySuccessPage() {
 						onClick={() =>
 							navigate({
 								to: "/auth/sign-in",
-								search: { verified: false, redirect: undefined },
+								search: { verified: true, redirect: undefined },
 							})
 						}
 					>

@@ -23,14 +23,18 @@ export function PollResults(props: PollResultsProps) {
 
 		const totalVotes = votes.length;
 
+		// Initialize counts using option IDs
 		const optionCounts = new Map<string, number>();
 		for (const option of poll.options) {
-			optionCounts.set(option, 0);
+			optionCounts.set(option.id, 0);
 		}
 
+		// Count votes - votes.optionIds is an array
 		votes.forEach((vote) => {
-			const current = optionCounts.get(vote.option) || 0;
-			optionCounts.set(vote.option, current + 1);
+			vote.optionIds.forEach((optionId) => {
+				const current = optionCounts.get(optionId) || 0;
+				optionCounts.set(optionId, current + 1);
+			});
 		});
 
 		const maxVotes = Math.max(...Array.from(optionCounts.values()));
@@ -38,12 +42,12 @@ export function PollResults(props: PollResultsProps) {
 		return {
 			totalVotes,
 			options: poll.options.map((option) => {
-				const count = optionCounts.get(option) || 0;
+				const count = optionCounts.get(option.id) || 0;
 				const percentage = totalVotes > 0 ? (count / totalVotes) * 100 : 0;
 				const isWinner = count === maxVotes && count > 0;
 
 				return {
-					option,
+					option: option.text,
 					count,
 					percentage,
 					isWinner,

@@ -12,8 +12,8 @@ export const testAction = mutation({
 	handler: async (ctx) => {
 		const { userProfile } = await getAuthenticatedUser(ctx);
 
-		// Check and consume rate limit
-		const { ok, retryAfter } = await rateLimiter.limit(ctx, "demoAction", {
+		// Check and consume rate limit (throws error if rate limited)
+		await rateLimiter.limit(ctx, "demoAction", {
 			key: userProfile._id,
 			count: 1,
 			throws: true, // Throw error if rate limited

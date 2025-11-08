@@ -26,12 +26,10 @@ type TimelineItem = {
 };
 
 export function Timeline(props: TimelineProps) {
-	const { showTasks: _showTasks = true, showEvents: _showEvents = true } =
-		props;
+	const { showTasks = true, showEvents = true } = props;
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
-	// TODO: Implement tasks API
-	const tasks: any[] = [];
+	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 
 	const timelineItems = useMemo(() => {
 		if (!event || !tasks) return [];
@@ -39,7 +37,7 @@ export function Timeline(props: TimelineProps) {
 		const items: TimelineItem[] = [];
 
 		// Add event date
-		if (showEvents) {
+		if (showEvents && event.date) {
 			items.push({
 				id: event._id,
 				type: "event",
@@ -66,7 +64,7 @@ export function Timeline(props: TimelineProps) {
 
 		// Sort by date
 		return items.sort((a, b) => a.date - b.date);
-	}, [event]);
+	}, [event, tasks, showTasks, showEvents]);
 
 	if (event === undefined || tasks === undefined) {
 		return <TimelineSkeleton />;
