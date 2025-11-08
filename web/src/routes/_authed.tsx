@@ -14,6 +14,7 @@ import { EventProvider } from "@/contexts/EventContext";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
 import { useSession } from "@/lib/auth";
+import { PresenceDisplay } from "@/components/presence";
 
 /**
  * Authenticated Layout Route
@@ -144,6 +145,7 @@ function SidebarAwareHeader() {
 		>
 			<SidebarTrigger className="-ml-1.5 mt-1" />
 			<div className="flex-1" />
+			<PresenceDisplay />
 		</header>
 	);
 }
