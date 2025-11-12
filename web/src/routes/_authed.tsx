@@ -3,6 +3,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { Suspense, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
+import { PresenceDisplay } from "@/components/presence";
 import { ThemeConvexSync } from "@/components/theme-convex-sync";
 import {
 	SidebarInset,
@@ -14,7 +15,6 @@ import { EventProvider } from "@/contexts/EventContext";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
 import { useSession } from "@/lib/auth";
-import { PresenceDisplay } from "@/components/presence";
 
 /**
  * Authenticated Layout Route

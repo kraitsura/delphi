@@ -19,10 +19,12 @@ import type * as events from "../events.js";
 import type * as expenses from "../expenses.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
+import type * as migrations_addUsername from "../migrations/addUsername.js";
 import type * as model_events from "../model/events.js";
 import type * as model_permissions from "../model/permissions.js";
 import type * as pollVotes from "../pollVotes.js";
 import type * as polls from "../polls.js";
+import type * as presence from "../presence.js";
 import type * as rateLimiterDemo from "../rateLimiterDemo.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as roomParticipants from "../roomParticipants.js";
@@ -56,10 +58,12 @@ declare const fullApi: ApiFromModules<{
   expenses: typeof expenses;
   http: typeof http;
   messages: typeof messages;
+  "migrations/addUsername": typeof migrations_addUsername;
   "model/events": typeof model_events;
   "model/permissions": typeof model_permissions;
   pollVotes: typeof pollVotes;
   polls: typeof polls;
+  presence: typeof presence;
   rateLimiterDemo: typeof rateLimiterDemo;
   rateLimits: typeof rateLimits;
   roomParticipants: typeof roomParticipants;
@@ -2176,6 +2180,68 @@ export declare const components: {
       findOne: FunctionReference<"query", "internal", any, any>;
       update: FunctionReference<"mutation", "internal", any, any>;
       updateMany: FunctionReference<"mutation", "internal", any, any>;
+    };
+  };
+  presence: {
+    public: {
+      disconnect: FunctionReference<
+        "mutation",
+        "internal",
+        { sessionToken: string },
+        null
+      >;
+      heartbeat: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          interval?: number;
+          roomId: string;
+          sessionId: string;
+          userId: string;
+        },
+        { roomToken: string; sessionToken: string }
+      >;
+      list: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; roomToken: string },
+        Array<{
+          data?: any;
+          lastDisconnected: number;
+          online: boolean;
+          userId: string;
+        }>
+      >;
+      listRoom: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; onlineOnly?: boolean; roomId: string },
+        Array<{ lastDisconnected: number; online: boolean; userId: string }>
+      >;
+      listUser: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; onlineOnly?: boolean; userId: string },
+        Array<{ lastDisconnected: number; online: boolean; roomId: string }>
+      >;
+      removeRoom: FunctionReference<
+        "mutation",
+        "internal",
+        { roomId: string },
+        null
+      >;
+      removeRoomUser: FunctionReference<
+        "mutation",
+        "internal",
+        { roomId: string; userId: string },
+        null
+      >;
+      updateRoomUser: FunctionReference<
+        "mutation",
+        "internal",
+        { data?: any; roomId: string; userId: string },
+        null
+      >;
     };
   };
   rateLimiter: {

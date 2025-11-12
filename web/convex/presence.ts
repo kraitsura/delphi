@@ -15,11 +15,11 @@ import {
   requireEventMember,
 } from "./authHelpers";
 
-// Initialize the Presence component
-export const presence = new Presence(components.presence, {
-  // Time before a user is considered offline (45 seconds)
-  expiresIn: 45000,
-});
+// Initialize the Presence component with new API (only takes component parameter)
+export const presence = new Presence(components.presence);
+
+// Heartbeat interval in milliseconds (30 seconds)
+const HEARTBEAT_INTERVAL = 30000;
 
 // ==========================================
 // TYPE DEFINITIONS
@@ -51,6 +51,7 @@ export type UserStatus = "active" | "idle" | "typing";
  *
  * @param context - The presence context (room/event/global)
  * @param status - Optional status indicator (active/idle/typing)
+ * @param sessionId - Unique session identifier for this client
  */
 export const updatePresence = mutation({
   args: {
@@ -72,6 +73,7 @@ export const updatePresence = mutation({
       v.literal("idle"),
       v.literal("typing")
     )),
+    sessionId: v.string(),
   },
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
@@ -83,22 +85,48 @@ export const updatePresence = mutation({
       await requireEventMember(ctx, args.context.eventId, userProfile._id);
     }
 
-    // Generate location string for presence tracking
-    const location =
+    // Generate roomId string for presence tracking (encode context in the ID)
+    const roomId =
       args.context.type === "room" ? `room:${args.context.roomId}` :
       args.context.type === "event" ? `event:${args.context.eventId}` :
       "global";
 
-    // Update presence
-    await presence.heartbeat(ctx, location, {
-      userId: userProfile._id,
-      userName: userProfile.name,
-      userAvatar: userProfile.avatar,
-      data: {
+    // Send heartbeat with new API (5 parameters)
+    const tokens = await presence.heartbeat(
+      ctx,
+      roomId,
+      userProfile._id,
+      args.sessionId,
+      HEARTBEAT_INTERVAL
+    );
+
+    // Store typing status in our custom table for easy querying
+    const existing = await ctx.db
+      .query("typingStatus")
+      .withIndex("by_room_and_user", (q) =>
+        q.eq("roomId", roomId).eq("userId", userProfile._id)
+      )
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
         status: args.status || "active",
-        context: args.context,
-      },
-    });
+        userName: userProfile.name,
+        userAvatar: userProfile.avatar,
+        updatedAt: Date.now(),
+      });
+    } else {
+      await ctx.db.insert("typingStatus", {
+        roomId,
+        userId: userProfile._id,
+        userName: userProfile.name,
+        userAvatar: userProfile.avatar,
+        status: args.status || "active",
+        updatedAt: Date.now(),
+      });
+    }
+
+    return tokens;
   },
 });
 
@@ -121,16 +149,13 @@ export const leaveLocation = mutation({
         type: v.literal("global"),
       })
     ),
+    sessionToken: v.string(),
   },
   handler: async (ctx, args) => {
-    const { userProfile } = await getAuthenticatedUser(ctx);
+    await getAuthenticatedUser(ctx);
 
-    const location =
-      args.context.type === "room" ? `room:${args.context.roomId}` :
-      args.context.type === "event" ? `event:${args.context.eventId}` :
-      "global";
-
-    await presence.disconnect(ctx, location, userProfile._id);
+    // Disconnect using session token (new API)
+    await presence.disconnect(ctx, args.sessionToken);
   },
 });
 
@@ -170,14 +195,35 @@ export const listPresenceByContext = query({
       await requireEventMember(ctx, args.context.eventId, userProfile._id);
     }
 
-    const location =
+    const roomId =
       args.context.type === "room" ? `room:${args.context.roomId}` :
       args.context.type === "event" ? `event:${args.context.eventId}` :
       "global";
 
-    const presentUsers = await presence.list(ctx, location);
+    // Get present users from presence component
+    const presentUsers = await presence.listRoom(ctx, roomId, true);
 
-    return presentUsers;
+    // Get typing status for all users in this room
+    const typingStatuses = await ctx.db
+      .query("typingStatus")
+      .withIndex("by_room", (q) => q.eq("roomId", roomId))
+      .collect();
+
+    // Create a map for quick lookup
+    const statusMap = new Map(
+      typingStatuses.map((status) => [status.userId, status])
+    );
+
+    // Combine presence data with typing status
+    return presentUsers.map((user) => {
+      const statusData = statusMap.get(user.userId as any);
+      return {
+        userId: user.userId,
+        userName: statusData?.userName || "Unknown User",
+        userAvatar: statusData?.userAvatar,
+        data: { status: statusData?.status || "active" as const },
+      };
+    });
   },
 });
 
@@ -192,7 +238,7 @@ export const getUserPresence = query({
   handler: async (ctx, args) => {
     await getAuthenticatedUser(ctx);
 
-    const userPresence = await presence.listUser(ctx, args.userId);
+    const userPresence = await presence.listUser(ctx, args.userId, true);
 
     return userPresence;
   },
@@ -221,7 +267,7 @@ export const getEventPresenceStats = query({
     // Get presence for each room
     const roomPresence = await Promise.all(
       rooms.map(async (room) => {
-        const present = await presence.list(ctx, `room:${room._id}`);
+        const present = await presence.listRoom(ctx, `room:${room._id}`, true);
         return {
           roomId: room._id,
           roomName: room.name,
@@ -232,7 +278,7 @@ export const getEventPresenceStats = query({
     );
 
     // Get event-level presence (users viewing event but not in a room)
-    const eventPresent = await presence.list(ctx, `event:${args.eventId}`);
+    const eventPresent = await presence.listRoom(ctx, `event:${args.eventId}`, true);
 
     // Count unique users across all contexts
     const allUsers = [

@@ -14,6 +14,7 @@ import {
 import { useEffect } from "react";
 import { MessageInput } from "@/components/messages/message-input";
 import { MessageList } from "@/components/messages/message-list";
+import { TypingIndicator } from "@/components/messages/typing-indicator";
 import { RoomSettingsDrawer } from "@/components/rooms/room-settings-drawer";
 import { Button } from "@/components/ui/button";
 import { useSendMessage } from "@/hooks/useSendMessage";
@@ -192,12 +193,15 @@ function RoomDetailPage() {
 				<MessageList
 					messages={messages}
 					currentUserId={userProfile._id}
-					onEdit={(messageId, newText) => edit(messageId, newText)}
-					onDelete={(messageId) => remove(messageId)}
+					onEdit={edit}
+					onDelete={remove}
 					canEdit={room.membership?.canEdit ?? false}
 					canDelete={room.membership?.canDelete ?? false}
 				/>
 			</div>
+
+			{/* Typing Indicator */}
+			<TypingIndicator />
 
 			{/* Input - Fixed at bottom */}
 			<div className="flex-shrink-0">

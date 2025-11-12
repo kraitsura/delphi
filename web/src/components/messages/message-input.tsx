@@ -2,6 +2,7 @@ import { Plus, Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { usePresence } from "@/hooks/usePresence";
 
 interface MessageInputProps {
 	onSend: (text: string) => void;
@@ -16,6 +17,8 @@ export function MessageInput({
 }: MessageInputProps) {
 	const [text, setText] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const { setTyping } = usePresence();
 
 	// Auto-resize textarea based on content
 	useEffect(() => {
@@ -29,6 +32,16 @@ export function MessageInput({
 		textarea.style.height = `${textarea.scrollHeight}px`;
 	}, []);
 
+	// Cleanup: Clear typing status on unmount
+	useEffect(() => {
+		return () => {
+			setTyping(false);
+			if (typingTimeoutRef.current) {
+				clearTimeout(typingTimeoutRef.current);
+			}
+		};
+	}, [setTyping]);
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		sendMessage();
@@ -37,8 +50,35 @@ export function MessageInput({
 	const sendMessage = () => {
 		const trimmedText = text.trim();
 		if (trimmedText && !disabled) {
+			// Clear typing status before sending
+			setTyping(false);
+			if (typingTimeoutRef.current) {
+				clearTimeout(typingTimeoutRef.current);
+			}
 			onSend(trimmedText);
 			setText("");
+		}
+	};
+
+	const handleTextChange = (value: string) => {
+		setText(value);
+
+		// Clear existing timeout
+		if (typingTimeoutRef.current) {
+			clearTimeout(typingTimeoutRef.current);
+		}
+
+		// If there's text, set typing to true
+		if (value.length > 0) {
+			setTyping(true);
+
+			// Auto-clear typing status after 3 seconds of inactivity
+			typingTimeoutRef.current = setTimeout(() => {
+				setTyping(false);
+			}, 3000);
+		} else {
+			// If text is cleared, immediately stop typing
+			setTyping(false);
 		}
 	};
 
@@ -70,7 +110,7 @@ export function MessageInput({
 					<Textarea
 						ref={textareaRef}
 						value={text}
-						onChange={(e) => setText(e.target.value)}
+						onChange={(e) => handleTextChange(e.target.value)}
 						onKeyDown={handleKeyDown}
 						placeholder={placeholder}
 						disabled={disabled}

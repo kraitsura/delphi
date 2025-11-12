@@ -155,7 +155,6 @@ jobs:
             --title "$PR_TITLE" \
             --body-file pr_body.md \
             --base main \
-            --head "${{ github.ref_name }}" \
-            --label "auto-created"
+            --head "${{ github.ref_name }}"
 
           echo "✅ Pull request created successfully!"

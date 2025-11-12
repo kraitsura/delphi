@@ -35,9 +35,9 @@ export function FeaturesSection() {
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-					{features.map((feature, index) => (
+					{features.map((feature) => (
 						<div
-							key={index}
+							key={feature.title}
 							className="border-2 border-black dark:border-white p-8 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors group"
 						>
 							<h3 className="font-mono font-bold text-2xl text-black dark:text-white group-hover:text-white dark:group-hover:text-black mb-4 uppercase">

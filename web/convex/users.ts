@@ -5,8 +5,55 @@
  */
 
 import { v } from "convex/values";
+import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { internalMutation, mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
+
+/**
+ * Generate a unique username from a name
+ * Converts "Aarya Reddy" to "aaryareddy"
+ * If username exists, appends numbers: "aaryareddy1", "aaryareddy2", etc.
+ */
+async function generateUniqueUsername(
+  ctx: QueryCtx | MutationCtx,
+  name: string
+): Promise<string> {
+  // Generate base username
+  let baseUsername = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+
+  // If empty after cleanup, use "user"
+  if (!baseUsername) {
+    baseUsername = "user";
+  }
+
+  // Check if base username is available
+  const existing = await ctx.db
+    .query("users")
+    .withIndex("by_username", (q) => q.eq("username", baseUsername))
+    .unique();
+
+  if (!existing) {
+    return baseUsername;
+  }
+
+  // Find available username by appending numbers
+  let counter = 1;
+  while (true) {
+    const candidateUsername = `${baseUsername}${counter}`;
+    const exists = await ctx.db
+      .query("users")
+      .withIndex("by_username", (q) => q.eq("username", candidateUsername))
+      .unique();
+
+    if (!exists) {
+      return candidateUsername;
+    }
+    counter++;
+  }
+}
 
 /**
  * Internal mutation called by Better Auth trigger on user creation
@@ -30,10 +77,17 @@ export const createUserProfile = internalMutation({
       return existingProfile._id;
     }
 
+    // Get name (use provided name or extract from email)
+    const name = args.name || args.email.split("@")[0];
+
+    // Generate unique username from name
+    const username = await generateUniqueUsername(ctx, name);
+
     // Create new extended profile
     const profileId = await ctx.db.insert("users", {
       email: args.email,
-      name: args.name || args.email.split("@")[0],
+      name,
+      username,
       avatar: args.image || undefined,
       role: "guest", // Default role for new users
       preferences: {
@@ -49,7 +103,7 @@ export const createUserProfile = internalMutation({
       isActive: true,
     });
 
-    console.log(`Created user profile for ${args.email} with ID ${profileId}`);
+    console.log(`Created user profile for ${args.email} with ID ${profileId} and username @${username}`);
     return profileId;
   },
 });
@@ -85,10 +139,17 @@ export const createOrUpdateProfile = mutation({
       return existingProfile._id;
     }
 
+    // Get name (use provided name or extract from email)
+    const name = authUser.name || authUser.email.split("@")[0];
+
+    // Generate unique username from name
+    const username = await generateUniqueUsername(ctx, name);
+
     // Create new extended profile
     const profileId = await ctx.db.insert("users", {
       email: authUser.email,
-      name: authUser.name || authUser.email.split("@")[0],
+      name,
+      username,
       avatar: authUser.image || undefined,
       role: "guest", // Default role for new users
       preferences: {
@@ -130,6 +191,7 @@ export const getMyProfile = query({
 export const updateMyProfile = mutation({
   args: {
     name: v.optional(v.string()),
+    username: v.optional(v.string()),
     avatar: v.optional(v.string()),
     bio: v.optional(v.string()),
     location: v.optional(v.string()),
@@ -178,15 +240,51 @@ export const updateMyProfile = mutation({
       throw new Error("Profile not found");
     }
 
-    await ctx.db.patch(profile._id, {
-      ...(args.name !== undefined && { name: args.name }),
-      ...(args.avatar !== undefined && { avatar: args.avatar }),
-      ...(args.bio !== undefined && { bio: args.bio }),
-      ...(args.location !== undefined && { location: args.location }),
-      ...(args.preferences !== undefined && { preferences: args.preferences }),
-      updatedAt: Date.now(),
-      lastActiveAt: Date.now(),
-    });
+    // If username is being updated, check if it's available
+    if (args.username !== undefined && args.username !== profile.username) {
+      // Clean and validate username
+      const cleanUsername = args.username
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "")
+        .trim();
+
+      if (!cleanUsername) {
+        throw new Error("Invalid username");
+      }
+
+      // Check if username is already taken
+      const existingUser = await ctx.db
+        .query("users")
+        .withIndex("by_username", (q) => q.eq("username", cleanUsername))
+        .unique();
+
+      if (existingUser && existingUser._id !== profile._id) {
+        throw new Error("Username already taken");
+      }
+
+      // Update with cleaned username
+      await ctx.db.patch(profile._id, {
+        username: cleanUsername,
+        ...(args.name !== undefined && { name: args.name }),
+        ...(args.avatar !== undefined && { avatar: args.avatar }),
+        ...(args.bio !== undefined && { bio: args.bio }),
+        ...(args.location !== undefined && { location: args.location }),
+        ...(args.preferences !== undefined && { preferences: args.preferences }),
+        updatedAt: Date.now(),
+        lastActiveAt: Date.now(),
+      });
+    } else {
+      // No username update
+      await ctx.db.patch(profile._id, {
+        ...(args.name !== undefined && { name: args.name }),
+        ...(args.avatar !== undefined && { avatar: args.avatar }),
+        ...(args.bio !== undefined && { bio: args.bio }),
+        ...(args.location !== undefined && { location: args.location }),
+        ...(args.preferences !== undefined && { preferences: args.preferences }),
+        updatedAt: Date.now(),
+        lastActiveAt: Date.now(),
+      });
+    }
 
     return profile._id;
   },
@@ -277,6 +375,7 @@ export const getById = query({
     return {
       _id: user._id,
       name: user.name,
+      username: user.username,
       email: user.email,
       avatar: user.avatar,
       role: user.role,
@@ -302,6 +401,7 @@ export const getByIds = query({
       .map((user) => ({
         _id: user!._id,
         name: user!.name,
+        username: user!.username,
         email: user!.email,
         avatar: user!.avatar,
         role: user!.role,
@@ -340,6 +440,7 @@ export const searchByName = query({
     return results.map((user) => ({
       _id: user._id,
       name: user.name,
+      username: user.username,
       email: user.email,
       avatar: user.avatar,
       role: user.role,
