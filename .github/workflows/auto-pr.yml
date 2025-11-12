@@ -7,7 +7,7 @@ on:
       - gh-pages
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -50,9 +50,14 @@ jobs:
           if [[ "$BRANCH_NAME" == feature/* ]]; then
             PREFIX="feat"
             TITLE_BODY="${CLEAN_NAME#feature }"
-          elif [[ "$BRANCH_NAME" == fix/* ]]; then
+          elif [[ "$BRANCH_NAME" == fix/* ]] || [[ "$BRANCH_NAME" == fixes/* ]]; then
             PREFIX="fix"
-            TITLE_BODY="${CLEAN_NAME#fix }"
+            # Remove either 'fix ' or 'fixes ' from the title
+            if [[ "$BRANCH_NAME" == fixes/* ]]; then
+              TITLE_BODY="${CLEAN_NAME#fixes }"
+            else
+              TITLE_BODY="${CLEAN_NAME#fix }"
+            fi
           elif [[ "$BRANCH_NAME" == docs/* ]]; then
             PREFIX="docs"
             TITLE_BODY="${CLEAN_NAME#docs }"
@@ -74,9 +79,14 @@ jobs:
           elif [[ "$BRANCH_NAME" == ci/* ]]; then
             PREFIX="ci"
             TITLE_BODY="${CLEAN_NAME#ci }"
-          elif [[ "$BRANCH_NAME" == chore/* ]]; then
+          elif [[ "$BRANCH_NAME" == chore/* ]] || [[ "$BRANCH_NAME" == chores/* ]]; then
             PREFIX="chore"
-            TITLE_BODY="${CLEAN_NAME#chore }"
+            # Remove either 'chore ' or 'chores ' from the title
+            if [[ "$BRANCH_NAME" == chores/* ]]; then
+              TITLE_BODY="${CLEAN_NAME#chores }"
+            else
+              TITLE_BODY="${CLEAN_NAME#chore }"
+            fi
           else
             # Default to feat for other branch patterns
             PREFIX="feat"
