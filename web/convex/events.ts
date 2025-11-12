@@ -526,6 +526,17 @@ export const getStats = query({
     const participantIds = new Set<Id<"users">>();
     let hitParticipantLimit = false;
 
+    // Add event coordinators to participant count
+    const event = await ctx.db.get(args.eventId);
+    if (event) {
+      participantIds.add(event.coordinatorId);
+      if (event.coCoordinatorIds) {
+        event.coCoordinatorIds.forEach((coCoordinatorId) => {
+          participantIds.add(coCoordinatorId);
+        });
+      }
+    }
+
     for (const room of rooms) {
       // Limit to 500 participants per room to prevent memory issues
       const allParticipants = await ctx.db

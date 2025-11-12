@@ -61,6 +61,7 @@ export function ChatBubble({
 					</div>
 					{/* Reply icon - visible on hover, positioned based on message owner */}
 					<button
+						type="button"
 						className={cn(
 							"absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/bubble:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded",
 							isOwnMessage ? "-left-8" : "-right-8",

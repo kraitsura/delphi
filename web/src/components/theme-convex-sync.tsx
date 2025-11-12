@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import {
 	getStoredTheme,
 	type StoredThemePreferences,
+	type ThemeMode,
 	useThemeSet,
 } from "./theme-set-provider";
 
@@ -59,7 +60,8 @@ export function ThemeConvexSync() {
 			updateFromExternal({
 				themeSet: convexPrefs.themeSet,
 				accent: convexPrefs.accent,
-				themeMode: convexPrefs.themeMode || (convexPrefs.theme as any),
+				themeMode:
+					convexPrefs.themeMode || (convexPrefs.theme as ThemeMode | undefined),
 			});
 		}
 

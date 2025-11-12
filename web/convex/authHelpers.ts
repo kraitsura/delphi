@@ -347,13 +347,33 @@ export async function isRoomParticipant(
 }
 
 /**
- * Require user to be a participant in a room
+ * Require user to be a participant in a room or event coordinator
+ * Returns the participant record if it exists, or null for coordinators without explicit participant records
  */
 export async function requireRoomParticipant(
   ctx: QueryCtx | MutationCtx,
   roomId: Id<"rooms">,
   userId: Id<"users">
-): Promise<Doc<"roomParticipants">> {
+): Promise<Doc<"roomParticipants"> | null> {
+  const room = await ctx.db.get(roomId);
+  if (!room) {
+    throw new Error("Room not found");
+  }
+
+  // Check if user is event coordinator (implicit access to all rooms)
+  const event = await ctx.db.get(room.eventId);
+  if (event && isEventCoordinator(event as Doc<"events">, userId)) {
+    // Coordinator has access - try to get their participant record if it exists
+    const participant = await ctx.db
+      .query("roomParticipants")
+      .withIndex("by_room_and_user", (q) =>
+        q.eq("roomId", roomId).eq("userId", userId)
+      )
+      .unique();
+    return participant ?? null; // Return null if coordinator has no explicit participant record
+  }
+
+  // Check if user is a participant
   const participant = await ctx.db
     .query("roomParticipants")
     .withIndex("by_room_and_user", (q) =>

@@ -1,5 +1,6 @@
 import { api } from "@convex/_generated/api";
 import { useMutation } from "convex/react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 
 /**
@@ -19,59 +20,67 @@ export function useSendMessage() {
 	const deleteMessage = useMutation(api.messages.remove);
 	const markAsRead = useMutation(api.messages.markRoomAsRead);
 
-	const handleSend = async (
-		roomId: Parameters<typeof sendMessage>[0]["roomId"],
-		text: string,
-	) => {
-		try {
-			await sendMessage({ roomId, text });
-		} catch (error) {
-			toast.error(
-				`Failed to send message: ${error instanceof Error ? error.message : "An error occurred"}`,
-			);
-			throw error;
-		}
-	};
+	const handleSend = useCallback(
+		async (
+			roomId: Parameters<typeof sendMessage>[0]["roomId"],
+			text: string,
+		) => {
+			try {
+				await sendMessage({ roomId, text });
+			} catch (error) {
+				toast.error(
+					`Failed to send message: ${error instanceof Error ? error.message : "An error occurred"}`,
+				);
+				throw error;
+			}
+		},
+		[sendMessage],
+	);
 
-	const handleEdit = async (
-		messageId: Parameters<typeof editMessage>[0]["messageId"],
-		text: string,
-	) => {
-		try {
-			await editMessage({ messageId, text });
-			toast.success("Message updated successfully");
-		} catch (error) {
-			toast.error(
-				`Failed to edit message: ${error instanceof Error ? error.message : "An error occurred"}`,
-			);
-			throw error;
-		}
-	};
+	const handleEdit = useCallback(
+		async (
+			messageId: Parameters<typeof editMessage>[0]["messageId"],
+			text: string,
+		) => {
+			try {
+				await editMessage({ messageId, text });
+				toast.success("Message updated successfully");
+			} catch (error) {
+				toast.error(
+					`Failed to edit message: ${error instanceof Error ? error.message : "An error occurred"}`,
+				);
+				throw error;
+			}
+		},
+		[editMessage],
+	);
 
-	const handleDelete = async (
-		messageId: Parameters<typeof deleteMessage>[0]["messageId"],
-	) => {
-		try {
-			await deleteMessage({ messageId });
-			toast.success("Message deleted");
-		} catch (error) {
-			toast.error(
-				`Failed to delete message: ${error instanceof Error ? error.message : "An error occurred"}`,
-			);
-			throw error;
-		}
-	};
+	const handleDelete = useCallback(
+		async (messageId: Parameters<typeof deleteMessage>[0]["messageId"]) => {
+			try {
+				await deleteMessage({ messageId });
+				toast.success("Message deleted");
+			} catch (error) {
+				toast.error(
+					`Failed to delete message: ${error instanceof Error ? error.message : "An error occurred"}`,
+				);
+				throw error;
+			}
+		},
+		[deleteMessage],
+	);
 
-	const handleMarkAsRead = async (
-		roomId: Parameters<typeof markAsRead>[0]["roomId"],
-	) => {
-		try {
-			await markAsRead({ roomId });
-		} catch (error) {
-			// Silent fail for read receipts - not critical
-			console.error("Failed to mark room as read:", error);
-		}
-	};
+	const handleMarkAsRead = useCallback(
+		async (roomId: Parameters<typeof markAsRead>[0]["roomId"]) => {
+			try {
+				await markAsRead({ roomId });
+			} catch (error) {
+				// Silent fail for read receipts - not critical
+				console.error("Failed to mark room as read:", error);
+			}
+		},
+		[markAsRead],
+	);
 
 	return {
 		send: handleSend,

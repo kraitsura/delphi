@@ -410,11 +410,34 @@ export const getStats = query({
     const { userProfile } = await getAuthenticatedUser(ctx);
     await requireRoomAccess(ctx, args.roomId, userProfile._id);
 
-    const participantCount = await ctx.db
+    const room = await ctx.db.get(args.roomId);
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    // Get explicit participants
+    const participants = await ctx.db
       .query("roomParticipants")
       .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
-      .collect()
-      .then((participants) => participants.length);
+      .collect();
+
+    const participantUserIds = new Set(participants.map((p) => p.userId));
+
+    // Get event coordinators and add them to the count if not already participants
+    const event = await ctx.db.get(room.eventId);
+    if (event) {
+      // Add main coordinator if not already a participant
+      participantUserIds.add(event.coordinatorId);
+
+      // Add co-coordinators if not already participants
+      if (event.coCoordinatorIds) {
+        event.coCoordinatorIds.forEach((coCoordinatorId) => {
+          participantUserIds.add(coCoordinatorId);
+        });
+      }
+    }
+
+    const participantCount = participantUserIds.size;
 
     // Count messages in the room (excluding deleted)
     const messageCount = await ctx.db

@@ -1,6 +1,6 @@
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { Edit2, MoreVertical, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +25,7 @@ interface MessageItemProps {
 	isFirstInGroup?: boolean;
 }
 
-export function MessageItem({
+export const MessageItem = memo(function MessageItem({
 	message,
 	currentUserId,
 	onEdit,
@@ -167,7 +167,7 @@ export function MessageItem({
 					<div className="mt-1 space-y-1">
 						{message.attachments.map((attachment, idx) => (
 							<div
-								key={idx}
+								key={`${attachment.name}-${idx}`}
 								className="text-xs text-blue-600 hover:underline cursor-pointer"
 							>
 								📎 {attachment.name}
@@ -178,4 +178,4 @@ export function MessageItem({
 			</div>
 		</div>
 	);
-}
+});

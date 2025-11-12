@@ -15,6 +15,7 @@ export default defineSchema({
     // Better Auth will create _id matching their user table
     email: v.string(),
     name: v.string(),
+    username: v.string(), // Auto-generated from name: "Aarya Reddy" → "aaryareddy"
     avatar: v.optional(v.string()),
     bio: v.optional(v.string()),
     location: v.optional(v.string()),
@@ -63,6 +64,7 @@ export default defineSchema({
     isActive: v.boolean(), // Soft delete flag
   })
     .index("by_email", ["email"])
+    .index("by_username", ["username"])
     .index("by_role", ["role"])
     .index("by_active", ["isActive"])
     .searchIndex("search_name", {
@@ -587,6 +589,30 @@ export default defineSchema({
     .index("by_poll_and_user", ["pollId", "userId"]) // One vote per user per poll
     .index("by_deleted", ["isDeleted"])
     .index("by_poll_and_deleted", ["pollId", "isDeleted"]),
+
+  // ==========================================
+  // TYPING STATUS
+  // ==========================================
+
+  /**
+   * TypingStatus - Tracks users currently typing in rooms
+   * Short-lived records that expire after a few seconds
+   */
+  typingStatus: defineTable({
+    roomId: v.string(), // Presence room ID (e.g., "room:123")
+    userId: v.id("users"),
+    userName: v.string(),
+    userAvatar: v.optional(v.string()),
+    status: v.union(
+      v.literal("active"),
+      v.literal("idle"),
+      v.literal("typing")
+    ),
+    updatedAt: v.number(), // Last update timestamp for cleanup
+  })
+    .index("by_room", ["roomId"])
+    .index("by_room_and_user", ["roomId", "userId"])
+    .index("by_updated", ["updatedAt"]), // For cleanup of stale records
 
   // ==========================================
   // DASHBOARDS (Fluid UI System)

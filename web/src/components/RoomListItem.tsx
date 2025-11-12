@@ -9,7 +9,6 @@ import { SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
 import {
 	Tooltip,
 	TooltipContent,
-	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { RoomWithPreview } from "@/hooks/useEventRooms";
@@ -117,97 +116,95 @@ export function RoomListItem({ room, eventId }: RoomListItemProps) {
 
 	return (
 		<SidebarMenuItem>
-			<TooltipProvider delayDuration={0}>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<SidebarMenuButton
-							asChild
-							isActive={isActive}
-							className={cn(
-								"h-auto py-2 px-2 group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-1 group-data-[collapsible=icon]:justify-center",
-								// Main room styling
-								isMainRoom && "border-l-2 border-l-primary",
-								isMainRoom && !isActive && "bg-primary/5",
-							)}
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<SidebarMenuButton
+						asChild
+						isActive={isActive}
+						className={cn(
+							"h-auto py-2 px-2 group-data-[collapsible=icon]:!size-12 group-data-[collapsible=icon]:!p-1 group-data-[collapsible=icon]:justify-center",
+							// Main room styling
+							isMainRoom && "border-l-2 border-l-primary",
+							isMainRoom && !isActive && "bg-primary/5",
+						)}
+					>
+						<Link
+							to="/events/$eventId/rooms/$roomId"
+							params={{ eventId, roomId: room._id }}
+							className="block"
 						>
-							<Link
-								to="/events/$eventId/rooms/$roomId"
-								params={{ eventId, roomId: room._id }}
-								className="block"
-							>
-								<div className="flex items-start gap-3 w-full min-w-0 group-data-[collapsible=icon]:gap-0">
-									{/* Avatar */}
-									<Avatar className="h-10 w-10 shrink-0">
-										<AvatarFallback className="bg-primary/10 text-primary">
-											{getRoomInitials(room.name)}
-										</AvatarFallback>
-									</Avatar>
+							<div className="flex items-start gap-3 w-full min-w-0 group-data-[collapsible=icon]:gap-0">
+								{/* Avatar */}
+								<Avatar className="h-10 w-10 shrink-0">
+									<AvatarFallback className="bg-primary/10 text-primary">
+										{getRoomInitials(room.name)}
+									</AvatarFallback>
+								</Avatar>
 
-									{/* Content */}
-									<div className="flex-1 min-w-0 space-y-0.5 group-data-[collapsible=icon]:hidden">
-										{/* Room name and timestamp */}
-										<div className="flex items-center justify-between gap-2">
-											<span
-												className={cn(
-													"text-sm font-medium truncate",
-													hasUnread && "font-semibold",
-												)}
-											>
-												{room.name}
-											</span>
-											<span className="text-xs text-muted-foreground shrink-0">
-												{formatTimestamp(timestamp)}
-											</span>
-										</div>
-
-										{/* Latest message preview */}
-										{/* biome-ignore lint/a11y/noStaticElementInteractions: Hover effects for UI feedback only */}
-										<div
-											className="flex items-center justify-between gap-2"
-											onMouseEnter={() => setIsHovering(true)}
-											onMouseLeave={() => setIsHovering(false)}
+								{/* Content */}
+								<div className="flex-1 min-w-0 space-y-0.5 group-data-[collapsible=icon]:hidden">
+									{/* Room name and timestamp */}
+									<div className="flex items-center justify-between gap-2">
+										<span
+											className={cn(
+												"text-sm font-medium truncate",
+												hasUnread && "font-semibold",
+											)}
 										>
-											<div
-												className={cn(
-													"text-xs text-muted-foreground min-w-0 flex-1",
-													hasUnread && "font-medium text-foreground/80",
-													shouldScroll && "overflow-hidden",
-												)}
-											>
-												{messagePreview ? (
-													shouldScroll ? (
-														<span className="inline-flex whitespace-nowrap animate-marquee">
-															<span className="pr-8">{messagePreview}</span>
-															<span className="pr-8">{messagePreview}</span>
-														</span>
-													) : (
-														<p className="truncate">{messagePreview}</p>
-													)
-												) : (
-													<p className="truncate">No messages yet</p>
-												)}
-											</div>
+											{room.name}
+										</span>
+										<span className="text-xs text-muted-foreground shrink-0">
+											{formatTimestamp(timestamp)}
+										</span>
+									</div>
 
-											{/* Unread badge */}
-											{hasUnread && (
-												<Badge
-													variant="default"
-													className="h-5 min-w-5 px-1.5 text-xs shrink-0"
-												>
-													{room.unreadCount > 99 ? "99+" : room.unreadCount}
-												</Badge>
+									{/* Latest message preview */}
+									{/* biome-ignore lint/a11y/noStaticElementInteractions: Hover effects for UI feedback only */}
+									<div
+										className="flex items-center justify-between gap-2"
+										onMouseEnter={() => setIsHovering(true)}
+										onMouseLeave={() => setIsHovering(false)}
+									>
+										<div
+											className={cn(
+												"text-xs text-muted-foreground min-w-0 flex-1",
+												hasUnread && "font-medium text-foreground/80",
+												shouldScroll && "overflow-hidden",
+											)}
+										>
+											{messagePreview ? (
+												shouldScroll ? (
+													<span className="inline-flex whitespace-nowrap animate-marquee">
+														<span className="pr-8">{messagePreview}</span>
+														<span className="pr-8">{messagePreview}</span>
+													</span>
+												) : (
+													<p className="truncate">{messagePreview}</p>
+												)
+											) : (
+												<p className="truncate">No messages yet</p>
 											)}
 										</div>
+
+										{/* Unread badge */}
+										{hasUnread && (
+											<Badge
+												variant="default"
+												className="h-5 min-w-5 px-1.5 text-xs shrink-0"
+											>
+												{room.unreadCount > 99 ? "99+" : room.unreadCount}
+											</Badge>
+										)}
 									</div>
 								</div>
-							</Link>
-						</SidebarMenuButton>
-					</TooltipTrigger>
-					<TooltipContent side="right">
-						<p>{room.name}</p>
-					</TooltipContent>
-				</Tooltip>
-			</TooltipProvider>
+							</div>
+						</Link>
+					</SidebarMenuButton>
+				</TooltipTrigger>
+				<TooltipContent side="right">
+					<p>{room.name}</p>
+				</TooltipContent>
+			</Tooltip>
 		</SidebarMenuItem>
 	);
 }

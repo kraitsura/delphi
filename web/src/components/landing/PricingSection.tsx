@@ -65,9 +65,9 @@ export function PricingSection() {
 				</div>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-					{plans.map((plan, index) => (
+					{plans.map((plan) => (
 						<div
-							key={index}
+							key={plan.name}
 							className={`border-2 border-black dark:border-white p-8 flex flex-col ${
 								plan.highlighted
 									? "bg-black dark:bg-white text-white dark:text-black"
@@ -116,9 +116,9 @@ export function PricingSection() {
 							</div>
 
 							<ul className="mb-8 flex-grow space-y-3">
-								{plan.features.map((feature, featureIndex) => (
+								{plan.features.map((feature) => (
 									<li
-										key={featureIndex}
+										key={feature}
 										className={`flex items-start gap-2 text-sm ${
 											plan.highlighted
 												? "text-white dark:text-black"

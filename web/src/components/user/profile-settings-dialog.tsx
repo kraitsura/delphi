@@ -187,9 +187,9 @@ export function ProfileSettingsDialog() {
 									}}
 								>
 									<div className="flex gap-1 items-center">
-										{option.colors.map((color, i) => (
+										{option.colors.map((color) => (
 											<div
-												key={i}
+												key={color}
 												className="w-3 h-3 rounded-full border border-border"
 												style={{ backgroundColor: color }}
 											/>

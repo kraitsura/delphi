@@ -20,7 +20,11 @@ export const registerBetterAuthMock = (
 	_t: ReturnType<typeof convexTest>,
 	authUser: { email: string; id: string; name?: string; image?: string } | null,
 ) => {
-	vi.spyOn(authComponent, "getAuthUser").mockResolvedValue(authUser as any);
+	vi.spyOn(authComponent, "getAuthUser").mockResolvedValue(
+		authUser as unknown as Awaited<
+			ReturnType<typeof authComponent.getAuthUser>
+		>,
+	);
 };
 
 /**
