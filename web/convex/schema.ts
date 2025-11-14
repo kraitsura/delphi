@@ -377,6 +377,7 @@ export default defineSchema({
       v.literal("poll"),
       v.literal("calendar"),
       v.literal("vendor_suggestion"),
+      v.literal("agent_invocation"),
       v.literal("none")
     )),
 
@@ -641,4 +642,37 @@ export default defineSchema({
     .index("by_event", ["eventId"])
     .index("by_deleted", ["isDeleted"])
     .index("by_event_and_deleted", ["eventId", "isDeleted"]),
+
+  // ==========================================
+  // AGENT SYSTEM (Phase 1 - Foundation)
+  // ==========================================
+
+  /**
+   * Agent Responses - Stores AI agent responses for tracking and analytics
+   * Phase 1: Basic tracking of agent invocations and responses
+   */
+  agentResponses: defineTable({
+    roomId: v.id("rooms"),
+    eventId: v.id("events"),
+    invokedBy: v.id("users"),
+    userMessage: v.string(),
+    agentResponse: v.string(),
+    timestamp: v.number(),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_room", ["roomId", "timestamp"])
+    .index("by_event", ["eventId", "timestamp"])
+    .index("by_user", ["invokedBy", "timestamp"]),
+
+  /**
+   * Agent State - Tracks Durable Object state and invocation metadata
+   * Stores checkpoint info for DO recovery
+   */
+  agentState: defineTable({
+    roomId: v.id("rooms"),
+    doInstanceId: v.string(), // DO ID from Cloudflare (chat-${roomId})
+    lastInvoked: v.number(),
+    invocationCount: v.number(),
+  })
+    .index("by_room", ["roomId"]),
 });

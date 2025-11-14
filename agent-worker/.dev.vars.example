@@ -1,0 +1,28 @@
+# Local development environment variables
+# Copy this file to .dev.vars and add your actual values
+# .dev.vars is gitignored and won't be committed
+
+# Convex deployment URL
+CONVEX_DEPLOY_URL=http://localhost:8000
+
+# AI Provider API Key (choose one)
+
+# Claude API (Primary - Haiku 4.5)
+# Get from: https://console.anthropic.com/
+# Model: claude-3-5-haiku-20241022 (fast and cost-effective)
+CLAUDE_API_KEY=sk-ant-api03-your-key-here
+
+# Kimi K2 by Moonshot AI (Fallback)
+# Get from: https://platform.moonshot.ai/
+# Models available: kimi-k2-0905-preview (256K context), kimi-k2-0711-preview (128K), kimi-k2-thinking
+# KIMI_API_KEY=sk-your-moonshot-api-key-here
+
+# Legacy Anthropic Claude (Fallback)
+# ANTHROPIC_API_KEY=sk-ant-api03-your-key-here
+
+# OpenAI GPT-4 (Fallback)
+# Get from: https://platform.openai.com/api-keys
+# OPENAI_API_KEY=sk-your-key-here
+
+# Environment setting
+ENVIRONMENT=development

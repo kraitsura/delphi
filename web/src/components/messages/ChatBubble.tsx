@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 interface ChatBubbleProps {
 	text: string;
 	isOwnMessage: boolean;
+	isAIGenerated?: boolean;
 	timestamp: number;
 	isEdited?: boolean;
 	isEditing?: boolean;
@@ -16,6 +17,7 @@ interface ChatBubbleProps {
 export function ChatBubble({
 	text,
 	isOwnMessage,
+	isAIGenerated = false,
 	timestamp,
 	isEdited = false,
 	isEditing = false,
@@ -31,9 +33,11 @@ export function ChatBubble({
 			className={cn(
 				"group/bubble relative px-3 py-2 rounded-lg max-w-[60%] transition-all",
 				"break-words",
-				isOwnMessage
-					? "bg-[#DCF8C6] hover:bg-[#d1f0ba]" // WhatsApp green
-					: "bg-white hover:bg-gray-50 border border-gray-200",
+				isAIGenerated
+					? "bg-purple-50 hover:bg-purple-100 border border-purple-200" // Agent messages
+					: isOwnMessage
+						? "bg-[#DCF8C6] hover:bg-[#d1f0ba]" // WhatsApp green
+						: "bg-white hover:bg-gray-50 border border-gray-200",
 				!isEditing && "cursor-default",
 			)}
 		>
@@ -42,9 +46,14 @@ export function ChatBubble({
 				children
 			) : (
 				<>
-					{/* Sender name at top for first message in group (other users only) */}
+					{/* Sender name at top for first message in group (other users only or AI) */}
 					{!isOwnMessage && isFirstInGroup && senderName && (
-						<div className="text-xs font-bold text-primary mb-1">
+						<div
+							className={cn(
+								"text-xs font-bold mb-1",
+								isAIGenerated ? "text-purple-600" : "text-primary",
+							)}
+						>
 							{senderName}
 						</div>
 					)}

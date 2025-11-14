@@ -1,0 +1,26 @@
+name = "delphi-agent-worker"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+account_id = "ed8b8023e8bf42f39daade39278c4a21"
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Secrets (add via wrangler secret put)
+# CONVEX_DEPLOY_URL
+# ANTHROPIC_API_KEY or OPENAI_API_KEY
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "CHAT_ORCHESTRATOR"
+class_name = "ChatOrchestratorDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["ChatOrchestratorDO"]
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
