@@ -1,5 +1,5 @@
 import type { Doc, Id } from "@convex/_generated/dataModel";
-import { Edit2, MoreVertical, Trash2 } from "lucide-react";
+import { Edit2, MoreVertical, Sparkles, Trash2 } from "lucide-react";
 import { memo, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,10 @@ export const MessageItem = memo(function MessageItem({
 	const [isEditing, setIsEditing] = useState(false);
 	const [editText, setEditText] = useState(message.text);
 
-	const isOwnMessage = message.authorId === currentUserId;
-	const canModify = isOwnMessage && (canEdit || canDelete);
+	const isAIGenerated = message.isAIGenerated ?? false;
+	// AI messages should never be treated as "own message" - they always appear on the left
+	const isOwnMessage = !isAIGenerated && message.authorId === currentUserId;
+	const canModify = isOwnMessage && (canEdit || canDelete); // Can't edit/delete AI messages (isOwnMessage is already false for AI)
 
 	const handleSaveEdit = () => {
 		if (editText.trim() && editText !== message.text) {
@@ -103,18 +105,28 @@ export const MessageItem = memo(function MessageItem({
 				</div>
 			)}
 
-			{/* Avatar - only show for others' messages and first in group */}
-			{!isOwnMessage && isFirstInGroup && (
+			{/* Avatar - only show for others' messages and first in group (or always for AI) */}
+			{!isOwnMessage && (isFirstInGroup || isAIGenerated) && (
 				<Avatar className="h-8 w-8 flex-shrink-0">
-					<AvatarImage src={message.author?.avatar} />
-					<AvatarFallback className="bg-blue-500 text-white text-xs">
-						{message.author?.name ? getInitials(message.author.name) : "?"}
-					</AvatarFallback>
+					{isAIGenerated ? (
+						<>
+							<AvatarFallback className="bg-purple-600 text-white">
+								<Sparkles className="h-4 w-4" />
+							</AvatarFallback>
+						</>
+					) : (
+						<>
+							<AvatarImage src={message.author?.avatar} />
+							<AvatarFallback className="bg-blue-500 text-white text-xs">
+								{message.author?.name ? getInitials(message.author.name) : "?"}
+							</AvatarFallback>
+						</>
+					)}
 				</Avatar>
 			)}
 
-			{/* Spacer for non-first messages to align with avatar */}
-			{!isOwnMessage && !isFirstInGroup && (
+			{/* Spacer for non-first messages to align with avatar (but not for AI which always shows avatar) */}
+			{!isOwnMessage && !isFirstInGroup && !isAIGenerated && (
 				<div className="h-8 w-8 flex-shrink-0" />
 			)}
 
@@ -155,9 +167,12 @@ export const MessageItem = memo(function MessageItem({
 					<ChatBubble
 						text={message.text}
 						isOwnMessage={isOwnMessage}
+						isAIGenerated={isAIGenerated}
 						timestamp={message.createdAt}
 						isEdited={message.isEdited}
-						senderName={message.author?.name || "Unknown User"}
+						senderName={
+							isAIGenerated ? "Delphi" : message.author?.name || "Unknown User"
+						}
 						isFirstInGroup={isFirstInGroup}
 					/>
 				)}

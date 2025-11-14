@@ -17,6 +17,7 @@ import { MessageList } from "@/components/messages/message-list";
 import { TypingIndicator } from "@/components/messages/typing-indicator";
 import { RoomSettingsDrawer } from "@/components/rooms/room-settings-drawer";
 import { Button } from "@/components/ui/button";
+import { useAgentInvoke } from "@/hooks/useAgentInvoke";
 import { useSendMessage } from "@/hooks/useSendMessage";
 import { convexQuery } from "@/lib/convex-query";
 
@@ -90,6 +91,27 @@ function RoomDetailPage() {
 
 	// Message mutation handlers
 	const { send, edit, remove, markAsRead } = useSendMessage();
+
+	// Agent invocation handler
+	const { invoke: invokeAgent, isInvoking: isAgentInvoking } = useAgentInvoke();
+
+	// Agent invoke wrapper - save user message first, then invoke agent
+	const handleAgentInvoke = async (text: string) => {
+		try {
+			// First, save the user's @Delphi message to the chat
+			await send(roomId as Id<"rooms">, text);
+
+			// Only invoke agent if message was saved successfully
+			await invokeAgent({
+				roomId: roomId as Id<"rooms">,
+				eventId: eventId as Id<"events">,
+				message: text,
+			});
+		} catch (error) {
+			console.error("[Room] Failed to send message or invoke agent:", error);
+			// Error will be handled by the useSendMessage and useAgentInvoke hooks
+		}
+	};
 
 	// Mark room as read when messages load
 	useEffect(() => {
@@ -207,10 +229,12 @@ function RoomDetailPage() {
 			<div className="flex-shrink-0">
 				<MessageInput
 					onSend={(text) => send(roomId as Id<"rooms">, text)}
+					onAgentInvoke={handleAgentInvoke}
+					isAgentInvoking={isAgentInvoking}
 					disabled={!room.membership?.canPost}
 					placeholder={
 						room.membership?.canPost
-							? "Type a message..."
+							? "Type a message... (Use @Delphi to invoke AI)"
 							: "You don't have permission to post in this room"
 					}
 				/>

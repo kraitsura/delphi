@@ -1,0 +1,24 @@
+{
+  "name": "delphi-agent-worker",
+  "version": "0.1.0",
+  "description": "Cloudflare Worker with Durable Objects for Delphi AI agent orchestration",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev --local --persist",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "types": "wrangler types"
+  },
+  "keywords": ["cloudflare", "workers", "durable-objects", "ai", "agent"],
+  "author": "Delphi Team",
+  "license": "MIT",
+  "dependencies": {
+    "convex": "^1.29.0",
+    "itty-router": "^5.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.47.0"
+  }
+}
