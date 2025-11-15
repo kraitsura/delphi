@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface UpcomingEventsProps {
-	status?: "planning" | "in_progress" | "completed" | "all";
+	status?: "planning" | "active" | "completed" | "all";
 	limit?: number;
 	sortBy?: "date" | "name" | "status";
 	compact?: boolean;
@@ -40,9 +40,9 @@ export function UpcomingEvents(props: UpcomingEventsProps) {
 		const sorted = [...filtered].sort((a, b) => {
 			switch (sortBy) {
 				case "date":
-					if (!a.date) return 1;
-					if (!b.date) return -1;
-					return a.date - b.date;
+					if (!a.eventDate) return 1;
+					if (!b.eventDate) return -1;
+					return a.eventDate - b.eventDate;
 				case "name":
 					return a.name.localeCompare(b.name);
 				case "status":
@@ -129,7 +129,7 @@ export function UpcomingEvents(props: UpcomingEventsProps) {
 								</div>
 
 								<div className="text-sm text-muted-foreground text-right shrink-0">
-									{formatDate(event.date)}
+									{formatDate(event.eventDate)}
 								</div>
 							</div>
 
@@ -210,7 +210,7 @@ export const UpcomingEventsMetadata = {
 		status: {
 			type: "enum",
 			required: false,
-			values: ["planning", "in_progress", "completed", "all"],
+			values: ["planning", "active", "completed", "all"],
 			description: "Filter events by status",
 		},
 		limit: {

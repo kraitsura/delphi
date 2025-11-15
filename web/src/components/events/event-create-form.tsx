@@ -22,7 +22,7 @@ export function EventCreateForm() {
 	const [name, setName] = useState("");
 	const [description, setDescription] = useState("");
 	const [type, setType] = useState<
-		"wedding" | "corporate" | "party" | "destination" | "other"
+		"wedding" | "corporate" | "party" | "travel" | "other"
 	>("wedding");
 	const [budget, setBudget] = useState("");
 	const [expectedGuests, setExpectedGuests] = useState("");
@@ -44,7 +44,7 @@ export function EventCreateForm() {
 				type,
 				budget: parseFloat(budget) || 0,
 				expectedGuests: parseInt(expectedGuests, 10) || 0,
-				date: date ? new Date(date).getTime() : undefined,
+				eventDate: date ? new Date(date).getTime() : undefined,
 				location:
 					address && city && state && country
 						? { address, city, state, country }
@@ -99,7 +99,7 @@ export function EventCreateForm() {
 										| "wedding"
 										| "corporate"
 										| "party"
-										| "destination"
+										| "travel"
 										| "other",
 								)
 							}
@@ -109,7 +109,7 @@ export function EventCreateForm() {
 							<option value="wedding">Wedding</option>
 							<option value="corporate">Corporate Event</option>
 							<option value="party">Party</option>
-							<option value="destination">Destination Event</option>
+							<option value="travel">Destination Event</option>
 							<option value="other">Other</option>
 						</select>
 					</div>

@@ -11,7 +11,7 @@ import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TasksListProps {
 	eventId: Id<"events">;
-	status?: "not_started" | "in_progress" | "blocked" | "completed" | "all";
+	status?: "todo" | "in_progress" | "blocked" | "completed" | "all";
 	assignee?: Id<"users">;
 	category?: string;
 	priority?: "low" | "medium" | "high" | "urgent" | "all";
@@ -52,7 +52,7 @@ export function TasksList(props: TasksListProps) {
 
 		// Filter by assignee
 		if (props.assignee) {
-			filtered = filtered.filter((t) => t.assigneeId === props.assignee);
+			filtered = filtered.filter((t) => t.assignedTo === props.assignee);
 		}
 
 		// Filter by category
@@ -64,9 +64,9 @@ export function TasksList(props: TasksListProps) {
 		const sorted = [...filtered].sort((a, b) => {
 			switch (sortBy) {
 				case "dueDate":
-					if (!a.dueDate) return 1;
-					if (!b.dueDate) return -1;
-					return a.dueDate - b.dueDate;
+					if (!a.deadline) return 1;
+					if (!b.deadline) return -1;
+					return a.deadline - b.deadline;
 				case "priority": {
 					const priorityOrder = {
 						urgent: 0,
@@ -168,7 +168,7 @@ export function TasksList(props: TasksListProps) {
 			<CardContent className="fluid-component-content">
 				<div className="space-y-2">
 					{filteredAndSorted.map((task) => {
-						const dueInfo = formatDate(task.dueDate);
+						const dueInfo = formatDate(task.deadline);
 						return (
 							<button
 								type="button"
@@ -201,7 +201,7 @@ export function TasksList(props: TasksListProps) {
 												</Badge>
 											)}
 
-											{task.dueDate && (
+											{task.deadline && (
 												<span
 													className={`text-xs ${
 														dueInfo.isOverdue
@@ -222,10 +222,10 @@ export function TasksList(props: TasksListProps) {
 									</div>
 
 									{/* Assignee */}
-									{task.assigneeId && (
+									{task.assignedTo && (
 										<Avatar className="h-8 w-8">
 											<AvatarFallback className="text-xs">
-												{task.assigneeId.substring(0, 2).toUpperCase()}
+												{task.assignedTo.substring(0, 2).toUpperCase()}
 											</AvatarFallback>
 										</Avatar>
 									)}
@@ -311,7 +311,7 @@ export const TasksListMetadata = {
 		status: {
 			type: "enum",
 			required: false,
-			values: ["not_started", "in_progress", "blocked", "completed", "all"],
+			values: ["todo", "in_progress", "blocked", "completed", "all"],
 			description: "Filter by status",
 		},
 		priority: {

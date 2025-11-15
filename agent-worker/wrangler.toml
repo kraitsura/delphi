@@ -1,7 +1,7 @@
 name = "delphi-agent-worker"
 main = "src/index.ts"
 compatibility_date = "2024-11-01"
-account_id = "ed8b8023e8bf42f39daade39278c4a21"
+account_id = "${CLOUDFLARE_ACCOUNT_ID}"
 
 # Environment variables
 [vars]

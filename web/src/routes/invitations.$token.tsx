@@ -351,10 +351,10 @@ function InvitationPage() {
 								<Calendar className="h-4 w-4" />
 								<span className="capitalize">{event.type} Event</span>
 							</div>
-							{event.date && (
+							{event.eventDate && (
 								<div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
 									<Calendar className="h-4 w-4" />
-									<span>{formatDate(event.date, "PPP")}</span>
+									<span>{formatDate(event.eventDate, "PPP")}</span>
 								</div>
 							)}
 						</div>

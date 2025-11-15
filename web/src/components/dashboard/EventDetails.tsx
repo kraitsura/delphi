@@ -74,7 +74,7 @@ export function EventDetails(props: EventDetailsProps) {
 								Date
 							</span>
 							<span className="text-base">
-								{event.date ? formatDate(event.date) : "TBD"}
+								{event.eventDate ? formatDate(event.eventDate) : "TBD"}
 							</span>
 						</div>
 

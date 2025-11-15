@@ -24,12 +24,7 @@ export const Route = createFileRoute("/_authed/events/")({
 
 function EventsPage() {
 	const [statusFilter, setStatusFilter] = useState<
-		| "planning"
-		| "in_progress"
-		| "completed"
-		| "cancelled"
-		| "archived"
-		| undefined
+		"planning" | "active" | "completed" | "cancelled" | undefined
 	>(undefined);
 
 	// Get pending invitations
@@ -200,9 +195,9 @@ function EventsPage() {
 						Planning
 					</button>
 					<button
-						onClick={() => setStatusFilter("in_progress")}
+						onClick={() => setStatusFilter("active")}
 						className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-							statusFilter === "in_progress"
+							statusFilter === "active"
 								? "bg-blue-600 text-white"
 								: "bg-gray-100 text-gray-700 hover:bg-gray-200"
 						}`}
@@ -218,16 +213,6 @@ function EventsPage() {
 						}`}
 					>
 						Completed
-					</button>
-					<button
-						onClick={() => setStatusFilter("archived")}
-						className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-							statusFilter === "archived"
-								? "bg-blue-600 text-white"
-								: "bg-gray-100 text-gray-700 hover:bg-gray-200"
-						}`}
-					>
-						Archived
 					</button>
 				</div>
 			</div>

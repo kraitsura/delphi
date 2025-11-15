@@ -69,8 +69,13 @@ export function MessageInput({
 		if (mentionsDelphi && onAgentInvoke) {
 			// Clear input immediately for better UX
 			setText("");
-			// Invoke the agent
-			await onAgentInvoke(trimmedText);
+			// Invoke the agent with error handling
+			try {
+				await onAgentInvoke(trimmedText);
+			} catch (error) {
+				console.error("Agent invocation failed in MessageInput:", error);
+				// Error is handled upstream, just log here for debugging
+			}
 		} else {
 			// Send regular message
 			onSend(trimmedText);

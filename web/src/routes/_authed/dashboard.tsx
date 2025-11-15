@@ -642,7 +642,7 @@ function QuickCreateForm({ onSuccess }: { onSuccess: () => void }) {
 	const createEvent = useMutation(api.events.create);
 	const [name, setName] = useState("");
 	const [type, setType] = useState<
-		"wedding" | "corporate" | "party" | "destination" | "other"
+		"wedding" | "corporate" | "party" | "travel" | "other"
 	>("wedding");
 	const [date, setDate] = useState("");
 	const [budget, setBudget] = useState("");
@@ -657,7 +657,7 @@ function QuickCreateForm({ onSuccess }: { onSuccess: () => void }) {
 			await createEvent({
 				name,
 				type,
-				date: date ? new Date(date).getTime() : undefined,
+				eventDate: date ? new Date(date).getTime() : undefined,
 				budget: parseFloat(budget) || 0,
 				expectedGuests: parseInt(guests, 10) || 0,
 			});
@@ -700,7 +700,7 @@ function QuickCreateForm({ onSuccess }: { onSuccess: () => void }) {
 						<option value="wedding">Wedding</option>
 						<option value="corporate">Corporate</option>
 						<option value="party">Party</option>
-						<option value="destination">Destination</option>
+						<option value="travel">Destination</option>
 						<option value="other">Other</option>
 					</select>
 				</div>
@@ -769,7 +769,7 @@ function EventItem({ event }: { event: any }) {
 	);
 	const [editBudget, setEditBudget] = useState(event.budget.total.toString());
 	const [editGuests, setEditGuests] = useState(
-		event.guestCount.expected.toString(),
+		event.guestCount?.expected.toString() || "0",
 	);
 
 	const handleSaveEdit = async () => {
@@ -779,7 +779,10 @@ function EventItem({ event }: { event: any }) {
 				name: editName,
 				description: editDescription || undefined,
 				budget: { total: parseFloat(editBudget) },
-				guestCount: { expected: parseInt(editGuests, 10) },
+				guestCount: {
+					confirmed: event.guestCount?.confirmed || 0,
+					expected: parseInt(editGuests, 10),
+				},
 			});
 			toast.success("Event updated!");
 			setIsEditing(false);
@@ -864,16 +867,17 @@ function EventItem({ event }: { event: any }) {
 
 			{/* Quick Info */}
 			<div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-				{event.date && (
+				{event.eventDate && (
 					<div className="flex items-center gap-2">
 						<Calendar className="h-4 w-4 text-muted-foreground" />
-						<span>{new Date(event.date).toLocaleDateString()}</span>
+						<span>{new Date(event.eventDate).toLocaleDateString()}</span>
 					</div>
 				)}
 				<div className="flex items-center gap-2">
 					<Users className="h-4 w-4 text-muted-foreground" />
 					<span>
-						{event.guestCount.confirmed} / {event.guestCount.expected}
+						{event.guestCount?.confirmed || 0} /{" "}
+						{event.guestCount?.expected || 0}
 					</span>
 				</div>
 				<div className="flex items-center gap-2">

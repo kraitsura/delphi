@@ -6,7 +6,7 @@ const STATUS_CONFIGS = {
 		className:
 			"bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400",
 	},
-	in_progress: {
+	active: {
 		label: "In Progress",
 		className:
 			"bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400",
@@ -20,11 +20,6 @@ const STATUS_CONFIGS = {
 		label: "Cancelled",
 		className:
 			"bg-red-500/10 text-red-700 dark:bg-red-500/20 dark:text-red-400",
-	},
-	archived: {
-		label: "Archived",
-		className:
-			"bg-yellow-500/10 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400",
 	},
 } as const;
 

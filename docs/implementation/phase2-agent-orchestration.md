@@ -30,11 +30,11 @@
 
 Transform the current general-purpose ChatOrchestratorDO into a **multi-agent orchestration system** with:
 
-1. ✅ **Message Threading** - Reply to specific messages to maintain conversation context
-2. ✅ **Tool System** - Reusable tools (CRUD, Firecrawl, Calculator) for all agents
-3. ✅ **Specialized Agents** - TaskAgent, BudgetAgent, VendorAgent, EventAgent
-4. ✅ **Intent Routing** - Simple keyword-based routing (no LLM needed)
-5. ✅ **Rich Responses** - Structured data from agents (tasks, budgets, vendors)
+1. **Message Threading** - Reply to specific messages to maintain conversation context
+2. **Tool System** - Reusable tools (ConvexCRUD, Firecrawl) for all agents
+3. **Specialized Agents** - TaskAgent, BudgetAgent, VendorAgent, EventAgent
+4. **Intent Routing** - Simple keyword-based routing (no LLM needed)
+5. **Rich Responses** - Structured data from agents (tasks, budgets, vendors)
 
 ### What We're NOT Building (Phase 3+)
 
@@ -49,6 +49,25 @@ Transform the current general-purpose ChatOrchestratorDO into a **multi-agent or
 - "Our AI TaskAgent extracted 10 tasks with cost estimates" > "We have checkpoints"
 - "VendorAgent searched web and found 5 florists" > "We have persistence"
 - **Demo-able features** beat **infrastructure improvements**
+
+### Implementation Status
+
+**Current State (as of v1.1):**
+- ✅ Basic ChatOrchestratorDO with AI integration (Kimi K2 API)
+- ✅ Message schema and CRUD operations
+- ✅ Frontend message components
+- ✅ Worker routing to Durable Objects
+- ❌ **Message threading NOT implemented**
+- ❌ **Tool system NOT implemented**
+- ❌ **Specialized agents NOT implemented**
+- ❌ **Intent routing NOT implemented**
+
+**What Phase 2 Will Build:**
+1. Add message threading to schema, mutations, frontend, and worker
+2. Create tool system (ConvexCRUD, Firecrawl)
+3. Build 4 specialized agents (Task, Budget, Vendor, Event)
+4. Implement keyword-based intent routing in ChatOrchestratorDO
+5. Wire up frontend with Reply buttons and thread UI
 
 ### Phase 2 Architecture
 
@@ -126,6 +145,10 @@ For hackathon: **Routing pattern is perfect**.
 ---
 
 ## Message Threading & Replies
+
+**Status:** ⚠️ **TO BE IMPLEMENTED** - Threading functionality is not yet in the codebase.
+
+This section describes the complete implementation needed for message threading support across all layers (Convex schema, mutations, frontend, and worker).
 
 ### User Story
 
@@ -411,6 +434,10 @@ private async assembleContext(body: any, convex: ConvexHttpClient) {
 ---
 
 ## Tool System Framework
+
+**Status:** ⚠️ **TO BE IMPLEMENTED** - Tool system classes need to be created.
+
+This section describes the tool architecture and implementations needed for agents to interact with Convex and external APIs.
 
 ### Tool Interface
 
@@ -729,123 +756,13 @@ export class FirecrawlTool implements Tool {
 }
 ```
 
-### 3. Calculator Tool
-
-**File:** `agent-worker/src/tools/CalculatorTool.ts`
-
-```typescript
-import { Tool, ToolResult } from './index';
-
-export class CalculatorTool implements Tool {
-  name = 'calculate';
-  description = 'Perform mathematical calculations (budget splits, totals, percentages, etc.)';
-
-  async execute(params: {
-    operation: 'add' | 'subtract' | 'multiply' | 'divide' | 'percentage' | 'split' | 'evaluate';
-    values?: number[];
-    expression?: string;
-    splitAmount?: number;
-    splitCount?: number;
-  }): Promise<ToolResult> {
-    const startTime = Date.now();
-
-    try {
-      let result;
-
-      switch (params.operation) {
-        case 'add':
-          result = this.add(params.values!);
-          break;
-        case 'subtract':
-          result = this.subtract(params.values!);
-          break;
-        case 'multiply':
-          result = this.multiply(params.values!);
-          break;
-        case 'divide':
-          result = this.divide(params.values!);
-          break;
-        case 'percentage':
-          result = this.percentage(params.values![0], params.values![1]);
-          break;
-        case 'split':
-          result = this.split(params.splitAmount!, params.splitCount!);
-          break;
-        case 'evaluate':
-          result = this.evaluate(params.expression!);
-          break;
-        default:
-          throw new Error(`Unknown operation: ${params.operation}`);
-      }
-
-      return {
-        success: true,
-        data: result,
-        metadata: {
-          duration: Date.now() - startTime,
-        }
-      };
-
-    } catch (error) {
-      console.error('[CalculatorTool Error]', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        metadata: {
-          duration: Date.now() - startTime,
-        }
-      };
-    }
-  }
-
-  private add(values: number[]): number {
-    return values.reduce((sum, val) => sum + val, 0);
-  }
-
-  private subtract(values: number[]): number {
-    return values.reduce((diff, val, i) => i === 0 ? val : diff - val, 0);
-  }
-
-  private multiply(values: number[]): number {
-    return values.reduce((product, val) => product * val, 1);
-  }
-
-  private divide(values: number[]): number {
-    if (values.length !== 2) throw new Error('Divide requires exactly 2 values');
-    if (values[1] === 0) throw new Error('Cannot divide by zero');
-    return values[0] / values[1];
-  }
-
-  private percentage(value: number, percent: number): number {
-    return (value * percent) / 100;
-  }
-
-  private split(amount: number, count: number): { perPerson: number; remainder: number } {
-    const perPerson = Math.floor((amount / count) * 100) / 100; // Round to 2 decimals
-    const remainder = amount - (perPerson * count);
-
-    return {
-      perPerson,
-      remainder: Math.round(remainder * 100) / 100,
-    };
-  }
-
-  private evaluate(expression: string): number {
-    // Safe math expression evaluator (no eval!)
-    // Use a library like math.js or implement simple parser
-    // For hackathon: basic implementation
-    const sanitized = expression.replace(/[^0-9+\-*/().\s]/g, '');
-
-    // Warning: In production, use a proper math expression parser
-    // For hackathon demo, this is acceptable
-    return Function(`'use strict'; return (${sanitized})`)();
-  }
-}
-```
-
 ---
 
 ## Specialized Agents
+
+**Status:** ⚠️ **TO BE IMPLEMENTED** - Agent classes need to be created.
+
+This section describes the multi-agent architecture where specialized agents (TaskAgent, BudgetAgent, VendorAgent, EventAgent) handle different types of user requests.
 
 ### Base Agent Class
 
@@ -1069,7 +986,7 @@ When users mention money:
 
 You should:
 1. Use convex_crud tool to create/read expense records
-2. Use calculate tool for splits and totals
+2. Calculate splits and totals directly (you can do basic math!)
 3. Alert if approaching or over budget
 4. Suggest fair splits among participants
 
@@ -1080,9 +997,14 @@ Be precise with numbers and categorization.
 Always show calculations step-by-step.
 Format currency as $X,XXX.XX
 
+Examples:
+- "$5000 split 3 ways = $1,666.67 per person"
+- "Total expenses: $12,500 / $40,000 budget = 31.25% used"
+- "Remaining: $40,000 - $12,500 = $27,500"
+
 Your response should include:
 1. Expense recorded (category, amount, payer)
-2. Updated budget totals
+2. Updated budget totals (query from Convex)
 3. Percentage of budget used
 4. Warnings if over budget
 5. Fair split breakdown if applicable`;
@@ -1204,6 +1126,10 @@ Format your response as:
 
 ## Agent Router Implementation
 
+**Status:** ⚠️ **TO BE IMPLEMENTED** - ChatOrchestratorDO needs agent routing logic.
+
+This section describes how to update the existing ChatOrchestratorDO to route messages to specialized agents based on detected intent.
+
 ### Intent Detection (Simple Keywords)
 
 **File:** `agent-worker/src/durable-objects/ChatOrchestratorDO.ts`
@@ -1217,7 +1143,6 @@ import { VendorAgent } from '../agents/VendorAgent';
 import { EventAgent } from '../agents/EventAgent';
 import { ConvexCRUDTool } from '../tools/ConvexCRUDTool';
 import { FirecrawlTool } from '../tools/FirecrawlTool';
-import { CalculatorTool } from '../tools/CalculatorTool';
 import { ToolContext } from '../tools';
 
 export class ChatOrchestratorDO {
@@ -1235,12 +1160,11 @@ export class ChatOrchestratorDO {
     // Initialize tools
     const convexTool = new ConvexCRUDTool(toolContext);
     const webTool = new FirecrawlTool(this.env.FIRECRAWL_API_KEY);
-    const calcTool = new CalculatorTool();
 
     // Initialize agents with appropriate tools
     this.agents = new Map([
-      ['task', new TaskAgent(this.env.CLAUDE_API_KEY, [convexTool, calcTool])],
-      ['budget', new BudgetAgent(this.env.CLAUDE_API_KEY, [convexTool, calcTool])],
+      ['task', new TaskAgent(this.env.CLAUDE_API_KEY, [convexTool])],
+      ['budget', new BudgetAgent(this.env.CLAUDE_API_KEY, [convexTool])],
       ['vendor', new VendorAgent(this.env.CLAUDE_API_KEY, [webTool, convexTool])],
       ['event', new EventAgent(this.env.CLAUDE_API_KEY, [convexTool])],
     ]);
@@ -1566,7 +1490,7 @@ export function useAgentInvoke() {
    → TaskAgent creates task with deadline
 
 5. User: "@Delphi venue deposit is $5000, split 3 ways"
-   → BudgetAgent records expense, calculates $1666.67 per person
+   → BudgetAgent records expense, calculates $1,666.67 per person (inline math)
 
 6. User: [Replies to #5] "can we see total budget?"
    → BudgetAgent shows breakdown
@@ -1668,8 +1592,8 @@ Type: "@Delphi what should we focus on next?"
 
 ### Core Functionality
 
-- [x] **Message Threading** - Reply to any message with thread indicators
-- [ ] **Tool System** - ConvexCRUD, Firecrawl, Calculator all working
+- [ ] **Message Threading** - Reply to any message with thread indicators
+- [ ] **Tool System** - ConvexCRUD, Firecrawl working
 - [ ] **4 Agents Deployed** - Task, Budget, Vendor, Event agents functional
 - [ ] **Intent Routing** - Keyword detection accurately routes 90%+ requests
 - [ ] **Structured Data** - Tasks, expenses, vendors saved to Convex
@@ -1737,8 +1661,7 @@ agent-worker/src/
 ├── tools/
 │   ├── index.ts (interfaces)
 │   ├── ConvexCRUDTool.ts
-│   ├── FirecrawlTool.ts
-│   └── CalculatorTool.ts
+│   └── FirecrawlTool.ts
 ├── agents/
 │   ├── BaseAgent.ts
 │   ├── TaskAgent.ts
@@ -1788,9 +1711,20 @@ web/src/routes/_authed/events.$eventId.rooms.$roomId.tsx
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** November 14, 2025
+**Document Version:** 1.2
+**Last Updated:** November 15, 2025
 **Status:** Ready to Implement
 **Estimated Time:** 2-3 days (aggressive hackathon pace)
+
+**Changes in v1.2:**
+- ⚠️ Clarified implementation status - threading, tools, and agents NOT yet built
+- Added status indicators to each major section
+- Updated success criteria to reflect current state
+- Added comprehensive "Implementation Status" section
+
+**Changes in v1.1:**
+- Removed Calculator tool (Claude can do basic math directly)
+- BudgetAgent now performs calculations inline instead of using a separate tool
+- Simplified tool architecture to only ConvexCRUD and Firecrawl
 
 **Let's build this! 🚀**

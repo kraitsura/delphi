@@ -23,7 +23,7 @@ import { EventEditDialog } from "./event-edit-dialog";
 import { StatusBadge } from "./StatusBadge";
 
 interface EventListProps {
-	status?: "planning" | "in_progress" | "completed" | "cancelled" | "archived";
+	status?: "planning" | "active" | "completed" | "cancelled";
 }
 
 export function EventList({ status }: EventListProps) {
@@ -136,10 +136,12 @@ export function EventList({ status }: EventListProps) {
 							)}
 
 							<div className="space-y-2 text-sm text-muted-foreground">
-								{event.date && (
+								{event.eventDate && (
 									<div className="flex items-center gap-2">
 										<Calendar className="h-4 w-4 flex-shrink-0" />
-										<span>{new Date(event.date).toLocaleDateString()}</span>
+										<span>
+											{new Date(event.eventDate).toLocaleDateString()}
+										</span>
 									</div>
 								)}
 
@@ -155,8 +157,8 @@ export function EventList({ status }: EventListProps) {
 								<div className="flex items-center gap-2">
 									<Users className="h-4 w-4 flex-shrink-0" />
 									<span>
-										{event.guestCount.confirmed} / {event.guestCount.expected}{" "}
-										guests
+										{event.guestCount?.confirmed || 0} /{" "}
+										{event.guestCount?.expected || 0} guests
 									</span>
 								</div>
 

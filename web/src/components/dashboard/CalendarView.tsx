@@ -40,9 +40,9 @@ export function CalendarView(props: CalendarViewProps) {
 		const events: CalendarEvent[] = [];
 
 		// Add event date
-		if (event?.date) {
+		if (event?.eventDate) {
 			events.push({
-				date: event.date,
+				date: event.eventDate,
 				type: "event",
 				title: event.name,
 				color: "bg-yellow-500",
@@ -53,9 +53,9 @@ export function CalendarView(props: CalendarViewProps) {
 		// TODO: Re-enable when tasks API is implemented
 		// if (_showTasks) {
 		// 	tasks.forEach((task) => {
-		// 		if (task.dueDate) {
+		// 		if (task.deadline) {
 		// 			events.push({
-		// 				date: task.dueDate,
+		// 				date: task.deadline,
 		// 				type: "task",
 		// 				title: task.title,
 		// 				color:

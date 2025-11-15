@@ -9,20 +9,28 @@
  */
 
 import type * as agent from "../agent.js";
+import type * as agentContext from "../agentContext.js";
+import type * as announcements from "../announcements.js";
 import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
 import type * as cascadeHelpers from "../cascadeHelpers.js";
+import type * as checkpoints from "../checkpoints.js";
 import type * as dashboards from "../dashboards.js";
+import type * as decisions from "../decisions.js";
 import type * as emails from "../emails.js";
 import type * as eventInvitations from "../eventInvitations.js";
 import type * as eventMembers from "../eventMembers.js";
 import type * as events from "../events.js";
 import type * as expenses from "../expenses.js";
+import type * as guests from "../guests.js";
 import type * as http from "../http.js";
+import type * as inventory from "../inventory.js";
 import type * as messages from "../messages.js";
 import type * as migrations_addUsername from "../migrations/addUsername.js";
+import type * as milestones from "../milestones.js";
 import type * as model_events from "../model/events.js";
 import type * as model_permissions from "../model/permissions.js";
+import type * as paymentSchedules from "../paymentSchedules.js";
 import type * as pollVotes from "../pollVotes.js";
 import type * as polls from "../polls.js";
 import type * as presence from "../presence.js";
@@ -30,8 +38,12 @@ import type * as rateLimiterDemo from "../rateLimiterDemo.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as roomParticipants from "../roomParticipants.js";
 import type * as rooms from "../rooms.js";
+import type * as taskGroups from "../taskGroups.js";
 import type * as tasks from "../tasks.js";
+import type * as timelineEvents from "../timelineEvents.js";
 import type * as users from "../users.js";
+import type * as validators from "../validators.js";
+import type * as vendors from "../vendors.js";
 
 import type {
   ApiFromModules,
@@ -41,20 +53,28 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   agent: typeof agent;
+  agentContext: typeof agentContext;
+  announcements: typeof announcements;
   auth: typeof auth;
   authHelpers: typeof authHelpers;
   cascadeHelpers: typeof cascadeHelpers;
+  checkpoints: typeof checkpoints;
   dashboards: typeof dashboards;
+  decisions: typeof decisions;
   emails: typeof emails;
   eventInvitations: typeof eventInvitations;
   eventMembers: typeof eventMembers;
   events: typeof events;
   expenses: typeof expenses;
+  guests: typeof guests;
   http: typeof http;
+  inventory: typeof inventory;
   messages: typeof messages;
   "migrations/addUsername": typeof migrations_addUsername;
+  milestones: typeof milestones;
   "model/events": typeof model_events;
   "model/permissions": typeof model_permissions;
+  paymentSchedules: typeof paymentSchedules;
   pollVotes: typeof pollVotes;
   polls: typeof polls;
   presence: typeof presence;
@@ -62,8 +82,12 @@ declare const fullApi: ApiFromModules<{
   rateLimits: typeof rateLimits;
   roomParticipants: typeof roomParticipants;
   rooms: typeof rooms;
+  taskGroups: typeof taskGroups;
   tasks: typeof tasks;
+  timelineEvents: typeof timelineEvents;
   users: typeof users;
+  validators: typeof validators;
+  vendors: typeof vendors;
 }>;
 
 /**

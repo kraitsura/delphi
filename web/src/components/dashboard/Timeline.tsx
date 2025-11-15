@@ -37,24 +37,24 @@ export function Timeline(props: TimelineProps) {
 		const items: TimelineItem[] = [];
 
 		// Add event date
-		if (showEvents && event.date) {
+		if (showEvents && event.eventDate) {
 			items.push({
 				id: event._id,
 				type: "event",
 				title: event.name,
-				date: event.date,
+				date: event.eventDate,
 			});
 		}
 
 		// Add tasks with due dates
 		if (showTasks) {
 			tasks.forEach((task) => {
-				if (task.dueDate) {
+				if (task.deadline) {
 					items.push({
 						id: task._id,
 						type: "task",
 						title: task.title,
-						date: task.dueDate,
+						date: task.deadline,
 						status: task.status,
 						category: task.category,
 					});

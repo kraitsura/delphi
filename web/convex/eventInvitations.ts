@@ -88,8 +88,8 @@ export const sendInvitation = mutation({
 
     // Send invitation email
     const inviteLink = `${process.env.SITE_URL || "http://localhost:3001"}/invitations/${token}`;
-    const eventDate = event.date
-      ? new Date(event.date).toLocaleDateString("en-US", {
+    const eventDate = event.eventDate
+      ? new Date(event.eventDate).toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
           month: "long",
@@ -372,8 +372,8 @@ export const resendInvitation = mutation({
 
     // Resend invitation email
     const inviteLink = `${process.env.SITE_URL || "http://localhost:3001"}/invitations/${token}`;
-    const eventDate = event.date
-      ? new Date(event.date).toLocaleDateString("en-US", {
+    const eventDate = event.eventDate
+      ? new Date(event.eventDate).toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
           month: "long",
@@ -477,7 +477,7 @@ export const getByToken = query({
         name: event.name,
         description: event.description,
         type: event.type,
-        date: event.date,
+        eventDate: event.eventDate,
       },
       inviter: inviter
         ? {
@@ -519,7 +519,7 @@ export const listByEmail = query({
                 name: event.name,
                 description: event.description,
                 type: event.type,
-                date: event.date,
+                eventDate: event.eventDate,
               }
             : null,
           inviter: inviter

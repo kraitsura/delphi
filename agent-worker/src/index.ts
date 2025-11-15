@@ -98,10 +98,11 @@ export default {
           );
         }
 
-        // Fetch user and context data from Convex using authenticated client
-        // This will automatically fail if:
-        // - Token is invalid
-        // - User doesn't have access to the room
+        // Fetch authenticated user profile from Convex
+        // This validates authentication only (NOT room access)
+        // Room membership is enforced downstream in the Durable Object
+        // This step will fail if:
+        // - Token is invalid or expired
         // - User is not authenticated
         let user: any;
 
@@ -156,6 +157,18 @@ export default {
             headers: { 'Content-Type': 'application/json' }
           })
         );
+
+        // Propagate DO response status to client
+        if (!doResponse.ok) {
+          const errorBody = await doResponse.json();
+          return new Response(
+            JSON.stringify(errorBody),
+            {
+              status: doResponse.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
 
         const result = await doResponse.json();
 
@@ -216,6 +229,18 @@ export default {
         const doResponse = await stub.fetch(
           new Request('http://internal/status')
         );
+
+        // Propagate DO response status to client
+        if (!doResponse.ok) {
+          const errorBody = await doResponse.json();
+          return new Response(
+            JSON.stringify(errorBody),
+            {
+              status: doResponse.status,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
 
         const result = await doResponse.json();
 

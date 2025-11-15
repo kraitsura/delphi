@@ -25,7 +25,7 @@ export function TasksKanban(props: TasksKanbanProps) {
 		if (groupBy === "status") {
 			return [
 				{
-					id: "not_started",
+					id: "todo",
 					label: "Not Started",
 					color: "bg-gray-100 dark:bg-gray-800",
 				},
@@ -67,7 +67,7 @@ export function TasksKanban(props: TasksKanbanProps) {
 					: groupBy === "priority"
 						? task.priority
 						: groupBy === "assignee"
-							? task.assigneeId || "unassigned"
+							? task.assignedTo || "unassigned"
 							: task.category || "uncategorized";
 
 			const existing = groups.get(key) || [];
@@ -137,7 +137,7 @@ export function TasksKanban(props: TasksKanbanProps) {
 								{/* Column content */}
 								<div className="flex-1 space-y-2 overflow-y-auto">
 									{columnTasks.map((task: Doc<"tasks">) => {
-										const dueInfo = formatDate(task.dueDate);
+										const dueInfo = formatDate(task.deadline);
 
 										return (
 											<button
@@ -177,11 +177,11 @@ export function TasksKanban(props: TasksKanbanProps) {
 												</div>
 
 												{/* Assignee */}
-												{task.assigneeId && (
+												{task.assignedTo && (
 													<div className="mt-2 flex items-center gap-2">
 														<Avatar className="h-6 w-6">
 															<AvatarFallback className="text-xs">
-																{task.assigneeId.substring(0, 2).toUpperCase()}
+																{task.assignedTo.substring(0, 2).toUpperCase()}
 															</AvatarFallback>
 														</Avatar>
 													</div>

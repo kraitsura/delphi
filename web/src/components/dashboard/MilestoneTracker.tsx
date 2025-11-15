@@ -19,7 +19,7 @@ type Milestone = {
 	name: string;
 	targetDate: number;
 	category: string;
-	status: "completed" | "in_progress" | "not_started";
+	status: "completed" | "in_progress" | "todo";
 	tasksCompleted: number;
 	tasksTotal: number;
 };
@@ -31,7 +31,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 	const milestones = useMemo(() => {
 		if (!event || !tasks) return [];
 
-		const eventDate = event.date;
+		const eventDate = event.eventDate;
 		const now = Date.now();
 
 		// If no event date is set, return empty milestones or use task-based status
@@ -39,7 +39,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 			return (
 				props.customMilestones?.map((m) => ({
 					...m,
-					status: "not_started" as const,
+					status: "todo" as const,
 					tasksCompleted: 0,
 					tasksTotal: 0,
 				})) || []
@@ -52,7 +52,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				name: "Venue Booked",
 				targetDate: eventDate - 180 * 24 * 60 * 60 * 1000,
 				category: "venue",
-				status: "not_started",
+				status: "todo",
 				tasksCompleted: 0,
 				tasksTotal: 0,
 			},
@@ -60,7 +60,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				name: "Save-the-Dates Sent",
 				targetDate: eventDate - 120 * 24 * 60 * 60 * 1000,
 				category: "invitations",
-				status: "not_started",
+				status: "todo",
 				tasksCompleted: 0,
 				tasksTotal: 0,
 			},
@@ -68,7 +68,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				name: "Vendors Confirmed",
 				targetDate: eventDate - 60 * 24 * 60 * 60 * 1000,
 				category: "vendor",
-				status: "not_started",
+				status: "todo",
 				tasksCompleted: 0,
 				tasksTotal: 0,
 			},
@@ -76,7 +76,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				name: "Final Headcount",
 				targetDate: eventDate - 14 * 24 * 60 * 60 * 1000,
 				category: "planning",
-				status: "not_started",
+				status: "todo",
 				tasksCompleted: 0,
 				tasksTotal: 0,
 			},
@@ -84,7 +84,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				name: "Day-of Coordination",
 				targetDate: eventDate - 1 * 24 * 60 * 60 * 1000,
 				category: "planning",
-				status: "not_started",
+				status: "todo",
 				tasksCompleted: 0,
 				tasksTotal: 0,
 			},
@@ -94,7 +94,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 		const milestonesToUse = props.customMilestones
 			? props.customMilestones.map((m) => ({
 					...m,
-					status: "not_started" as const,
+					status: "todo" as const,
 					tasksCompleted: 0,
 					tasksTotal: 0,
 				}))
@@ -117,14 +117,14 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				if (milestone.targetDate < now) {
 					status = "in_progress";
 				} else {
-					status = "not_started";
+					status = "todo";
 				}
 			} else if (completedTasks === totalTasks) {
 				status = "completed";
 			} else if (completedTasks > 0) {
 				status = "in_progress";
 			} else {
-				status = "not_started";
+				status = "todo";
 			}
 
 			return {
@@ -163,7 +163,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				return SYMBOLS.CHECK_MARK;
 			case "in_progress":
 				return SYMBOLS.BLACK_CIRCLE;
-			case "not_started":
+			case "todo":
 				return "○";
 			default:
 				return "○";
@@ -176,7 +176,7 @@ export function MilestoneTracker(props: MilestoneTrackerProps) {
 				return "text-green-600";
 			case "in_progress":
 				return "text-blue-600";
-			case "not_started":
+			case "todo":
 				return "text-muted-foreground";
 			default:
 				return "text-muted-foreground";

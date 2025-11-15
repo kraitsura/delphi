@@ -66,7 +66,13 @@ export const saveResponse = mutation({
     roomId: v.id("rooms"),
     eventId: v.id("events"),
     text: v.string(),
-    metadata: v.any(),
+    metadata: v.object({
+      invokedBy: v.id("users"),
+      userMessage: v.string(),
+      timestamp: v.optional(v.number()),
+      messagesFetched: v.optional(v.number()),
+      conversationTurns: v.optional(v.number()),
+    }),
   },
   handler: async (ctx, args) => {
     // Save to messages table as agent message
@@ -106,7 +112,7 @@ export const saveResponse = mutation({
     } else {
       await ctx.db.insert("agentState", {
         roomId: args.roomId,
-        doInstanceId: `chat-${args.roomId}`,
+        doInstanceId: `room-${args.roomId}`,
         lastInvoked: Date.now(),
         invocationCount: 1,
       });

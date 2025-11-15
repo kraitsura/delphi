@@ -64,9 +64,9 @@ function EventDetailPage() {
 
 			<div className="grid gap-6 md:grid-cols-2 mb-8">
 				<EventInfoCard
-					date={event.date}
+					date={event.eventDate}
 					location={event.location}
-					guestCount={event.guestCount}
+					guestCount={event.guestCount || { confirmed: 0, expected: 0 }}
 				/>
 				<BudgetCard budget={event.budget} />
 			</div>

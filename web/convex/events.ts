@@ -23,10 +23,10 @@ export const create = mutation({
       v.literal("wedding"),
       v.literal("corporate"),
       v.literal("party"),
-      v.literal("destination"),
+      v.literal("travel"),
       v.literal("other")
     ),
-    date: v.optional(v.number()),
+    eventDate: v.optional(v.number()),
     budget: v.number(),
     expectedGuests: v.number(),
     location: v.optional(
@@ -46,23 +46,24 @@ export const create = mutation({
       name: args.name,
       description: args.description,
       type: args.type,
-      date: args.date,
+      eventDate: args.eventDate,
       location: args.location,
       budget: {
         total: args.budget,
+        currency: "USD",
         spent: 0,
+        remaining: args.budget,
         committed: 0,
       },
       guestCount: {
-        expected: args.expectedGuests,
         confirmed: 0,
+        expected: args.expectedGuests,
       },
       coordinatorId: userProfile._id,
       status: "planning",
       createdAt: Date.now(),
       updatedAt: Date.now(),
       createdBy: userProfile._id,
-      isDeleted: false,
     });
 
     // Create main event room automatically
@@ -139,10 +140,9 @@ export const listUserEvents = query({
     status: v.optional(
       v.union(
         v.literal("planning"),
-        v.literal("in_progress"),
+        v.literal("active"),
         v.literal("completed"),
-        v.literal("cancelled"),
-        v.literal("archived")
+        v.literal("cancelled")
       )
     ),
   },
@@ -163,7 +163,7 @@ export const update = mutation({
     eventId: v.id("events"),
     name: v.optional(v.string()),
     description: v.optional(v.string()),
-    date: v.optional(v.number()),
+    eventDate: v.optional(v.number()),
     location: v.optional(
       v.object({
         address: v.string(),
@@ -173,7 +173,10 @@ export const update = mutation({
       })
     ),
     budget: v.optional(v.object({ total: v.number() })),
-    guestCount: v.optional(v.object({ expected: v.number() })),
+    guestCount: v.optional(v.object({
+      confirmed: v.number(),
+      expected: v.number(),
+    })),
   },
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
@@ -196,21 +199,19 @@ export const update = mutation({
 
     if (args.name) updates.name = args.name;
     if (args.description !== undefined) updates.description = args.description;
-    if (args.date) updates.date = args.date;
+    if (args.eventDate) updates.eventDate = args.eventDate;
     if (args.location) updates.location = args.location;
 
     if (args.budget) {
       updates.budget = {
         ...event.budget,
         total: args.budget.total,
+        remaining: args.budget.total - event.budget.spent,
       };
     }
 
-    if (args.guestCount) {
-      updates.guestCount = {
-        ...event.guestCount,
-        expected: args.guestCount.expected,
-      };
+    if (args.guestCount !== undefined) {
+      updates.guestCount = args.guestCount;
     }
 
     await ctx.db.patch(args.eventId, updates);
@@ -228,10 +229,9 @@ export const updateStatus = mutation({
     eventId: v.id("events"),
     status: v.union(
       v.literal("planning"),
-      v.literal("in_progress"),
+      v.literal("active"),
       v.literal("completed"),
-      v.literal("cancelled"),
-      v.literal("archived")
+      v.literal("cancelled")
     ),
   },
   handler: async (ctx, args) => {
@@ -391,7 +391,7 @@ export const archive = mutation({
     }
 
     await ctx.db.patch(args.eventId, {
-      status: "archived",
+      status: "completed",
       updatedAt: Date.now(),
     });
   },
@@ -447,7 +447,7 @@ export const softDelete = mutation({
     }
 
     // Prevent double deletion
-    if (event.isDeleted) {
+    if (event.deletedAt !== undefined) {
       throw new Error("Event is already deleted");
     }
 
@@ -458,7 +458,6 @@ export const softDelete = mutation({
 
     // Finally, soft delete the event itself
     await ctx.db.patch(args.eventId, {
-      isDeleted: true,
       deletedAt: now,
       status: "cancelled",
       updatedAt: now,
@@ -490,13 +489,13 @@ export const getStats = query({
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .take(5000);
 
-    const tasks = allTasks.filter((t) => !t.isDeleted);
+    const tasks = allTasks.filter((t) => t.deletedAt === undefined);
 
     const taskStats = {
       total: tasks.length,
       completed: tasks.filter((t) => t.status === "completed").length,
       inProgress: tasks.filter((t) => t.status === "in_progress").length,
-      notStarted: tasks.filter((t) => t.status === "not_started").length,
+      notStarted: tasks.filter((t) => t.status === "todo").length,
       isPartial: allTasks.length === 5000, // Flag if stats may be incomplete
     };
 
@@ -507,7 +506,7 @@ export const getStats = query({
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .take(5000);
 
-    const expenses = allExpenses.filter((e) => !e.isDeleted);
+    const expenses = allExpenses.filter((e) => e.deletedAt === undefined);
 
     const expenseStats = {
       total: expenses.reduce((sum, e) => sum + e.amount, 0),

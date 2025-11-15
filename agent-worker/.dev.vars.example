@@ -2,6 +2,10 @@
 # Copy this file to .dev.vars and add your actual values
 # .dev.vars is gitignored and won't be committed
 
+# Cloudflare account ID
+# Get from: Cloudflare Dashboard > Workers & Pages > Overview
+CLOUDFLARE_ACCOUNT_ID=your-cloudflare-account-id-here
+
 # Convex deployment URL
 CONVEX_DEPLOY_URL=http://localhost:8000
 
