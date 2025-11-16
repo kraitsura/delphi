@@ -3,7 +3,6 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { Suspense, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
-import { PresenceDisplay } from "@/components/presence";
 import { ThemeConvexSync } from "@/components/theme-convex-sync";
 import {
 	SidebarInset,
@@ -145,7 +144,6 @@ function SidebarAwareHeader() {
 		>
 			<SidebarTrigger className="-ml-1.5 mt-1" />
 			<div className="flex-1" />
-			<PresenceDisplay />
 		</header>
 	);
 }

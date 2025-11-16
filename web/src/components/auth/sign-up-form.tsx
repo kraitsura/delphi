@@ -20,26 +20,11 @@ export function SignUpForm() {
 	const emailId = useId();
 	const passwordId = useId();
 	const [name, setName] = useState("");
-	const [username, setUsername] = useState("");
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [showVerifyMessage, setShowVerifyMessage] = useState(false);
-
-	// Generate username from name: "Aarya Reddy" -> "aaryareddy"
-	const generateUsername = (name: string) => {
-		return name
-			.toLowerCase()
-			.replace(/[^a-z0-9]/g, "") // Remove non-alphanumeric characters
-			.trim();
-	};
-
-	const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const newName = e.target.value;
-		setName(newName);
-		setUsername(generateUsername(newName));
-	};
 
 	const handleEmailSignUp = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -47,9 +32,6 @@ export function SignUpForm() {
 		setError(null);
 
 		try {
-			// Store username in localStorage temporarily so it can be used during profile creation
-			localStorage.setItem("pendingUsername", username);
-
 			// Sign up with Better Auth
 			// User profile is created automatically via Better Auth onCreate trigger
 			await authClient.signUp.email({
@@ -61,7 +43,6 @@ export function SignUpForm() {
 			// Show verification message
 			setShowVerifyMessage(true);
 		} catch (err) {
-			localStorage.removeItem("pendingUsername"); // Clean up on error
 			setError(err instanceof Error ? err.message : "Sign up failed");
 			setLoading(false);
 		}
@@ -162,16 +143,10 @@ export function SignUpForm() {
 							type="text"
 							placeholder="Your name"
 							value={name}
-							onChange={handleNameChange}
+							onChange={(e) => setName(e.target.value)}
 							required
 							disabled={loading}
 						/>
-						{username && (
-							<p className="text-xs text-muted-foreground">
-								Username:{" "}
-								<span className="font-medium text-foreground">@{username}</span>
-							</p>
-						)}
 					</div>
 					<div className="space-y-2">
 						<Label htmlFor={emailId}>Email</Label>

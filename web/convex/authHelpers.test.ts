@@ -28,11 +28,6 @@ vi.mock("./auth", () => ({
   },
 }));
 
-// Helper function to generate username from name
-const generateUsername = (name: string): string => {
-  return name.toLowerCase().replace(/\s+/g, "");
-};
-
 describe("authHelpers", () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -47,7 +42,6 @@ describe("authHelpers", () => {
         return await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          username: generateUsername("Test User"),
           role: "coordinator",
           isActive: true,
           createdAt: Date.now(),
@@ -100,7 +94,6 @@ describe("authHelpers", () => {
         await ctx.db.insert("users", {
           email: "inactive@example.com",
           name: "Inactive User",
-          username: generateUsername("Inactive User"),
           role: "coordinator",
           isActive: false,
           createdAt: Date.now(),
@@ -127,7 +120,6 @@ describe("authHelpers", () => {
         await ctx.db.insert("users", {
           email: "test@example.com",
           name: "Test User",
-          username: generateUsername("Test User"),
           role: "coordinator",
           isActive: true,
           createdAt: Date.now(),
@@ -178,7 +170,6 @@ describe("authHelpers", () => {
         await ctx.db.insert("users", {
           email: "inactive@example.com",
           name: "Inactive User",
-          username: generateUsername("Inactive User"),
           role: "coordinator",
           isActive: false,
           createdAt: Date.now(),
@@ -288,7 +279,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -324,7 +314,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -334,7 +323,6 @@ describe("authHelpers", () => {
           const otherId = await ctx.db.insert("users", {
             email: "other@example.com",
             name: "Other User",
-            username: generateUsername("Other User"),
             role: "collaborator",
             isActive: true,
             createdAt: Date.now(),
@@ -372,7 +360,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -408,7 +395,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -418,7 +404,6 @@ describe("authHelpers", () => {
           const otherId = await ctx.db.insert("users", {
             email: "other@example.com",
             name: "Other User",
-            username: generateUsername("Other User"),
             role: "collaborator",
             isActive: true,
             createdAt: Date.now(),
@@ -454,7 +439,6 @@ describe("authHelpers", () => {
           return await ctx.db.insert("users", {
             email: "user@example.com",
             name: "User",
-            username: "user",
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -482,7 +466,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -518,7 +501,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -528,7 +510,6 @@ describe("authHelpers", () => {
           const collaboratorId = await ctx.db.insert("users", {
             email: "collaborator@example.com",
             name: "Collaborator",
-            username: generateUsername("Collaborator"),
             role: "collaborator",
             isActive: true,
             createdAt: Date.now(),
@@ -572,7 +553,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -582,7 +562,6 @@ describe("authHelpers", () => {
           const otherId = await ctx.db.insert("users", {
             email: "other@example.com",
             name: "Other",
-            username: generateUsername("Other"),
             role: "guest",
             isActive: true,
             createdAt: Date.now(),
@@ -622,7 +601,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -668,7 +646,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -678,7 +655,6 @@ describe("authHelpers", () => {
           const collaboratorId = await ctx.db.insert("users", {
             email: "collaborator@example.com",
             name: "Collaborator",
-            username: generateUsername("Collaborator"),
             role: "collaborator",
             isActive: true,
             createdAt: Date.now(),
@@ -736,7 +712,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -746,7 +721,6 @@ describe("authHelpers", () => {
           const guestId = await ctx.db.insert("users", {
             email: "guest@example.com",
             name: "Guest",
-            username: generateUsername("Guest"),
             role: "guest",
             isActive: true,
             createdAt: Date.now(),
@@ -806,7 +780,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -852,7 +825,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -862,7 +834,6 @@ describe("authHelpers", () => {
           const guestId = await ctx.db.insert("users", {
             email: "guest@example.com",
             name: "Guest",
-            username: generateUsername("Guest"),
             role: "guest",
             isActive: true,
             createdAt: Date.now(),
@@ -922,7 +893,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -968,7 +938,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -978,7 +947,6 @@ describe("authHelpers", () => {
           const participantId = await ctx.db.insert("users", {
             email: "participant@example.com",
             name: "Participant",
-            username: generateUsername("Participant"),
             role: "collaborator",
             isActive: true,
             createdAt: Date.now(),
@@ -1036,7 +1004,6 @@ describe("authHelpers", () => {
           const coordinatorId = await ctx.db.insert("users", {
             email: "coordinator@example.com",
             name: "Coordinator",
-            username: generateUsername("Coordinator"),
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),
@@ -1046,7 +1013,6 @@ describe("authHelpers", () => {
           const otherId = await ctx.db.insert("users", {
             email: "other@example.com",
             name: "Other",
-            username: generateUsername("Other"),
             role: "guest",
             isActive: true,
             createdAt: Date.now(),
@@ -1096,7 +1062,6 @@ describe("authHelpers", () => {
           return await ctx.db.insert("users", {
             email: "test@example.com",
             name: "Test User",
-            username: "testuser",
             role: "coordinator",
             isActive: true,
             createdAt: Date.now(),

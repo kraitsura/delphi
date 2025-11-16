@@ -23,6 +23,10 @@ import { RSVPStatus, RSVPStatusMetadata } from "./RSVPStatus";
 import { TasksKanban, TasksKanbanMetadata } from "./TasksKanban";
 // Task Components
 import { TasksList, TasksListMetadata } from "./TasksList";
+import { TaskCreator, TaskCreatorMetadata } from "./TaskCreator";
+import { TaskEditor, TaskEditorMetadata } from "./TaskEditor";
+import { TaskDetails, TaskDetailsMetadata } from "./TaskDetails";
+import { TaskGroupDetails, TaskGroupDetailsMetadata } from "./TaskGroupDetails";
 // Timeline Components
 import { Timeline, TimelineMetadata } from "./Timeline";
 import { UpcomingEvents, UpcomingEventsMetadata } from "./UpcomingEvents";
@@ -44,6 +48,10 @@ export { RoomActivity, RoomActivityMetadata };
 export { RSVPStatus, RSVPStatusMetadata };
 export { TasksKanban, TasksKanbanMetadata };
 export { TasksList, TasksListMetadata };
+export { TaskCreator, TaskCreatorMetadata };
+export { TaskEditor, TaskEditorMetadata };
+export { TaskDetails, TaskDetailsMetadata };
+export { TaskGroupDetails, TaskGroupDetailsMetadata };
 export { Timeline, TimelineMetadata };
 export { UpcomingEvents, UpcomingEventsMetadata };
 export { UpcomingPayments, UpcomingPaymentsMetadata };
@@ -60,7 +68,7 @@ export function registerDashboardComponents() {
 
 	console.log("Dashboard components registered:", {
 		event: ["EventDetails", "UpcomingEvents"],
-		task: ["TasksList", "TasksKanban"],
+		task: ["TasksList", "TasksKanban", "TaskCreator", "TaskEditor", "TaskDetails", "TaskGroupDetails"],
 		budget: ["ExpensesSummary", "ExpensesList", "UpcomingPayments"],
 		timeline: ["Timeline", "MilestoneTracker"],
 		people: ["VendorsList", "VendorDetails", "GuestList", "RSVPStatus"],
@@ -78,6 +86,10 @@ export function getDashboardComponentsMetadata() {
 		UpcomingEvents: UpcomingEventsMetadata,
 		TasksList: TasksListMetadata,
 		TasksKanban: TasksKanbanMetadata,
+		TaskCreator: TaskCreatorMetadata,
+		TaskEditor: TaskEditorMetadata,
+		TaskDetails: TaskDetailsMetadata,
+		TaskGroupDetails: TaskGroupDetailsMetadata,
 		ExpensesSummary: ExpensesSummaryMetadata,
 		ExpensesList: ExpensesListMetadata,
 		UpcomingPayments: UpcomingPaymentsMetadata,
@@ -107,6 +119,10 @@ export type { RoomActivityProps } from "./RoomActivity";
 export type { RSVPStatusProps } from "./RSVPStatus";
 export type { TasksKanbanProps } from "./TasksKanban";
 export type { TasksListProps } from "./TasksList";
+export type { TaskCreatorProps } from "./TaskCreator";
+export type { TaskEditorProps } from "./TaskEditor";
+export type { TaskDetailsProps } from "./TaskDetails";
+export type { TaskGroupDetailsProps } from "./TaskGroupDetails";
 export type { TimelineProps } from "./Timeline";
 export type { UpcomingEventsProps } from "./UpcomingEvents";
 export type { UpcomingPaymentsProps } from "./UpcomingPayments";

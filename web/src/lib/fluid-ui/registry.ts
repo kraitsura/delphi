@@ -51,6 +51,14 @@ export function hasComponent(type: string): boolean {
 }
 
 /**
+ * Get the entire component registry
+ * Used for inspecting all available components
+ */
+export function getComponentRegistry(): Map<string, RegistryEntry> {
+	return registry;
+}
+
+/**
  * Calculate grid layout from components and layout preference
  */
 export function calculateGridLayout(

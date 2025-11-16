@@ -25,7 +25,7 @@ interface MessageItemProps {
 	isFirstInGroup?: boolean;
 }
 
-export const MessageItem = memo(function MessageItem({
+export function MessageItem({
 	message,
 	currentUserId,
 	onEdit,
@@ -182,7 +182,7 @@ export const MessageItem = memo(function MessageItem({
 					<div className="mt-1 space-y-1">
 						{message.attachments.map((attachment, idx) => (
 							<div
-								key={`${attachment.name}-${idx}`}
+								key={idx}
 								className="text-xs text-blue-600 hover:underline cursor-pointer"
 							>
 								📎 {attachment.name}
@@ -193,4 +193,4 @@ export const MessageItem = memo(function MessageItem({
 			</div>
 		</div>
 	);
-});
+}

@@ -9,7 +9,7 @@ import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface CalendarViewProps {
 	eventId: Id<"events">;
-	view?: "month" | "week";
+	view?: "month" | "week" | "agenda";
 	currentDate?: number;
 	showTasks?: boolean;
 	showMilestones?: boolean;
@@ -247,12 +247,6 @@ export const CalendarViewMetadata = {
 		preferredRatio: "1fr",
 		minHeight: "400px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: false,
-		emits: ["dateSelected"],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",
@@ -262,8 +256,8 @@ export const CalendarViewMetadata = {
 		view: {
 			type: "enum",
 			required: false,
-			values: ["month", "week"],
-			description: "Calendar view mode",
+			values: ["month", "week", "agenda"],
+			description: "Calendar view mode (agenda is compact list view)",
 		},
 		showTasks: {
 			type: "boolean",

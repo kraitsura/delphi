@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvitationsTokenRouteImport } from './routes/invitations.$token'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
+import { Route as AuthedTestbedRouteImport } from './routes/_authed/testbed'
 import { Route as AuthedProfileRouteImport } from './routes/_authed/profile'
 import { Route as AuthedInvitationsRouteImport } from './routes/_authed/invitations'
 import { Route as AuthedDashboardRouteImport } from './routes/_authed/dashboard'
@@ -72,6 +73,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/auth/sign-in',
   path: '/auth/sign-in',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthedTestbedRoute = AuthedTestbedRouteImport.update({
+  id: '/testbed',
+  path: '/testbed',
+  getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedProfileRoute = AuthedProfileRouteImport.update({
   id: '/profile',
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthedDashboardRoute
   '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
+  '/testbed': typeof AuthedTestbedRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -156,6 +163,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthedDashboardRoute
   '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
+  '/testbed': typeof AuthedTestbedRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -177,6 +185,7 @@ export interface FileRoutesById {
   '/_authed/dashboard': typeof AuthedDashboardRoute
   '/_authed/invitations': typeof AuthedInvitationsRoute
   '/_authed/profile': typeof AuthedProfileRoute
+  '/_authed/testbed': typeof AuthedTestbedRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -199,6 +208,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/invitations'
     | '/profile'
+    | '/testbed'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/invitations/$token'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/invitations'
     | '/profile'
+    | '/testbed'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/invitations/$token'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/_authed/dashboard'
     | '/_authed/invitations'
     | '/_authed/profile'
+    | '/_authed/testbed'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/invitations/$token'
@@ -328,6 +340,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/auth/sign-in'
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authed/testbed': {
+      id: '/_authed/testbed'
+      path: '/testbed'
+      fullPath: '/testbed'
+      preLoaderRoute: typeof AuthedTestbedRouteImport
+      parentRoute: typeof AuthedRoute
     }
     '/_authed/profile': {
       id: '/_authed/profile'
@@ -421,6 +440,7 @@ interface AuthedRouteChildren {
   AuthedDashboardRoute: typeof AuthedDashboardRoute
   AuthedInvitationsRoute: typeof AuthedInvitationsRoute
   AuthedProfileRoute: typeof AuthedProfileRoute
+  AuthedTestbedRoute: typeof AuthedTestbedRoute
   AuthedEventsEventIdRoute: typeof AuthedEventsEventIdRouteWithChildren
   AuthedEventsNewRoute: typeof AuthedEventsNewRoute
   AuthedEventsIndexRoute: typeof AuthedEventsIndexRoute
@@ -430,6 +450,7 @@ const AuthedRouteChildren: AuthedRouteChildren = {
   AuthedDashboardRoute: AuthedDashboardRoute,
   AuthedInvitationsRoute: AuthedInvitationsRoute,
   AuthedProfileRoute: AuthedProfileRoute,
+  AuthedTestbedRoute: AuthedTestbedRoute,
   AuthedEventsEventIdRoute: AuthedEventsEventIdRouteWithChildren,
   AuthedEventsNewRoute: AuthedEventsNewRoute,
   AuthedEventsIndexRoute: AuthedEventsIndexRoute,

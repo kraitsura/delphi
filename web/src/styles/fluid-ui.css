@@ -69,10 +69,11 @@
 
 /* Component cells */
 .fluid-component {
-	@apply p-6;
+	@apply p-4;
 	/* Emergent borders - only where components meet */
-	border-right: 1px solid hsl(var(--border));
-	border-bottom: 1px solid hsl(var(--border));
+	border-right: 1px solid hsl(var(--accent) / 0.3);
+	border-bottom: 1px solid hsl(var(--accent) / 0.3);
+	box-shadow: inset 0 0 0 1px hsl(var(--accent) / 0.1);
 }
 
 /* Remove border on last component in row */
@@ -100,7 +101,7 @@
 /* Mobile responsive */
 @media (max-width: 768px) {
 	.fluid-grid-row {
-		@apply grid-cols-1 !important; /* Force single column */
+		grid-template-columns: 1fr; /* Force single column */
 	}
 
 	.fluid-component {
@@ -148,68 +149,267 @@
 	@apply pt-4 mt-4 border-t;
 }
 
-/* Status badges */
+/* Status badges - Ultra minimal with sharp edges */
 .status-badge {
-	@apply inline-flex items-center px-2 py-1 text-xs rounded-sm;
+	@apply inline-flex items-center px-2 py-1 text-xs;
+	border-radius: 0; /* Sharp edges */
+	border: 1px solid;
+	font-weight: 400;
+	letter-spacing: 0.02em;
 }
 
 .status-badge--planning {
-	@apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+	background: transparent;
+	border-color: hsl(var(--accent) / 0.4);
+	color: hsl(var(--accent-foreground));
 }
 
 .status-badge--in-progress {
-	@apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+	background: hsl(var(--accent) / 0.1);
+	border-color: hsl(var(--accent));
+	color: hsl(var(--accent-foreground));
 }
 
 .status-badge--completed {
-	@apply bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200;
+	background: hsl(var(--muted) / 0.5);
+	border-color: hsl(var(--border));
+	color: hsl(var(--muted-foreground));
 }
 
 .status-badge--not-started {
-	@apply bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400;
+	background: transparent;
+	border-color: hsl(var(--border));
+	color: hsl(var(--muted-foreground));
 }
 
 .status-badge--blocked {
-	@apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+	background: hsl(0 100% 50% / 0.1);
+	border-color: hsl(0 100% 50% / 0.5);
+	color: hsl(0 100% 40%);
 }
 
 .status-badge--pending {
-	@apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+	background: hsl(45 100% 50% / 0.1);
+	border-color: hsl(45 100% 50% / 0.5);
+	color: hsl(45 100% 35%);
 }
 
 .status-badge--paid {
-	@apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+	background: hsl(var(--accent) / 0.1);
+	border-color: hsl(var(--accent));
+	color: hsl(var(--accent-foreground));
 }
 
 .status-badge--overdue {
-	@apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+	background: hsl(0 100% 50% / 0.1);
+	border-color: hsl(0 100% 50% / 0.5);
+	color: hsl(0 100% 40%);
 }
 
 .status-badge--active {
-	@apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+	background: hsl(var(--accent) / 0.1);
+	border-color: hsl(var(--accent));
+	color: hsl(var(--accent-foreground));
 }
 
 .status-badge--closed {
-	@apply bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400;
+	background: transparent;
+	border-color: hsl(var(--border));
+	color: hsl(var(--muted-foreground));
 }
 
-/* Priority indicators */
+/* Priority indicators - Minimal with accent colors */
 .priority-indicator {
 	@apply inline-flex items-center;
+	font-size: 10px;
+	font-weight: 500;
 }
 
 .priority-indicator--urgent {
-	@apply text-red-600;
+	color: hsl(0 100% 50%);
 }
 
 .priority-indicator--high {
-	@apply text-red-600;
+	color: hsl(0 80% 55%);
 }
 
 .priority-indicator--medium {
-	@apply text-yellow-600;
+	color: hsl(45 100% 50%);
 }
 
 .priority-indicator--low {
-	@apply text-blue-600;
+	color: hsl(var(--muted-foreground));
+}
+
+/* ============================================================================
+   ULTRA-MINIMAL ENHANCEMENTS
+   ============================================================================ */
+
+/* Sharp buttons */
+.fluid-button {
+	border-radius: 0;
+	font-weight: 400;
+	letter-spacing: 0.01em;
+	border: 1px solid hsl(var(--border));
+	background: transparent;
+	color: hsl(var(--foreground));
+	transition: all 0.15s ease;
+	padding: 8px 16px;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.fluid-button:hover {
+	border-color: hsl(var(--accent));
+	background: hsl(var(--accent) / 0.05);
+}
+
+.fluid-button:active {
+	background: hsl(var(--accent) / 0.1);
+}
+
+.fluid-button--primary {
+	background: hsl(var(--accent));
+	border-color: hsl(var(--accent));
+	color: hsl(var(--background));
+}
+
+.fluid-button--primary:hover {
+	background: hsl(var(--accent) / 0.9);
+}
+
+/* Sharp inputs */
+.fluid-input {
+	border-radius: 0;
+	border: 1px solid hsl(var(--border));
+	background: transparent;
+	color: hsl(var(--foreground));
+	padding: 8px 12px;
+	font-size: 12px;
+	font-weight: 300;
+	transition: all 0.15s ease;
+}
+
+.fluid-input:focus {
+	outline: none;
+	border-color: hsl(var(--accent));
+	background: hsl(var(--accent) / 0.02);
+}
+
+.fluid-input::placeholder {
+	color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Tables with thin lines */
+.fluid-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+	font-weight: 300;
+}
+
+.fluid-table thead th {
+	text-align: left;
+	font-weight: 500;
+	font-size: 10px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: hsl(var(--muted-foreground));
+	padding: 8px 12px;
+	border-bottom: 1px solid hsl(var(--accent));
+}
+
+.fluid-table tbody td {
+	padding: 12px;
+	border-bottom: 1px solid hsl(var(--border));
+}
+
+.fluid-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.fluid-table tbody tr:hover {
+	background: hsl(var(--accent) / 0.02);
+}
+
+/* Thin dividers with accent */
+.fluid-divider {
+	height: 1px;
+	background: hsl(var(--accent) / 0.2);
+	border: none;
+	margin: 16px 0;
+}
+
+.fluid-divider--accent {
+	background: hsl(var(--accent));
+}
+
+/* Minimal cards - no rounded corners */
+.fluid-card {
+	border: 1px solid hsl(var(--border));
+	border-radius: 0;
+	background: hsl(var(--background));
+	padding: 16px;
+}
+
+.fluid-card--accent {
+	border-color: hsl(var(--accent) / 0.3);
+}
+
+/* Subtle inset shadows for depth */
+.fluid-inset {
+	box-shadow: inset 0 1px 2px hsl(var(--foreground) / 0.05);
+}
+
+/* Hover lift effect */
+.fluid-hover-lift {
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fluid-hover-lift:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 2px 8px hsl(var(--foreground) / 0.08);
+}
+
+/* Precise spacing utilities */
+.fluid-space-4 {
+	gap: 4px;
+}
+
+.fluid-space-8 {
+	gap: 8px;
+}
+
+.fluid-space-12 {
+	gap: 12px;
+}
+
+.fluid-space-16 {
+	gap: 16px;
+}
+
+/* Typography refinements */
+.fluid-mono {
+	font-family: "SF Mono", "Monaco", "Inconsolata", "Roboto Mono", monospace;
+	font-variant-numeric: tabular-nums;
+}
+
+.fluid-caps {
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	font-size: 0.85em;
+	font-weight: 500;
+}
+
+/* Accent highlights */
+.fluid-accent-text {
+	color: hsl(var(--accent-foreground));
+}
+
+.fluid-accent-border {
+	border-color: hsl(var(--accent));
+}
+
+.fluid-accent-bg {
+	background: hsl(var(--accent) / 0.1);
 }

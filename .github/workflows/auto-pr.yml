@@ -7,7 +7,7 @@ on:
       - gh-pages
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -50,14 +50,9 @@ jobs:
           if [[ "$BRANCH_NAME" == feature/* ]]; then
             PREFIX="feat"
             TITLE_BODY="${CLEAN_NAME#feature }"
-          elif [[ "$BRANCH_NAME" == fix/* ]] || [[ "$BRANCH_NAME" == fixes/* ]]; then
+          elif [[ "$BRANCH_NAME" == fix/* ]]; then
             PREFIX="fix"
-            # Remove either 'fix ' or 'fixes ' from the title
-            if [[ "$BRANCH_NAME" == fixes/* ]]; then
-              TITLE_BODY="${CLEAN_NAME#fixes }"
-            else
-              TITLE_BODY="${CLEAN_NAME#fix }"
-            fi
+            TITLE_BODY="${CLEAN_NAME#fix }"
           elif [[ "$BRANCH_NAME" == docs/* ]]; then
             PREFIX="docs"
             TITLE_BODY="${CLEAN_NAME#docs }"
@@ -79,14 +74,9 @@ jobs:
           elif [[ "$BRANCH_NAME" == ci/* ]]; then
             PREFIX="ci"
             TITLE_BODY="${CLEAN_NAME#ci }"
-          elif [[ "$BRANCH_NAME" == chore/* ]] || [[ "$BRANCH_NAME" == chores/* ]]; then
+          elif [[ "$BRANCH_NAME" == chore/* ]]; then
             PREFIX="chore"
-            # Remove either 'chore ' or 'chores ' from the title
-            if [[ "$BRANCH_NAME" == chores/* ]]; then
-              TITLE_BODY="${CLEAN_NAME#chores }"
-            else
-              TITLE_BODY="${CLEAN_NAME#chore }"
-            fi
+            TITLE_BODY="${CLEAN_NAME#chore }"
           else
             # Default to feat for other branch patterns
             PREFIX="feat"
@@ -165,6 +155,7 @@ jobs:
             --title "$PR_TITLE" \
             --body-file pr_body.md \
             --base main \
-            --head "${{ github.ref_name }}"
+            --head "${{ github.ref_name }}" \
+            --label "auto-created"
 
           echo "✅ Pull request created successfully!"

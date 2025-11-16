@@ -38,12 +38,6 @@ export const GuestListMetadata = {
 		preferredRatio: "2fr",
 		minWidth: "400px",
 	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: false,
-		emits: [],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",

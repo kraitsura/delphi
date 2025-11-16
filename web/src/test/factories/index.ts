@@ -11,13 +11,6 @@ const generateId = <T extends TableNames>(prefix: T): Id<T> => {
 	return `${prefix}_${Date.now()}_${idCounter}` as Id<T>;
 };
 
-/**
- * Generate username from name (e.g., "Test User" → "testuser")
- */
-const generateUsername = (name: string): string => {
-	return name.toLowerCase().replace(/\s+/g, "");
-};
-
 export const factories = {
 	/**
 	 * Create a mock user
@@ -25,14 +18,12 @@ export const factories = {
 	user: (overrides?: Partial<Doc<"users">>): Doc<"users"> => {
 		const id = overrides?._id || generateId("users");
 		const now = Date.now();
-		const name = overrides?.name || "Test User";
 
 		return {
 			_id: id,
 			_creationTime: now,
 			email: `test-${id}@example.com`,
-			name,
-			username: overrides?.username || generateUsername(name),
+			name: "Test User",
 			role: "collaborator",
 			isActive: true,
 			createdAt: now,

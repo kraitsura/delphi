@@ -200,13 +200,12 @@ export const UpcomingEventsMetadata = {
 		preferredRatio: "1fr",
 		minWidth: "350px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: false,
-		emits: ["eventSelected"],
-		listensTo: [],
-	},
 	props: {
+		eventId: {
+			type: "string",
+			required: false,
+			description: "Event identifier (optional, component queries all user events)",
+		},
 		status: {
 			type: "enum",
 			required: false,

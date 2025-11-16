@@ -11,13 +11,14 @@ import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 export interface TasksKanbanProps {
 	eventId: Id<"events">;
 	columns?: string[];
+	columnCount?: 1 | 2 | 4;
 	groupBy?: "status" | "priority" | "assignee" | "category";
 	showCounts?: boolean;
 	onTaskSelect?: (taskId: Id<"tasks">) => void;
 }
 
 export function TasksKanban(props: TasksKanbanProps) {
-	const { groupBy = "status", showCounts = true, onTaskSelect } = props;
+	const { groupBy = "status", showCounts = true, onTaskSelect, columnCount = 4 } = props;
 
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 
@@ -115,8 +116,8 @@ export function TasksKanban(props: TasksKanbanProps) {
 			</CardHeader>
 
 			<CardContent className="fluid-component-content">
-				<div className="grid grid-cols-4 gap-4">
-					{columns.map((column) => {
+				<div className={`grid gap-4 ${columnCount === 1 ? "grid-cols-1" : columnCount === 2 ? "grid-cols-2" : "grid-cols-4"}`}>
+					{columns.slice(0, columnCount).map((column) => {
 						const columnTasks = groupedTasks.get(column.id) || [];
 
 						return (
@@ -251,17 +252,16 @@ export const TasksKanbanMetadata = {
 		minWidth: "100%",
 		minHeight: "400px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: false,
-		emits: ["taskSelected"],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",
 			required: true,
 			description: "Event identifier",
+		},
+		columnCount: {
+			type: "number",
+			required: false,
+			description: "Number of columns to display (1, 2, or 4)",
 		},
 		groupBy: {
 			type: "enum",

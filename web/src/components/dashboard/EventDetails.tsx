@@ -241,12 +241,6 @@ export const EventDetailsMetadata = {
 		preferredRatio: "1fr",
 		minHeight: "250px",
 	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: false,
-		emits: [],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",

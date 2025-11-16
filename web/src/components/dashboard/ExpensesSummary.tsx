@@ -1,23 +1,42 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
+import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
 
 export interface ExpensesSummaryProps {
 	eventId: Id<"events">;
 	showChart?: boolean;
 	showCategories?: boolean;
+	compact?: boolean;
 }
 
 export function ExpensesSummary(props: ExpensesSummaryProps) {
-	const { showChart = true, showCategories = true } = props;
+	const { showChart = true, showCategories = true, compact = false } = props;
+
+	// Zustand state
+	const selectedCategory = useDashboardStore((state) => state.selections.category);
+	const select = useDashboardStore((state) => state.select);
+	const clearSelection = useDashboardStore((state) => state.clearSelection);
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
 	// TODO: Implement expenses API
 	const expenses: unknown[] = [];
+
+	const handleCategoryClick = (category: string) => {
+		const newCategory = selectedCategory === category ? null : category;
+
+		if (newCategory) {
+			// Update Zustand store with selected category
+			select("category", newCategory);
+		} else {
+			// Clear category selection in Zustand
+			clearSelection("category");
+		}
+	};
 
 	const summary = useMemo(() => {
 		if (!event || !expenses) return null;
@@ -138,7 +157,7 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 				)}
 
 				{/* Stats cards */}
-				<div className="grid grid-cols-3 gap-4 mb-6">
+				<div className={`grid gap-4 mb-6 ${compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
 					<div className="space-y-1">
 						<div className="text-xs text-muted-foreground uppercase tracking-wide">
 							Total Budget
@@ -178,25 +197,38 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 							By Category
 						</h4>
 						<div className="space-y-2">
-							{summary.categoryBreakdown.map((cat) => (
-								<div key={cat.category} className="space-y-1">
-									<div className="flex justify-between text-sm">
-										<span>{cat.category}</span>
-										<span className="text-muted-foreground">
-											${cat.amount.toLocaleString()} (
-											{cat.percentage.toFixed(1)}%)
-										</span>
+							{summary.categoryBreakdown.map((cat) => {
+								const isSelected = selectedCategory === cat.category;
+								return (
+									<div
+										key={cat.category}
+										className={`space-y-1 p-2 rounded cursor-pointer transition-all border ${
+											isSelected
+												? "border-primary bg-primary/5"
+												: "border-transparent hover:bg-muted/50"
+										}`}
+										onClick={() => handleCategoryClick(cat.category)}
+									>
+										<div className="flex justify-between text-sm">
+											<span className={`${isSelected ? "font-semibold" : ""}`}>
+												{isSelected && "→ "}{cat.category}
+											</span>
+											<span className="text-muted-foreground">
+												${cat.amount.toLocaleString()} (
+												{cat.percentage.toFixed(1)}%)
+											</span>
+										</div>
+										<div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+											<div
+												className={`h-full ${isSelected ? "bg-primary" : "bg-primary/70"}`}
+												style={{
+													width: `${cat.percentage}%`,
+												}}
+											/>
+										</div>
 									</div>
-									<div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
-										<div
-											className="h-full bg-primary"
-											style={{
-												width: `${cat.percentage}%`,
-											}}
-										/>
-									</div>
-								</div>
-							))}
+								);
+							})}
 						</div>
 					</div>
 				)}
@@ -252,11 +284,12 @@ export const ExpensesSummaryMetadata = {
 		preferredRatio: "2fr",
 		minWidth: "400px",
 	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: false,
-		emits: [],
-		listensTo: [],
+	zustand: {
+		role: "master",
+		writes: ["selections.category"],
+		reads: ["selections.category"],
+		behavior:
+			"Clicking a category updates selections.category in Zustand store. Highlights selected category.",
 	},
 	props: {
 		eventId: {
@@ -273,6 +306,11 @@ export const ExpensesSummaryMetadata = {
 			type: "boolean",
 			required: false,
 			description: "Show category breakdown",
+		},
+		compact: {
+			type: "boolean",
+			required: false,
+			description: "Compact layout (single column for stats)",
 		},
 	},
 };

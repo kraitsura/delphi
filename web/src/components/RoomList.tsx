@@ -8,7 +8,6 @@ import {
 	SidebarMenu,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEvent } from "@/contexts/EventContext";
 import { useEventRooms } from "@/hooks/useEventRooms";
 
@@ -93,25 +92,23 @@ export function RoomList() {
 
 	// Render room list
 	return (
-		<TooltipProvider delayDuration={0}>
-			<SidebarGroup className="group-data-[collapsible=icon]:p-0">
-				<SidebarGroupLabel>
-					<Link
-						to="/events/$eventId/rooms"
-						params={{ eventId }}
-						className="hover:text-foreground transition-colors"
-					>
-						Rooms
-					</Link>
-				</SidebarGroupLabel>
-				<SidebarGroupContent>
-					<SidebarMenu>
-						{rooms.map((room) => (
-							<RoomListItem key={room._id} room={room} eventId={eventId} />
-						))}
-					</SidebarMenu>
-				</SidebarGroupContent>
-			</SidebarGroup>
-		</TooltipProvider>
+		<SidebarGroup className="group-data-[collapsible=icon]:p-0">
+			<SidebarGroupLabel>
+				<Link
+					to="/events/$eventId/rooms"
+					params={{ eventId }}
+					className="hover:text-foreground transition-colors"
+				>
+					Rooms
+				</Link>
+			</SidebarGroupLabel>
+			<SidebarGroupContent>
+				<SidebarMenu>
+					{rooms.map((room) => (
+						<RoomListItem key={room._id} room={room} eventId={eventId} />
+					))}
+				</SidebarMenu>
+			</SidebarGroupContent>
+		</SidebarGroup>
 	);
 }

@@ -38,12 +38,6 @@ export const VendorsListMetadata = {
 		preferredRatio: "1fr",
 		minWidth: "300px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: false,
-		emits: ["vendorSelected"],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",

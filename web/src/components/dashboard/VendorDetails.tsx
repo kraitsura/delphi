@@ -34,12 +34,6 @@ export const VendorDetailsMetadata = {
 		preferredRatio: "1fr",
 		minHeight: "400px",
 	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: true,
-		emits: [],
-		listensTo: ["vendorSelected"],
-	},
 	props: {
 		eventId: {
 			type: "string",

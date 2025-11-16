@@ -22,8 +22,6 @@ export function MessageInput({
 }: MessageInputProps) {
 	const [text, setText] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
-	const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-	const { setTyping } = usePresence();
 
 	// Check if message mentions @Delphi
 	const mentionsDelphi = /@delphi/i.test(text);
@@ -39,16 +37,6 @@ export function MessageInput({
 		// Set height to content height (CSS max-height will cap it)
 		textarea.style.height = `${textarea.scrollHeight}px`;
 	}, []);
-
-	// Cleanup: Clear typing status on unmount
-	useEffect(() => {
-		return () => {
-			setTyping(false);
-			if (typingTimeoutRef.current) {
-				clearTimeout(typingTimeoutRef.current);
-			}
-		};
-	}, [setTyping]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -80,28 +68,6 @@ export function MessageInput({
 			// Send regular message
 			onSend(trimmedText);
 			setText("");
-		}
-	};
-
-	const handleTextChange = (value: string) => {
-		setText(value);
-
-		// Clear existing timeout
-		if (typingTimeoutRef.current) {
-			clearTimeout(typingTimeoutRef.current);
-		}
-
-		// If there's text, set typing to true
-		if (value.length > 0) {
-			setTyping(true);
-
-			// Auto-clear typing status after 3 seconds of inactivity
-			typingTimeoutRef.current = setTimeout(() => {
-				setTyping(false);
-			}, 3000);
-		} else {
-			// If text is cleared, immediately stop typing
-			setTyping(false);
 		}
 	};
 

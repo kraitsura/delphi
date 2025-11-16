@@ -34,7 +34,7 @@ export function MessageList({
 	useEffect(() => {
 		// Only auto-scroll if messages increased (new message)
 		if (messages.length > prevMessagesLengthRef.current) {
-			messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+			messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
 		}
 		prevMessagesLengthRef.current = messages.length;
 	}, [messages.length]);

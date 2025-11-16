@@ -116,7 +116,11 @@ export type SelectionEvent =
 	| { type: "categorySelected"; payload: { category: string } }
 	| { type: "dateSelected"; payload: { date: number } }
 	| { type: "pollSelected"; payload: { pollId: string } }
-	| { type: "eventSelected"; payload: { eventId: string } };
+	| { type: "eventSelected"; payload: { eventId: string } }
+	| { type: "milestoneSelected"; payload: { milestoneId: string; milestoneName?: string } }
+	| { type: "phaseSelected"; payload: { phase: string; phaseName?: string } }
+	| { type: "timeSlotSelected"; payload: { time: number; duration?: number } }
+	| { type: "teamMemberSelected"; payload: { userId: string; userName: string; role?: string } };
 
 /**
  * Filter events - emitted when filters change
@@ -134,7 +138,9 @@ export type ActionEvent =
 	| { type: "itemAdded"; payload: { itemType: string; itemId: string } }
 	| { type: "itemUpdated"; payload: { itemType: string; itemId: string } }
 	| { type: "itemDeleted"; payload: { itemType: string; itemId: string } }
-	| { type: "filterCleared"; payload: { filterType?: string } };
+	| { type: "filterCleared"; payload: { filterType?: string } }
+	| { type: "taskStatusChanged"; payload: { taskId: string; status: string; updatedBy?: string } }
+	| { type: "runOfShowUpdated"; payload: { currentTime: number; currentTaskId?: string } };
 
 /**
  * Union of all component events

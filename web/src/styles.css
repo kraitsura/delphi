@@ -2,6 +2,8 @@
 
 @import 'tw-animate-css';
 
+@import './styles/fluid-ui.css';
+
 @custom-variant dark (&:is(.dark *));
 
 body {

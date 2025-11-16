@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
+import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
 
 export interface TasksListProps {
 	eventId: Id<"events">;
@@ -32,6 +33,10 @@ export function TasksList(props: TasksListProps) {
 		onTaskSelect,
 	} = props;
 
+	// Zustand state - read selections from store
+	const selectedPhase = useDashboardStore((state) => state.selections.phase);
+	const selectedVendor = useDashboardStore((state) => state.selections.vendorId);
+
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 	const [showFiltersPanel, setShowFiltersPanel] = useState(showFilters);
 
@@ -39,6 +44,16 @@ export function TasksList(props: TasksListProps) {
 		if (!tasks) return [];
 
 		let filtered = tasks;
+
+		// Filter by phase (from Zustand)
+		if (selectedPhase) {
+			filtered = filtered.filter((t) => t.phase === selectedPhase);
+		}
+
+		// Filter by vendor (from Zustand)
+		if (selectedVendor) {
+			filtered = filtered.filter((t) => t.vendorId === selectedVendor);
+		}
 
 		// Filter by status
 		if (status !== "all") {
@@ -87,7 +102,7 @@ export function TasksList(props: TasksListProps) {
 
 		// Limit
 		return limit ? sorted.slice(0, limit) : sorted;
-	}, [tasks, status, priority, props.assignee, props.category, sortBy, limit]);
+	}, [tasks, selectedPhase, selectedVendor, status, priority, props.assignee, props.category, sortBy, limit]);
 
 	if (tasks === undefined) {
 		return <TasksListSkeleton />;
@@ -148,11 +163,21 @@ export function TasksList(props: TasksListProps) {
 				<CardTitle className="fluid-component-title">
 					{SYMBOLS.BLACK_SQUARE} Tasks
 				</CardTitle>
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 flex-wrap">
 					<span className="text-sm text-muted-foreground">
 						{filteredAndSorted.length} task
 						{filteredAndSorted.length !== 1 ? "s" : ""}
 					</span>
+					{selectedPhase && (
+						<Badge variant="outline" className="text-xs">
+							Phase: {selectedPhase}
+						</Badge>
+					)}
+					{selectedVendor && (
+						<Badge variant="outline" className="text-xs">
+							Vendor: {selectedVendor}
+						</Badge>
+					)}
 					{showFilters && (
 						<Button
 							variant="ghost"
@@ -289,18 +314,18 @@ function TasksListEmpty() {
 
 export const TasksListMetadata = {
 	name: "TasksList",
-	description: "Filterable task list with inline actions",
+	description: "Filterable task list with inline actions (Detail component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
 		preferredRatio: "1fr",
 		minWidth: "350px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: true,
-		emits: ["taskSelected", "statusChanged"],
-		listensTo: ["categorySelected", "assigneeSelected"],
+	zustand: {
+		role: "detail",
+		reads: ["selections.phase", "selections.vendorId"],
+		writes: [],
+		behavior: "Filters tasks based on selected phase and vendor from Zustand store. Shows active filters in header.",
 	},
 	props: {
 		eventId: {
