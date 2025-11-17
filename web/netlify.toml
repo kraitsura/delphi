@@ -1,17 +1,12 @@
 [build]
-  command = "npm run build"
-  publish = ".netlify/functions-internal"
+  command = "bun install && bun run build"
 
 [functions]
-  directory = ".netlify/functions-internal"
   node_bundler = "esbuild"
-  # Increase function timeout for AI operations
-  included_files = ["dist/**", "public/**"]
 
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/render"
-  status = 200
+# Use Bun runtime
+[build.environment]
+  BUN_VERSION = "1.1.38"
 
 # Environment variables (set these in Netlify UI or via CLI)
 # Required environment variables:
@@ -19,5 +14,7 @@
 # - VITE_CONVEX_URL
 # - VITE_CONVEX_SITE_URL
 # - VITE_WORKER_URL
+# - VITE_SITE_URL
 # - GOOGLE_CLIENT_ID
 # - GOOGLE_CLIENT_SECRET
+# - VITE_AGENT_WORKER_SECRET
