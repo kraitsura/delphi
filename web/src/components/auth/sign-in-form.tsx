@@ -36,9 +36,9 @@ export function SignInForm({ verified = false }: SignInFormProps) {
 			await authClient.signIn.email({
 				email,
 				password,
-				callbackURL: "/events",
 			});
-			// Navigation handled by Better Auth
+			// Manually navigate after successful sign-in
+			window.location.href = "/events";
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Sign in failed";
@@ -54,7 +54,6 @@ export function SignInForm({ verified = false }: SignInFormProps) {
 			} else {
 				setError(errorMessage);
 			}
-		} finally {
 			setLoading(false);
 		}
 	};
