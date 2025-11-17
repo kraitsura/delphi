@@ -2,19 +2,9 @@
   command = "bun install && bun run build"
   publish = "dist/client"
 
-[functions]
-  node_bundler = "esbuild"
-  directory = ".netlify/v1/functions"
-
 # Use Bun runtime
 [build.environment]
   BUN_VERSION = "1.1.38"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/server"
-  status = 200
-  force = false
 
 # Environment variables (set these in Netlify UI or via CLI)
 # Required environment variables:
