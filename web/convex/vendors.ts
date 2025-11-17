@@ -1,6 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import {
+  getAuthenticatedUser,
+  requireEventMember,
+  requireRoomAccess,
+} from "./authHelpers";
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -18,6 +23,11 @@ export async function createVendor(
     city?: string;
     state?: string;
     country?: string;
+    // Venue-specific fields
+    capacity?: number;
+    venueType?: "indoor" | "outdoor" | "both";
+    amenities?: string[];
+    // Pricing
     pricing?: any;
     rating?: number;
     reviewCount?: number;
@@ -30,6 +40,13 @@ export async function createVendor(
     sourceMessageId?: Id<"messages">;
   }
 ): Promise<Id<"vendors">> {
+  const { userProfile } = await getAuthenticatedUser(ctx);
+
+  // Verify access to event if provided
+  if (args.eventId) {
+    await requireEventMember(ctx, args.eventId, userProfile._id);
+  }
+
   const now = Date.now();
 
   const vendorId = await ctx.db.insert("vendors", {
@@ -43,7 +60,19 @@ export async function createVendor(
 }
 
 export async function getVendor(ctx: QueryCtx, args: { vendorId: Id<"vendors"> }) {
-  return await ctx.db.get(args.vendorId);
+  const { userProfile } = await getAuthenticatedUser(ctx);
+
+  const vendor = await ctx.db.get(args.vendorId);
+  if (!vendor || vendor.deletedAt !== undefined) {
+    throw new Error("Vendor not found");
+  }
+
+  // Verify access to event if vendor is associated with one
+  if (vendor.eventId) {
+    await requireEventMember(ctx, vendor.eventId, userProfile._id);
+  }
+
+  return vendor;
 }
 
 export async function listVendorsByEvent(
@@ -54,6 +83,9 @@ export async function listVendorsByEvent(
     status?: string;
   }
 ) {
+  const { userProfile } = await getAuthenticatedUser(ctx);
+  await requireEventMember(ctx, args.eventId, userProfile._id);
+
   let query = ctx.db
     .query("vendors")
     .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
@@ -71,6 +103,9 @@ export async function listVendorsByEvent(
 }
 
 export async function listVendorsByRoom(ctx: QueryCtx, args: { roomId: Id<"rooms"> }) {
+  const { userProfile } = await getAuthenticatedUser(ctx);
+  await requireRoomAccess(ctx, args.roomId, userProfile._id);
+
   return await ctx.db
     .query("vendors")
     .withIndex("by_room", (q) => q.eq("roomId", args.roomId))
@@ -85,6 +120,10 @@ export async function searchVendorsByCategory(
     minRating?: number;
   }
 ) {
+  // Note: This is a public search function that searches across all vendors
+  // by category. No authentication required as it's meant to be a general
+  // vendor discovery feature.
+
   let query = ctx.db
     .query("vendors")
     .withIndex("by_category", (q) => q.eq("category", args.category))
@@ -112,6 +151,19 @@ export async function updateVendor(
     contractSignedAt?: number;
   }
 ): Promise<Id<"vendors">> {
+  const { userProfile } = await getAuthenticatedUser(ctx);
+
+  // Get vendor to verify access
+  const vendor = await ctx.db.get(args.vendorId);
+  if (!vendor || vendor.deletedAt !== undefined) {
+    throw new Error("Vendor not found");
+  }
+
+  // Verify access to event if vendor is associated with one
+  if (vendor.eventId) {
+    await requireEventMember(ctx, vendor.eventId, userProfile._id);
+  }
+
   const { vendorId, ...updates } = args;
 
   await ctx.db.patch(vendorId, {
@@ -126,6 +178,19 @@ export async function removeVendor(
   ctx: MutationCtx,
   args: { vendorId: Id<"vendors"> }
 ): Promise<Id<"vendors">> {
+  const { userProfile } = await getAuthenticatedUser(ctx);
+
+  // Get vendor to verify access
+  const vendor = await ctx.db.get(args.vendorId);
+  if (!vendor || vendor.deletedAt !== undefined) {
+    throw new Error("Vendor not found");
+  }
+
+  // Verify access to event if vendor is associated with one
+  if (vendor.eventId) {
+    await requireEventMember(ctx, vendor.eventId, userProfile._id);
+  }
+
   await ctx.db.patch(args.vendorId, {
     deletedAt: Date.now(),
     updatedAt: Date.now(),

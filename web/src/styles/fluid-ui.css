@@ -98,10 +98,12 @@
 	@apply p-6;
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
+/* Responsive breakpoints */
+
+/* Tablet and below: Single column layout for better readability */
+@media (max-width: 1024px) {
 	.fluid-grid-row {
-		grid-template-columns: 1fr; /* Force single column */
+		grid-template-columns: 1fr !important; /* Force single column on smaller screens */
 	}
 
 	.fluid-component {
@@ -110,6 +112,13 @@
 
 	.fluid-component:last-child {
 		border-bottom: none;
+	}
+}
+
+/* Desktop and above: Allow multi-column layouts */
+@media (min-width: 1025px) {
+	.fluid-component:last-child {
+		border-right: none;
 	}
 }
 

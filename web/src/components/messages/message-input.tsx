@@ -11,6 +11,7 @@ interface MessageInputProps {
 	disabled?: boolean;
 	isAgentInvoking?: boolean;
 	placeholder?: string;
+	onMentionsDelphiChange?: (mentionsDelphi: boolean) => void;
 }
 
 export function MessageInput({
@@ -19,12 +20,20 @@ export function MessageInput({
 	disabled = false,
 	isAgentInvoking = false,
 	placeholder = "Type a message...",
+	onMentionsDelphiChange,
 }: MessageInputProps) {
 	const [text, setText] = useState("");
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+	const { setTyping } = usePresence();
 
 	// Check if message mentions @Delphi
 	const mentionsDelphi = /@delphi/i.test(text);
+
+	// Notify parent when @Delphi mention state changes
+	useEffect(() => {
+		onMentionsDelphiChange?.(mentionsDelphi);
+	}, [mentionsDelphi, onMentionsDelphiChange]);
 
 	// Auto-resize textarea based on content
 	useEffect(() => {
@@ -37,6 +46,16 @@ export function MessageInput({
 		// Set height to content height (CSS max-height will cap it)
 		textarea.style.height = `${textarea.scrollHeight}px`;
 	}, []);
+
+	// Cleanup: Clear typing status when component unmounts
+	useEffect(() => {
+		return () => {
+			setTyping(false);
+			if (typingTimeoutRef.current) {
+				clearTimeout(typingTimeoutRef.current);
+			}
+		};
+	}, [setTyping]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -68,6 +87,26 @@ export function MessageInput({
 			// Send regular message
 			onSend(trimmedText);
 			setText("");
+		}
+	};
+
+	const handleTextChange = (value: string) => {
+		setText(value);
+
+		// Clear existing typing timeout
+		if (typingTimeoutRef.current) {
+			clearTimeout(typingTimeoutRef.current);
+		}
+
+		// Set typing status based on input
+		if (value.length > 0) {
+			setTyping(true);
+			// Clear typing status after 3 seconds of inactivity
+			typingTimeoutRef.current = setTimeout(() => {
+				setTyping(false);
+			}, 3000);
+		} else {
+			setTyping(false);
 		}
 	};
 
@@ -128,22 +167,6 @@ export function MessageInput({
 						</Button>
 					</div>
 				</div>
-
-				{/* Agent thinking indicator */}
-				{isAgentInvoking && (
-					<div className="flex items-center gap-2 text-sm text-purple-600 px-4 py-1">
-						<Sparkles className="h-4 w-4 animate-pulse" />
-						<span className="animate-pulse">Delphi is thinking...</span>
-					</div>
-				)}
-
-				{/* @Delphi hint */}
-				{mentionsDelphi && !isAgentInvoking && (
-					<div className="flex items-center gap-2 text-sm text-purple-600 px-4 py-1">
-						<Sparkles className="h-4 w-4" />
-						<span>Press Enter to ask Delphi</span>
-					</div>
-				)}
 			</div>
 		</form>
 	);

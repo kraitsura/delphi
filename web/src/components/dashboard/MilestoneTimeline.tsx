@@ -1,12 +1,12 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface MilestoneTimelineProps {
 	eventId: Id<"events">;
@@ -28,41 +28,74 @@ export function MilestoneTimeline(props: MilestoneTimelineProps) {
 		if (!tasks || !event) return [];
 
 		const phases = [
-			{ id: "planning", label: "Planning Complete", icon: SYMBOLS.PENCIL, order: 1 },
-			{ id: "vendor_selection", label: "Vendors Secured", icon: SYMBOLS.HANDSHAKE, order: 2 },
-			{ id: "design", label: "Design Finalized", icon: SYMBOLS.PALETTE, order: 3 },
-			{ id: "logistics", label: "Logistics Ready", icon: SYMBOLS.TRUCK, order: 4 },
+			{
+				id: "planning",
+				label: "Planning Complete",
+				icon: SYMBOLS.PENCIL,
+				order: 1,
+			},
+			{
+				id: "vendor_selection",
+				label: "Vendors Secured",
+				icon: SYMBOLS.HANDSHAKE,
+				order: 2,
+			},
+			{
+				id: "design",
+				label: "Design Finalized",
+				icon: SYMBOLS.PALETTE,
+				order: 3,
+			},
+			{
+				id: "logistics",
+				label: "Logistics Ready",
+				icon: SYMBOLS.TRUCK,
+				order: 4,
+			},
 			{ id: "day_of", label: "Event Day", icon: SYMBOLS.CALENDAR, order: 5 },
-			{ id: "post_event", label: "Wrap Up", icon: SYMBOLS.CHECK_MARK, order: 6 },
+			{
+				id: "post_event",
+				label: "Wrap Up",
+				icon: SYMBOLS.CHECK_MARK,
+				order: 6,
+			},
 		];
 
 		return phases.map((phase) => {
-			const phaseTasks = tasks.filter((t: any) => (t.phase || "planning") === phase.id);
+			const phaseTasks = tasks.filter(
+				(t: any) => (t.phase || "planning") === phase.id,
+			);
 			const total = phaseTasks.length;
-			const completed = phaseTasks.filter((t: any) => t.status === "completed").length;
+			const completed = phaseTasks.filter(
+				(t: any) => t.status === "completed",
+			).length;
 			const isComplete = total > 0 && completed === total;
-			const latestDueDate = phaseTasks.reduce((latest: number | null, t: any) => {
-				if (!t.dueDate) return latest;
-				return latest === null || t.dueDate > latest ? t.dueDate : latest;
-			}, null);
+			const latestDueDate = phaseTasks.reduce(
+				(latest: number | null, t: any) => {
+					if (!t.dueDate) return latest;
+					return latest === null || t.dueDate > latest ? t.dueDate : latest;
+				},
+				null,
+			);
 
 			return {
 				...phase,
 				total,
 				completed,
 				isComplete,
-				targetDate: latestDueDate || event.date,
+				targetDate: latestDueDate || event.eventDate,
 				isHighlighted: selectedPhase === phase.id,
 			};
 		});
 	}, [tasks, event, selectedPhase]);
 
-	const handleMilestoneClick = (phaseId: string, phaseName: string) => {
+	const handleMilestoneClick = (phaseId: string, _phaseName: string) => {
 		// Update Zustand store with selected phase
 		select("phase", phaseId);
 	};
 
-	const formatDate = (timestamp: number) => {
+	const formatDate = (timestamp: number | undefined) => {
+		if (!timestamp) return "N/A";
 		const date = new Date(timestamp);
 		return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 	};
@@ -94,16 +127,25 @@ export function MilestoneTimeline(props: MilestoneTimelineProps) {
 										? "border-primary bg-accent/50"
 										: "border-border hover:bg-accent/30"
 								}`}
-								onClick={() => handleMilestoneClick(milestone.id, milestone.label)}
+								onClick={() =>
+									handleMilestoneClick(milestone.id, milestone.label)
+								}
 							>
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">
-										<span className={milestone.isComplete ? "text-green-600" : ""}>
+										<span
+											className={milestone.isComplete ? "text-green-600" : ""}
+										>
 											{milestone.icon}
 										</span>
-										<span className="font-medium text-sm">{milestone.label}</span>
+										<span className="font-medium text-sm">
+											{milestone.label}
+										</span>
 										{milestone.isComplete && (
-											<Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-900">
+											<Badge
+												variant="outline"
+												className="text-xs bg-green-100 dark:bg-green-900"
+											>
 												Complete
 											</Badge>
 										)}
@@ -155,7 +197,7 @@ export function MilestoneTimeline(props: MilestoneTimelineProps) {
 
 					{/* Milestones */}
 					<div className="space-y-6">
-						{milestones.map((milestone, index) => (
+						{milestones.map((milestone) => (
 							<div key={milestone.id} className="relative pl-12">
 								{/* Timeline dot */}
 								<div
@@ -177,12 +219,17 @@ export function MilestoneTimeline(props: MilestoneTimelineProps) {
 											? "border-primary bg-accent/50"
 											: "border-border hover:bg-accent/30"
 									}`}
-									onClick={() => handleMilestoneClick(milestone.id, milestone.label)}
+									onClick={() =>
+										handleMilestoneClick(milestone.id, milestone.label)
+									}
 								>
 									<div className="flex items-center justify-between mb-2">
 										<h3 className="font-medium">{milestone.label}</h3>
 										{milestone.isComplete && (
-											<Badge variant="outline" className="text-xs bg-green-100 dark:bg-green-900">
+											<Badge
+												variant="outline"
+												className="text-xs bg-green-100 dark:bg-green-900"
+											>
 												{SYMBOLS.CHECK_MARK} Complete
 											</Badge>
 										)}
@@ -255,7 +302,8 @@ function MilestoneTimelineEmpty() {
 
 export const MilestoneTimelineMetadata = {
 	name: "MilestoneTimeline",
-	description: "Timeline view of major project milestones and phases (Master + Detail using Zustand)",
+	description:
+		"Timeline view of major project milestones and phases (Master + Detail using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
@@ -266,7 +314,8 @@ export const MilestoneTimelineMetadata = {
 		role: "both",
 		writes: ["selections.phase"],
 		reads: ["selections.phase"],
-		behavior: "Clicking a milestone updates selections.phase. Also highlights milestones based on selected phase from other components.",
+		behavior:
+			"Clicking a milestone updates selections.phase. Also highlights milestones based on selected phase from other components.",
 	},
 	props: {
 		eventId: {

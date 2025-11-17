@@ -1,33 +1,31 @@
 import { api } from "@convex/_generated/api";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileForm } from "@/components/user/profile-form";
+import { usePageHeader } from "@/hooks/usePageHeader";
+import { convexQuery } from "@/lib/convex-query";
 
 export const Route = createFileRoute("/_authed/profile")({
+	loader: async ({ context }) => {
+		// Prefetch user profile
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.users.getMyProfile, {}),
+		);
+	},
 	component: ProfilePage,
 });
 
 function ProfilePage() {
-	const profile = useQuery(api.users.getMyProfile);
+	usePageHeader({ title: "Profile Settings" });
 
-	if (profile === undefined) {
-		return (
-			<div className="container mx-auto p-6 max-w-2xl">
-				<Skeleton className="h-10 w-64 mb-8" />
-				<div className="space-y-8">
-					<Skeleton className="h-64 w-full" />
-					<Skeleton className="h-96 w-full" />
-				</div>
-			</div>
-		);
-	}
+	const { data: profile } = useSuspenseQuery(
+		convexQuery(api.users.getMyProfile, {}),
+	);
 
 	if (!profile) {
 		return (
 			<div className="container mx-auto p-6 max-w-2xl">
-				<h1 className="text-3xl font-bold mb-4">Profile Settings</h1>
 				<Card>
 					<CardContent className="pt-6">
 						<p className="text-muted-foreground">
@@ -41,8 +39,6 @@ function ProfilePage() {
 
 	return (
 		<div className="container mx-auto p-6 max-w-2xl">
-			<h1 className="text-3xl font-bold mb-8">Profile Settings</h1>
-
 			<div className="space-y-8">
 				{/* Avatar Section - Placeholder for future implementation */}
 				<Card>

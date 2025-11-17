@@ -1,7 +1,7 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { Mail, UserPlus } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -110,43 +110,44 @@ export function InviteUserDialog({
 					</Button>
 				)}
 			</DialogTrigger>
-			<DialogContent className="max-w-md">
-				<DialogHeader>
-					<DialogTitle>Invite User to Event</DialogTitle>
-					<DialogDescription>
-						Send an invitation to collaborate on this event. They'll receive an
-						email with a link to join.
+			<DialogContent className="max-w-md border-0 shadow-xl">
+				<DialogHeader className="space-y-3">
+					<DialogTitle className="text-2xl font-light tracking-tight">
+						Invite Collaborator
+					</DialogTitle>
+					<DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
+						Send an invitation link to collaborate on this event
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
+				<form onSubmit={handleSubmit} className="space-y-6 mt-6">
 					{/* Email Input */}
 					<div className="space-y-2">
-						<Label htmlFor="email">
-							Email Address <span className="text-red-500">*</span>
+						<Label
+							htmlFor="email"
+							className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400"
+						>
+							Email
 						</Label>
-						<div className="relative">
-							<Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-							<Input
-								id="email"
-								type="email"
-								placeholder="colleague@example.com"
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-								className="pl-10"
-								required
-								disabled={isLoading}
-							/>
-						</div>
-						<p className="text-xs text-gray-500">
-							Enter the email address of the person you want to invite
-						</p>
+						<Input
+							id="email"
+							type="email"
+							placeholder="colleague@example.com"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+							className="border-0 border-b border-gray-200 dark:border-gray-800 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400 dark:focus-visible:border-gray-600 transition-colors"
+							required
+							disabled={isLoading}
+						/>
 					</div>
 
 					{/* Role Selection */}
 					<div className="space-y-2">
-						<Label htmlFor="role">
-							Role <span className="text-red-500">*</span>
+						<Label
+							htmlFor="role"
+							className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400"
+						>
+							Role
 						</Label>
 						<Select
 							value={role}
@@ -155,31 +156,34 @@ export function InviteUserDialog({
 							) => setRole(value)}
 							disabled={isLoading}
 						>
-							<SelectTrigger id="role">
+							<SelectTrigger
+								id="role"
+								className="border-0 border-b border-gray-200 dark:border-gray-800 rounded-none px-0 focus:ring-0 focus:border-gray-400 dark:focus:border-gray-600"
+							>
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
 								<SelectItem value="coordinator">
-									<div className="flex flex-col items-start">
+									<div className="flex flex-col items-start py-1">
 										<span className="font-medium">Coordinator</span>
 										<span className="text-xs text-gray-500">
-											Full permissions - can manage event and invite others
+											Full permissions
 										</span>
 									</div>
 								</SelectItem>
 								<SelectItem value="collaborator">
-									<div className="flex flex-col items-start">
+									<div className="flex flex-col items-start py-1">
 										<span className="font-medium">Collaborator</span>
 										<span className="text-xs text-gray-500">
-											Can participate and contribute to planning
+											Can contribute to planning
 										</span>
 									</div>
 								</SelectItem>
 								<SelectItem value="guest">
-									<div className="flex flex-col items-start">
+									<div className="flex flex-col items-start py-1">
 										<span className="font-medium">Guest</span>
 										<span className="text-xs text-gray-500">
-											Limited access - can view but not edit
+											View only access
 										</span>
 									</div>
 								</SelectItem>
@@ -189,40 +193,51 @@ export function InviteUserDialog({
 
 					{/* Optional Message */}
 					<div className="space-y-2">
-						<Label htmlFor="message">Personal Message (optional)</Label>
+						<Label
+							htmlFor="message"
+							className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400"
+						>
+							Message{" "}
+							<span className="normal-case text-gray-400">(optional)</span>
+						</Label>
 						<Textarea
 							id="message"
-							placeholder="Add a personal message to the invitation..."
+							placeholder="Add a personal note..."
 							value={message}
 							onChange={(e) => setMessage(e.target.value)}
 							rows={3}
 							maxLength={500}
 							disabled={isLoading}
+							className="border-gray-200 dark:border-gray-800 focus-visible:ring-0 focus-visible:border-gray-400 dark:focus-visible:border-gray-600 resize-none"
 						/>
-						<p className="text-xs text-gray-500">
-							{message.length}/500 characters
-						</p>
+						{message.length > 0 && (
+							<p className="text-xs text-gray-400">{message.length}/500</p>
+						)}
 					</div>
 
 					{/* Info Box */}
-					<div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-						<p className="text-sm text-blue-800 dark:text-blue-300">
-							💡 The invitation link will be valid for 7 days. You can resend or
-							cancel it from the invitations list.
+					<div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+						<p className="text-xs text-gray-500 dark:text-gray-400">
+							Invitation link is valid for 7 days
 						</p>
 					</div>
 
-					<DialogFooter>
+					<DialogFooter className="gap-2">
 						<Button
 							type="button"
-							variant="outline"
+							variant="ghost"
 							onClick={() => setOpen(false)}
 							disabled={isLoading}
+							className="hover:bg-gray-100 dark:hover:bg-gray-900"
 						>
 							Cancel
 						</Button>
-						<Button type="submit" disabled={isLoading}>
-							{isLoading ? "Sending..." : "Send Invitation"}
+						<Button
+							type="submit"
+							disabled={isLoading}
+							className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100"
+						>
+							{isLoading ? "Sending..." : "Send Invite"}
 						</Button>
 					</DialogFooter>
 				</form>

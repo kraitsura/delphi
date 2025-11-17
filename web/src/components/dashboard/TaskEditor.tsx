@@ -1,7 +1,7 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,10 +12,10 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
+import { Textarea } from "@/components/ui/textarea";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TaskEditorProps {
 	taskId: Id<"tasks">;
@@ -38,8 +38,12 @@ export function TaskEditor(props: TaskEditorProps) {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState("");
-	const [status, setStatus] = useState<"not_started" | "in_progress" | "blocked" | "completed">("not_started");
-	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
+	const [status, setStatus] = useState<
+		"todo" | "in_progress" | "blocked" | "completed" | "cancelled"
+	>("todo");
+	const [priority, setPriority] = useState<
+		"low" | "medium" | "high" | "urgent"
+	>("medium");
 	const [dueDate, setDueDate] = useState("");
 	const [estimatedTime, setEstimatedTime] = useState("");
 	const [estimatedCostMin, setEstimatedCostMin] = useState("");
@@ -55,8 +59,12 @@ export function TaskEditor(props: TaskEditorProps) {
 			setCategory(task.category || "");
 			setStatus(task.status);
 			setPriority(task.priority);
-			setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
-			setEstimatedTime(task.estimatedTime || "");
+			setDueDate(
+				task.deadline
+					? new Date(task.deadline).toISOString().split("T")[0]
+					: "",
+			);
+			setEstimatedTime(task.estimatedDuration?.toString() || "");
 			setEstimatedCostMin(task.estimatedCost?.min?.toString() || "");
 			setEstimatedCostMax(task.estimatedCost?.max?.toString() || "");
 			setHasChanges(false);
@@ -73,13 +81,27 @@ export function TaskEditor(props: TaskEditorProps) {
 			category !== (task.category || "") ||
 			status !== task.status ||
 			priority !== task.priority ||
-			dueDate !== (task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "") ||
-			estimatedTime !== (task.estimatedTime || "") ||
+			dueDate !==
+				(task.deadline
+					? new Date(task.deadline).toISOString().split("T")[0]
+					: "") ||
+			estimatedTime !== (task.estimatedDuration?.toString() || "") ||
 			estimatedCostMin !== (task.estimatedCost?.min?.toString() || "") ||
 			estimatedCostMax !== (task.estimatedCost?.max?.toString() || "");
 
 		setHasChanges(changed);
-	}, [task, title, description, category, status, priority, dueDate, estimatedTime, estimatedCostMin, estimatedCostMax]);
+	}, [
+		task,
+		title,
+		description,
+		category,
+		status,
+		priority,
+		dueDate,
+		estimatedTime,
+		estimatedCostMin,
+		estimatedCostMax,
+	]);
 
 	// Form validation
 	const isValid = title.trim().length > 0;
@@ -99,14 +121,16 @@ export function TaskEditor(props: TaskEditorProps) {
 				category: category as any,
 				status,
 				priority,
-				dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
-				estimatedTime: estimatedTime.trim() || undefined,
+				deadline: dueDate ? new Date(dueDate).getTime() : undefined,
+				estimatedDuration: estimatedTime.trim()
+					? parseInt(estimatedTime.trim(), 10)
+					: undefined,
 			};
 
 			// Handle estimated cost
 			const minCost = parseFloat(estimatedCostMin);
 			const maxCost = parseFloat(estimatedCostMax);
-			if (!isNaN(minCost) && !isNaN(maxCost)) {
+			if (!Number.isNaN(minCost) && !Number.isNaN(maxCost)) {
 				updates.estimatedCost = { min: minCost, max: maxCost };
 			}
 
@@ -134,8 +158,12 @@ export function TaskEditor(props: TaskEditorProps) {
 			setCategory(task.category || "");
 			setStatus(task.status);
 			setPriority(task.priority);
-			setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : "");
-			setEstimatedTime(task.estimatedTime || "");
+			setDueDate(
+				task.deadline
+					? new Date(task.deadline).toISOString().split("T")[0]
+					: "",
+			);
+			setEstimatedTime(task.estimatedDuration?.toString() || "");
 			setEstimatedCostMin(task.estimatedCost?.min?.toString() || "");
 			setEstimatedCostMax(task.estimatedCost?.max?.toString() || "");
 			setHasChanges(false);
@@ -200,10 +228,11 @@ export function TaskEditor(props: TaskEditorProps) {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="not_started">Not Started</SelectItem>
+							<SelectItem value="todo">To Do</SelectItem>
 							<SelectItem value="in_progress">In Progress</SelectItem>
 							<SelectItem value="blocked">Blocked</SelectItem>
 							<SelectItem value="completed">Completed</SelectItem>
+							<SelectItem value="cancelled">Cancelled</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -217,15 +246,11 @@ export function TaskEditor(props: TaskEditorProps) {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="low">
-								{SYMBOLS.TRIANGLE_DOWN} Low
-							</SelectItem>
+							<SelectItem value="low">{SYMBOLS.TRIANGLE_DOWN} Low</SelectItem>
 							<SelectItem value="medium">
 								{SYMBOLS.BLACK_CIRCLE} Medium
 							</SelectItem>
-							<SelectItem value="high">
-								{SYMBOLS.TRIANGLE_UP} High
-							</SelectItem>
+							<SelectItem value="high">{SYMBOLS.TRIANGLE_UP} High</SelectItem>
 							<SelectItem value="urgent">
 								{SYMBOLS.THUNDERBOLT} Urgent
 							</SelectItem>
@@ -291,7 +316,10 @@ export function TaskEditor(props: TaskEditorProps) {
 				<Label className="text-sm font-normal">Estimated Cost Range</Label>
 				<div className="grid grid-cols-2 gap-4">
 					<div className="space-y-1">
-						<Label htmlFor="edit-cost-min" className="text-xs text-muted-foreground">
+						<Label
+							htmlFor="edit-cost-min"
+							className="text-xs text-muted-foreground"
+						>
 							Min
 						</Label>
 						<Input
@@ -306,7 +334,10 @@ export function TaskEditor(props: TaskEditorProps) {
 						/>
 					</div>
 					<div className="space-y-1">
-						<Label htmlFor="edit-cost-max" className="text-xs text-muted-foreground">
+						<Label
+							htmlFor="edit-cost-max"
+							className="text-xs text-muted-foreground"
+						>
 							Max
 						</Label>
 						<Input
@@ -384,7 +415,8 @@ export const TaskEditorMetadata = {
 		role: "input",
 		reads: [],
 		writes: [],
-		behavior: "Full-featured task editor. Tracks changes and enables save only when modified. Shows toast notifications on success/error.",
+		behavior:
+			"Full-featured task editor. Tracks changes and enables save only when modified. Shows toast notifications on success/error.",
 	},
 	props: {
 		taskId: {

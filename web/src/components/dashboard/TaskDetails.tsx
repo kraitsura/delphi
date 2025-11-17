@@ -11,10 +11,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { TaskEditor } from "./TaskEditor";
 
 export interface TaskDetailsProps {
@@ -55,7 +55,9 @@ export function TaskDetails(props: TaskDetailsProps) {
 		setIsEditing(false);
 	};
 
-	const handleStatusChange = async (newStatus: "not_started" | "in_progress" | "blocked" | "completed") => {
+	const handleStatusChange = async (
+		newStatus: "todo" | "in_progress" | "blocked" | "completed",
+	) => {
 		try {
 			await updateStatus({ taskId, status: newStatus });
 			showToast(`Task marked as ${newStatus.replace("_", " ")}`, "success");
@@ -66,7 +68,11 @@ export function TaskDetails(props: TaskDetailsProps) {
 	};
 
 	const handleDelete = async () => {
-		if (!confirm("Are you sure you want to delete this task? This action cannot be undone.")) {
+		if (
+			!confirm(
+				"Are you sure you want to delete this task? This action cannot be undone.",
+			)
+		) {
 			return;
 		}
 
@@ -181,13 +187,18 @@ export function TaskDetails(props: TaskDetailsProps) {
 					</DialogTitle>
 					<DialogDescription>
 						<div className="flex flex-wrap items-center gap-2 mt-2">
-							<Badge className={`status-badge status-badge--${task.status.replace("_", "-")}`}>
+							<Badge
+								className={`status-badge status-badge--${task.status.replace("_", "-")}`}
+							>
 								{task.status.replace("_", " ")}
 							</Badge>
 							{task.category && (
 								<Badge variant="outline">{task.category}</Badge>
 							)}
-							<Badge variant="outline" className={`priority-indicator--${task.priority}`}>
+							<Badge
+								variant="outline"
+								className={`priority-indicator--${task.priority}`}
+							>
 								{task.priority}
 							</Badge>
 						</div>
@@ -213,15 +224,15 @@ export function TaskDetails(props: TaskDetailsProps) {
 							<h4 className="text-xs font-normal text-muted-foreground mb-1">
 								Due Date
 							</h4>
-							<p className="text-sm">{formatDate(task.dueDate)}</p>
+							<p className="text-sm">{formatDate(task.deadline)}</p>
 						</div>
 
-						{task.estimatedTime && (
+						{task.estimatedDuration && (
 							<div>
 								<h4 className="text-xs font-normal text-muted-foreground mb-1">
 									Estimated Time
 								</h4>
-								<p className="text-sm">{task.estimatedTime}</p>
+								<p className="text-sm">{task.estimatedDuration} min</p>
 							</div>
 						)}
 
@@ -231,71 +242,23 @@ export function TaskDetails(props: TaskDetailsProps) {
 									Estimated Cost
 								</h4>
 								<p className="text-sm fluid-mono">
-									${task.estimatedCost.min.toFixed(2)} - ${task.estimatedCost.max.toFixed(2)}
+									${task.estimatedCost.min.toFixed(2)} - $
+									{task.estimatedCost.max.toFixed(2)}
 								</p>
 							</div>
 						)}
 
-						{task.assigneeId && (
+						{task.assignedTo && (
 							<div>
 								<h4 className="text-xs font-normal text-muted-foreground mb-1">
 									Assigned To
 								</h4>
-								<p className="text-sm">{task.assigneeId.substring(0, 8)}...</p>
+								<p className="text-sm">
+									{String(task.assignedTo).substring(0, 8)}...
+								</p>
 							</div>
 						)}
 					</div>
-
-					{/* AI Suggestions */}
-					{task.aiEnriched && task.aiSuggestions && (
-						<>
-							<Separator />
-							<div>
-								<h4 className="text-sm font-normal text-muted-foreground mb-3">
-									{SYMBOLS.SPARKLE} AI Suggestions
-								</h4>
-
-								{task.aiSuggestions.vendors && task.aiSuggestions.vendors.length > 0 && (
-									<div className="mb-3">
-										<p className="text-xs text-muted-foreground mb-1">Recommended Vendors:</p>
-										<div className="flex flex-wrap gap-2">
-											{task.aiSuggestions.vendors.map((vendor, i) => (
-												<Badge key={i} variant="secondary" className="text-xs">
-													{vendor}
-												</Badge>
-											))}
-										</div>
-									</div>
-								)}
-
-								{task.aiSuggestions.tips && task.aiSuggestions.tips.length > 0 && (
-									<div className="mb-3">
-										<p className="text-xs text-muted-foreground mb-1">Tips:</p>
-										<ul className="space-y-1">
-											{task.aiSuggestions.tips.map((tip, i) => (
-												<li key={i} className="text-xs pl-4">
-													{SYMBOLS.BLACK_CIRCLE} {tip}
-												</li>
-											))}
-										</ul>
-									</div>
-								)}
-
-								{task.aiSuggestions.questionsToAsk && task.aiSuggestions.questionsToAsk.length > 0 && (
-									<div>
-										<p className="text-xs text-muted-foreground mb-1">Questions to Ask:</p>
-										<ul className="space-y-1">
-											{task.aiSuggestions.questionsToAsk.map((question, i) => (
-												<li key={i} className="text-xs pl-4">
-													{SYMBOLS.BLACK_CIRCLE} {question}
-												</li>
-											))}
-										</ul>
-									</div>
-								)}
-							</div>
-						</>
-					)}
 
 					<Separator />
 
@@ -327,7 +290,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 									onClick={() => handleStatusChange("completed")}
 									className="fluid-button"
 								>
-									{SYMBOLS.CHECK} Mark Complete
+									{SYMBOLS.CHECK_MARK} Mark Complete
 								</Button>
 							)}
 							{task.status !== "in_progress" && task.status !== "completed" && (
@@ -337,7 +300,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 									onClick={() => handleStatusChange("in_progress")}
 									className="fluid-button"
 								>
-									{SYMBOLS.TRIANGLE_RIGHT} Start Task
+									{SYMBOLS.ARROW_RIGHT} Start Task
 								</Button>
 							)}
 							{task.status !== "blocked" && task.status !== "completed" && (
@@ -347,7 +310,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 									onClick={() => handleStatusChange("blocked")}
 									className="fluid-button"
 								>
-									{SYMBOLS.CROSS} Mark Blocked
+									Mark Blocked
 								</Button>
 							)}
 						</div>
@@ -417,7 +380,8 @@ export const TaskDetailsMetadata = {
 		role: "detail",
 		reads: ["modals"],
 		writes: [],
-		behavior: "Modal overlay showing full task details. Switches between read-only and edit modes. Provides quick status change actions and delete functionality.",
+		behavior:
+			"Modal overlay showing full task details. Switches between read-only and edit modes. Provides quick status change actions and delete functionality.",
 	},
 	props: {
 		taskId: {

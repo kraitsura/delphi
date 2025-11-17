@@ -1,15 +1,8 @@
 import { api } from "@convex/_generated/api";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import {
-	Calendar,
-	DollarSign,
-	MapPin,
-	MoreVertical,
-	Pencil,
-	Trash2,
-	Users,
-} from "lucide-react";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -18,6 +11,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { convexQuery } from "@/lib/convex-query";
 import { EventDeleteDialog } from "./event-delete-dialog";
 import { EventEditDialog } from "./event-edit-dialog";
 import { StatusBadge } from "./StatusBadge";
@@ -26,26 +20,34 @@ interface EventListProps {
 	status?: "planning" | "active" | "completed" | "cancelled";
 }
 
-export function EventList({ status }: EventListProps) {
-	const events = useQuery(api.events.listUserEvents, {
-		status,
-	});
+function EventListSkeleton() {
+	return (
+		<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+			{[1, 2, 3].map((i) => (
+				<Card
+					key={i}
+					className="border-2 border-black dark:border-white animate-pulse"
+				>
+					<CardContent className="p-0">
+						<div className="border-b-2 border-black dark:border-white p-4">
+							<div className="h-5 bg-gray-300 dark:bg-gray-700 w-3/4" />
+						</div>
+						<div className="p-4 space-y-3">
+							<div className="h-3 bg-gray-300 dark:bg-gray-700 w-full" />
+							<div className="h-3 bg-gray-300 dark:bg-gray-700 w-full" />
+							<div className="h-3 bg-gray-300 dark:bg-gray-700 w-2/3" />
+						</div>
+					</CardContent>
+				</Card>
+			))}
+		</div>
+	);
+}
 
-	if (events === undefined) {
-		return (
-			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-				{[1, 2, 3].map((i) => (
-					<Card key={i} className="animate-pulse">
-						<CardContent className="p-6">
-							<div className="h-6 bg-gray-200 rounded w-3/4 mb-4" />
-							<div className="h-4 bg-gray-200 rounded w-full mb-2" />
-							<div className="h-4 bg-gray-200 rounded w-2/3" />
-						</CardContent>
-					</Card>
-				))}
-			</div>
-		);
-	}
+function EventListContent({ status }: EventListProps) {
+	const { data: events } = useSuspenseQuery(
+		convexQuery(api.events.listUserEvents, { status }),
+	);
 
 	if (events.length === 0) {
 		return (
@@ -62,21 +64,21 @@ export function EventList({ status }: EventListProps) {
 	}
 
 	return (
-		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+		<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
 			{events.map((event) => (
 				<Card
 					key={event._id}
-					className="hover:shadow-lg transition-shadow h-full relative"
+					className="border-2 border-black dark:border-white hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors h-full relative group"
 				>
-					<CardContent className="p-6">
-						{/* Header with title, status, and actions */}
-						<div className="flex items-start justify-between mb-4">
+					<CardContent className="p-0">
+						{/* Header with title and status */}
+						<div className="border-b-2 border-black dark:border-white p-4 flex items-center justify-between">
 							<Link
 								to="/events/$eventId"
 								params={{ eventId: event._id }}
-								className="flex-1 min-w-0 hover:opacity-80 transition-opacity"
+								className="flex-1 min-w-0 hover:underline"
 							>
-								<h3 className="font-semibold text-lg line-clamp-1">
+								<h3 className="font-bold text-base uppercase tracking-tight line-clamp-1">
 									{event.name}
 								</h3>
 							</Link>
@@ -88,7 +90,7 @@ export function EventList({ status }: EventListProps) {
 										<Button
 											variant="ghost"
 											size="icon"
-											className="h-8 w-8"
+											className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
 											onClick={(e) => e.stopPropagation()}
 										>
 											<MoreVertical className="h-4 w-4" />
@@ -127,19 +129,19 @@ export function EventList({ status }: EventListProps) {
 						<Link
 							to="/events/$eventId"
 							params={{ eventId: event._id }}
-							className="block"
+							className="block p-4"
 						>
 							{event.description && (
-								<p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+								<p className="text-xs leading-relaxed mb-4 opacity-80 line-clamp-2">
 									{event.description}
 								</p>
 							)}
 
-							<div className="space-y-2 text-sm text-muted-foreground">
+							<div className="space-y-2 text-xs">
 								{event.eventDate && (
-									<div className="flex items-center gap-2">
-										<Calendar className="h-4 w-4 flex-shrink-0" />
-										<span>
+									<div className="flex items-start gap-2">
+										<span className="opacity-50 min-w-[60px]">DATE:</span>
+										<span className="flex-1">
 											{new Date(event.eventDate).toLocaleDateString()}
 										</span>
 									</div>
@@ -147,38 +149,46 @@ export function EventList({ status }: EventListProps) {
 
 								{event.location && (
 									<div className="flex items-start gap-2">
-										<MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-										<span className="line-clamp-1">
+										<span className="opacity-50 min-w-[60px]">LOC:</span>
+										<span className="flex-1 line-clamp-1">
 											{event.location.city}, {event.location.state}
 										</span>
 									</div>
 								)}
 
-								<div className="flex items-center gap-2">
-									<Users className="h-4 w-4 flex-shrink-0" />
-									<span>
+								<div className="flex items-start gap-2">
+									<span className="opacity-50 min-w-[60px]">GUESTS:</span>
+									<span className="flex-1">
 										{event.guestCount?.confirmed || 0} /{" "}
-										{event.guestCount?.expected || 0} guests
+										{event.guestCount?.expected || 0}
 									</span>
 								</div>
 
-								<div className="flex items-center gap-2">
-									<DollarSign className="h-4 w-4 flex-shrink-0" />
-									<span>
+								<div className="flex items-start gap-2">
+									<span className="opacity-50 min-w-[60px]">BUDGET:</span>
+									<span className="flex-1">
 										${event.budget.spent.toLocaleString()} / $
 										{event.budget.total.toLocaleString()}
 									</span>
 								</div>
-							</div>
 
-							<div className="mt-4 pt-4 border-t text-xs text-muted-foreground">
-								<span className="capitalize">{event.type}</span> •{" "}
-								{new Date(event.createdAt).toLocaleDateString()}
+								<div className="flex items-start gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+									<span className="opacity-50 min-w-[60px]">TYPE:</span>
+									<span className="flex-1 uppercase">{event.type}</span>
+								</div>
 							</div>
 						</Link>
 					</CardContent>
 				</Card>
 			))}
 		</div>
+	);
+}
+
+export function EventList({ status }: EventListProps) {
+	return (
+		<Suspense fallback={<EventListSkeleton />}>
+			<EventListContent status={status} />
+		</Suspense>
 	);
 }

@@ -13,6 +13,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie, getRequest } from "@tanstack/react-start/server";
+import { useEffect } from "react";
 import { scan } from "react-scan";
 import { Toaster } from "sonner";
 import { ErrorBoundary } from "../components/errors/error-boundary";
@@ -20,6 +21,7 @@ import { NotFound } from "../components/errors/not-found";
 import { ThemeSetProvider } from "../components/theme-set-provider";
 import { TooltipProvider } from "../components/ui/tooltip";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
+import { registerMessageComponents } from "../lib/fluid-ui/registerMessageComponents";
 import appCss from "../styles.css?url";
 
 // Initialize React Scan only in development
@@ -98,6 +100,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootComponent() {
+	// Register Fluid UI message components on mount (client-side only)
+	useEffect(() => {
+		if (typeof window !== "undefined") {
+			registerMessageComponents();
+		}
+	}, []);
+
 	return (
 		<html lang="en" suppressHydrationWarning className="h-full">
 			<head>

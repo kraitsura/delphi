@@ -14,19 +14,27 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TaskCreatorProps {
 	id: string;
 	eventId: Id<"events">;
+	roomId: Id<"rooms">;
 	defaultCategory?: string;
 	defaultAssignee?: Id<"users">;
 	onTaskCreated?: (taskId: Id<"tasks">) => void;
 }
 
 export function TaskCreator(props: TaskCreatorProps) {
-	const { id, eventId, defaultCategory, defaultAssignee, onTaskCreated } = props;
+	const {
+		id,
+		eventId,
+		roomId,
+		defaultCategory,
+		defaultAssignee,
+		onTaskCreated,
+	} = props;
 
 	// Zustand state - check if expanded
 	const isExpanded = useDashboardStore((state) => state.expandedPanels.has(id));
@@ -41,7 +49,9 @@ export function TaskCreator(props: TaskCreatorProps) {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [category, setCategory] = useState(defaultCategory || "");
-	const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
+	const [priority, setPriority] = useState<
+		"low" | "medium" | "high" | "urgent"
+	>("medium");
 	const [dueDate, setDueDate] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -57,12 +67,13 @@ export function TaskCreator(props: TaskCreatorProps) {
 		try {
 			const taskId = await createTask({
 				eventId,
+				roomId,
 				title: title.trim(),
 				description: description.trim() || undefined,
 				category: category as any,
 				priority,
-				dueDate: dueDate ? new Date(dueDate).getTime() : undefined,
-				assigneeId: defaultAssignee,
+				deadline: dueDate ? new Date(dueDate).getTime() : undefined,
+				assignedTo: defaultAssignee,
 			});
 
 			// Success
@@ -147,7 +158,10 @@ export function TaskCreator(props: TaskCreatorProps) {
 
 					{/* Description - Optional */}
 					<div className="space-y-2">
-						<Label htmlFor={`${id}-description`} className="text-sm font-normal">
+						<Label
+							htmlFor={`${id}-description`}
+							className="text-sm font-normal"
+						>
 							Description
 						</Label>
 						<Textarea
@@ -188,7 +202,10 @@ export function TaskCreator(props: TaskCreatorProps) {
 							<Label htmlFor={`${id}-priority`} className="text-sm font-normal">
 								Priority
 							</Label>
-							<Select value={priority} onValueChange={(v: any) => setPriority(v)}>
+							<Select
+								value={priority}
+								onValueChange={(v: any) => setPriority(v)}
+							>
 								<SelectTrigger id={`${id}-priority`} className="fluid-input">
 									<SelectValue />
 								</SelectTrigger>
@@ -262,7 +279,8 @@ export const TaskCreatorMetadata = {
 		role: "input",
 		reads: ["expandedPanels"],
 		writes: [],
-		behavior: "Collapsible form for creating tasks. Uses Zustand expandedPanels to manage collapsed/expanded state. Shows toast notifications on success/error.",
+		behavior:
+			"Collapsible form for creating tasks. Uses Zustand expandedPanels to manage collapsed/expanded state. Shows toast notifications on success/error.",
 	},
 	props: {
 		id: {

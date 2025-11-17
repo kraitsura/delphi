@@ -53,7 +53,6 @@ export const dashboardConfigSchema = z.object({
  * Validation options
  */
 export interface ValidationOptions {
-	/** Disable max rows limit (useful for testbed) */
 	disableRowLimit?: boolean;
 }
 
@@ -71,7 +70,7 @@ export function validateDashboardConfig(
 		// Custom validations
 		const errors: ValidationError[] = [];
 
-		// Check component count constraint (max 2 rows) - unless disabled
+		// Check component count constraint (max 2 rows)
 		if (!options.disableRowLimit) {
 			const rowSections = config.sections.filter((s: any) => s.type === "row");
 			if (rowSections.length > 2) {

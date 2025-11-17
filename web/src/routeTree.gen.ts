@@ -11,22 +11,25 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifySuccessRouteImport } from './routes/verify-success'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
-import { Route as PlansRouteImport } from './routes/plans'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as AuthedRouteImport } from './routes/_authed'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InvitationsTokenRouteImport } from './routes/invitations.$token'
 import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
 import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
-import { Route as AuthedTestbedRouteImport } from './routes/_authed/testbed'
 import { Route as AuthedProfileRouteImport } from './routes/_authed/profile'
 import { Route as AuthedInvitationsRouteImport } from './routes/_authed/invitations'
-import { Route as AuthedDashboardRouteImport } from './routes/_authed/dashboard'
+import { Route as AuthedContactsRouteImport } from './routes/_authed/contacts'
 import { Route as AuthedEventsIndexRouteImport } from './routes/_authed/events.index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthedEventsNewRouteImport } from './routes/_authed/events.new'
 import { Route as AuthedEventsEventIdRouteImport } from './routes/_authed/events.$eventId'
 import { Route as AuthedEventsEventIdIndexRouteImport } from './routes/_authed/events.$eventId.index'
+import { Route as AuthedEventsEventIdTeamRouteImport } from './routes/_authed/events.$eventId.team'
+import { Route as AuthedEventsEventIdSettingsRouteImport } from './routes/_authed/events.$eventId.settings'
+import { Route as AuthedEventsEventIdRoomsRouteImport } from './routes/_authed/events.$eventId.rooms'
+import { Route as AuthedEventsEventIdDashboardRouteImport } from './routes/_authed/events.$eventId.dashboard'
+import { Route as AuthedEventsEventIdCalendarRouteImport } from './routes/_authed/events.$eventId.calendar'
 import { Route as AuthedEventsEventIdRoomsIndexRouteImport } from './routes/_authed/events.$eventId.rooms.index'
 import { Route as AuthedEventsEventIdRoomsRoomIdRouteImport } from './routes/_authed/events.$eventId.rooms.$roomId'
 
@@ -38,11 +41,6 @@ const VerifySuccessRoute = VerifySuccessRouteImport.update({
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlansRoute = PlansRouteImport.update({
-  id: '/plans',
-  path: '/plans',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesRoute = FeaturesRouteImport.update({
@@ -74,11 +72,6 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/auth/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthedTestbedRoute = AuthedTestbedRouteImport.update({
-  id: '/testbed',
-  path: '/testbed',
-  getParentRoute: () => AuthedRoute,
-} as any)
 const AuthedProfileRoute = AuthedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -89,9 +82,9 @@ const AuthedInvitationsRoute = AuthedInvitationsRouteImport.update({
   path: '/invitations',
   getParentRoute: () => AuthedRoute,
 } as any)
-const AuthedDashboardRoute = AuthedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthedContactsRoute = AuthedContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
   getParentRoute: () => AuthedRoute,
 } as any)
 const AuthedEventsIndexRoute = AuthedEventsIndexRouteImport.update({
@@ -120,29 +113,56 @@ const AuthedEventsEventIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthedEventsEventIdRoute,
   } as any)
+const AuthedEventsEventIdTeamRoute = AuthedEventsEventIdTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthedEventsEventIdRoute,
+} as any)
+const AuthedEventsEventIdSettingsRoute =
+  AuthedEventsEventIdSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthedEventsEventIdRoute,
+  } as any)
+const AuthedEventsEventIdRoomsRoute =
+  AuthedEventsEventIdRoomsRouteImport.update({
+    id: '/rooms',
+    path: '/rooms',
+    getParentRoute: () => AuthedEventsEventIdRoute,
+  } as any)
+const AuthedEventsEventIdDashboardRoute =
+  AuthedEventsEventIdDashboardRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthedEventsEventIdRoute,
+  } as any)
+const AuthedEventsEventIdCalendarRoute =
+  AuthedEventsEventIdCalendarRouteImport.update({
+    id: '/calendar',
+    path: '/calendar',
+    getParentRoute: () => AuthedEventsEventIdRoute,
+  } as any)
 const AuthedEventsEventIdRoomsIndexRoute =
   AuthedEventsEventIdRoomsIndexRouteImport.update({
-    id: '/rooms/',
-    path: '/rooms/',
-    getParentRoute: () => AuthedEventsEventIdRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthedEventsEventIdRoomsRoute,
   } as any)
 const AuthedEventsEventIdRoomsRoomIdRoute =
   AuthedEventsEventIdRoomsRoomIdRouteImport.update({
-    id: '/rooms/$roomId',
-    path: '/rooms/$roomId',
-    getParentRoute: () => AuthedEventsEventIdRoute,
+    id: '/$roomId',
+    path: '/$roomId',
+    getParentRoute: () => AuthedEventsEventIdRoomsRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/features': typeof FeaturesRoute
-  '/plans': typeof PlansRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-success': typeof VerifySuccessRoute
-  '/dashboard': typeof AuthedDashboardRoute
+  '/contacts': typeof AuthedContactsRoute
   '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
-  '/testbed': typeof AuthedTestbedRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -150,26 +170,33 @@ export interface FileRoutesByFullPath {
   '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/events': typeof AuthedEventsIndexRoute
+  '/events/$eventId/calendar': typeof AuthedEventsEventIdCalendarRoute
+  '/events/$eventId/dashboard': typeof AuthedEventsEventIdDashboardRoute
+  '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsRouteWithChildren
+  '/events/$eventId/settings': typeof AuthedEventsEventIdSettingsRoute
+  '/events/$eventId/team': typeof AuthedEventsEventIdTeamRoute
   '/events/$eventId/': typeof AuthedEventsEventIdIndexRoute
   '/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
-  '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsIndexRoute
+  '/events/$eventId/rooms/': typeof AuthedEventsEventIdRoomsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/features': typeof FeaturesRoute
-  '/plans': typeof PlansRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-success': typeof VerifySuccessRoute
-  '/dashboard': typeof AuthedDashboardRoute
+  '/contacts': typeof AuthedContactsRoute
   '/invitations': typeof AuthedInvitationsRoute
   '/profile': typeof AuthedProfileRoute
-  '/testbed': typeof AuthedTestbedRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/invitations/$token': typeof InvitationsTokenRoute
   '/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/events': typeof AuthedEventsIndexRoute
+  '/events/$eventId/calendar': typeof AuthedEventsEventIdCalendarRoute
+  '/events/$eventId/dashboard': typeof AuthedEventsEventIdDashboardRoute
+  '/events/$eventId/settings': typeof AuthedEventsEventIdSettingsRoute
+  '/events/$eventId/team': typeof AuthedEventsEventIdTeamRoute
   '/events/$eventId': typeof AuthedEventsEventIdIndexRoute
   '/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
   '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsIndexRoute
@@ -179,13 +206,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authed': typeof AuthedRouteWithChildren
   '/features': typeof FeaturesRoute
-  '/plans': typeof PlansRoute
   '/verify-email': typeof VerifyEmailRoute
   '/verify-success': typeof VerifySuccessRoute
-  '/_authed/dashboard': typeof AuthedDashboardRoute
+  '/_authed/contacts': typeof AuthedContactsRoute
   '/_authed/invitations': typeof AuthedInvitationsRoute
   '/_authed/profile': typeof AuthedProfileRoute
-  '/_authed/testbed': typeof AuthedTestbedRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/invitations/$token': typeof InvitationsTokenRoute
@@ -193,6 +218,11 @@ export interface FileRoutesById {
   '/_authed/events/new': typeof AuthedEventsNewRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authed/events/': typeof AuthedEventsIndexRoute
+  '/_authed/events/$eventId/calendar': typeof AuthedEventsEventIdCalendarRoute
+  '/_authed/events/$eventId/dashboard': typeof AuthedEventsEventIdDashboardRoute
+  '/_authed/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsRouteWithChildren
+  '/_authed/events/$eventId/settings': typeof AuthedEventsEventIdSettingsRoute
+  '/_authed/events/$eventId/team': typeof AuthedEventsEventIdTeamRoute
   '/_authed/events/$eventId/': typeof AuthedEventsEventIdIndexRoute
   '/_authed/events/$eventId/rooms/$roomId': typeof AuthedEventsEventIdRoomsRoomIdRoute
   '/_authed/events/$eventId/rooms/': typeof AuthedEventsEventIdRoomsIndexRoute
@@ -202,13 +232,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/features'
-    | '/plans'
     | '/verify-email'
     | '/verify-success'
-    | '/dashboard'
+    | '/contacts'
     | '/invitations'
     | '/profile'
-    | '/testbed'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/invitations/$token'
@@ -216,26 +244,33 @@ export interface FileRouteTypes {
     | '/events/new'
     | '/api/auth/$'
     | '/events'
+    | '/events/$eventId/calendar'
+    | '/events/$eventId/dashboard'
+    | '/events/$eventId/rooms'
+    | '/events/$eventId/settings'
+    | '/events/$eventId/team'
     | '/events/$eventId/'
     | '/events/$eventId/rooms/$roomId'
-    | '/events/$eventId/rooms'
+    | '/events/$eventId/rooms/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/features'
-    | '/plans'
     | '/verify-email'
     | '/verify-success'
-    | '/dashboard'
+    | '/contacts'
     | '/invitations'
     | '/profile'
-    | '/testbed'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/invitations/$token'
     | '/events/new'
     | '/api/auth/$'
     | '/events'
+    | '/events/$eventId/calendar'
+    | '/events/$eventId/dashboard'
+    | '/events/$eventId/settings'
+    | '/events/$eventId/team'
     | '/events/$eventId'
     | '/events/$eventId/rooms/$roomId'
     | '/events/$eventId/rooms'
@@ -244,13 +279,11 @@ export interface FileRouteTypes {
     | '/'
     | '/_authed'
     | '/features'
-    | '/plans'
     | '/verify-email'
     | '/verify-success'
-    | '/_authed/dashboard'
+    | '/_authed/contacts'
     | '/_authed/invitations'
     | '/_authed/profile'
-    | '/_authed/testbed'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/invitations/$token'
@@ -258,6 +291,11 @@ export interface FileRouteTypes {
     | '/_authed/events/new'
     | '/api/auth/$'
     | '/_authed/events/'
+    | '/_authed/events/$eventId/calendar'
+    | '/_authed/events/$eventId/dashboard'
+    | '/_authed/events/$eventId/rooms'
+    | '/_authed/events/$eventId/settings'
+    | '/_authed/events/$eventId/team'
     | '/_authed/events/$eventId/'
     | '/_authed/events/$eventId/rooms/$roomId'
     | '/_authed/events/$eventId/rooms/'
@@ -267,7 +305,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthedRoute: typeof AuthedRouteWithChildren
   FeaturesRoute: typeof FeaturesRoute
-  PlansRoute: typeof PlansRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   VerifySuccessRoute: typeof VerifySuccessRoute
   AuthSignInRoute: typeof AuthSignInRoute
@@ -290,13 +327,6 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plans': {
-      id: '/plans'
-      path: '/plans'
-      fullPath: '/plans'
-      preLoaderRoute: typeof PlansRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/features': {
@@ -341,13 +371,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authed/testbed': {
-      id: '/_authed/testbed'
-      path: '/testbed'
-      fullPath: '/testbed'
-      preLoaderRoute: typeof AuthedTestbedRouteImport
-      parentRoute: typeof AuthedRoute
-    }
     '/_authed/profile': {
       id: '/_authed/profile'
       path: '/profile'
@@ -362,11 +385,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedInvitationsRouteImport
       parentRoute: typeof AuthedRoute
     }
-    '/_authed/dashboard': {
-      id: '/_authed/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthedDashboardRouteImport
+    '/_authed/contacts': {
+      id: '/_authed/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof AuthedContactsRouteImport
       parentRoute: typeof AuthedRoute
     }
     '/_authed/events/': {
@@ -404,53 +427,108 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsEventIdIndexRouteImport
       parentRoute: typeof AuthedEventsEventIdRoute
     }
-    '/_authed/events/$eventId/rooms/': {
-      id: '/_authed/events/$eventId/rooms/'
+    '/_authed/events/$eventId/team': {
+      id: '/_authed/events/$eventId/team'
+      path: '/team'
+      fullPath: '/events/$eventId/team'
+      preLoaderRoute: typeof AuthedEventsEventIdTeamRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoute
+    }
+    '/_authed/events/$eventId/settings': {
+      id: '/_authed/events/$eventId/settings'
+      path: '/settings'
+      fullPath: '/events/$eventId/settings'
+      preLoaderRoute: typeof AuthedEventsEventIdSettingsRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoute
+    }
+    '/_authed/events/$eventId/rooms': {
+      id: '/_authed/events/$eventId/rooms'
       path: '/rooms'
       fullPath: '/events/$eventId/rooms'
-      preLoaderRoute: typeof AuthedEventsEventIdRoomsIndexRouteImport
+      preLoaderRoute: typeof AuthedEventsEventIdRoomsRouteImport
       parentRoute: typeof AuthedEventsEventIdRoute
+    }
+    '/_authed/events/$eventId/dashboard': {
+      id: '/_authed/events/$eventId/dashboard'
+      path: '/dashboard'
+      fullPath: '/events/$eventId/dashboard'
+      preLoaderRoute: typeof AuthedEventsEventIdDashboardRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoute
+    }
+    '/_authed/events/$eventId/calendar': {
+      id: '/_authed/events/$eventId/calendar'
+      path: '/calendar'
+      fullPath: '/events/$eventId/calendar'
+      preLoaderRoute: typeof AuthedEventsEventIdCalendarRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoute
+    }
+    '/_authed/events/$eventId/rooms/': {
+      id: '/_authed/events/$eventId/rooms/'
+      path: '/'
+      fullPath: '/events/$eventId/rooms/'
+      preLoaderRoute: typeof AuthedEventsEventIdRoomsIndexRouteImport
+      parentRoute: typeof AuthedEventsEventIdRoomsRoute
     }
     '/_authed/events/$eventId/rooms/$roomId': {
       id: '/_authed/events/$eventId/rooms/$roomId'
-      path: '/rooms/$roomId'
+      path: '/$roomId'
       fullPath: '/events/$eventId/rooms/$roomId'
       preLoaderRoute: typeof AuthedEventsEventIdRoomsRoomIdRouteImport
-      parentRoute: typeof AuthedEventsEventIdRoute
+      parentRoute: typeof AuthedEventsEventIdRoomsRoute
     }
   }
 }
 
-interface AuthedEventsEventIdRouteChildren {
-  AuthedEventsEventIdIndexRoute: typeof AuthedEventsEventIdIndexRoute
+interface AuthedEventsEventIdRoomsRouteChildren {
   AuthedEventsEventIdRoomsRoomIdRoute: typeof AuthedEventsEventIdRoomsRoomIdRoute
   AuthedEventsEventIdRoomsIndexRoute: typeof AuthedEventsEventIdRoomsIndexRoute
 }
 
+const AuthedEventsEventIdRoomsRouteChildren: AuthedEventsEventIdRoomsRouteChildren =
+  {
+    AuthedEventsEventIdRoomsRoomIdRoute: AuthedEventsEventIdRoomsRoomIdRoute,
+    AuthedEventsEventIdRoomsIndexRoute: AuthedEventsEventIdRoomsIndexRoute,
+  }
+
+const AuthedEventsEventIdRoomsRouteWithChildren =
+  AuthedEventsEventIdRoomsRoute._addFileChildren(
+    AuthedEventsEventIdRoomsRouteChildren,
+  )
+
+interface AuthedEventsEventIdRouteChildren {
+  AuthedEventsEventIdCalendarRoute: typeof AuthedEventsEventIdCalendarRoute
+  AuthedEventsEventIdDashboardRoute: typeof AuthedEventsEventIdDashboardRoute
+  AuthedEventsEventIdRoomsRoute: typeof AuthedEventsEventIdRoomsRouteWithChildren
+  AuthedEventsEventIdSettingsRoute: typeof AuthedEventsEventIdSettingsRoute
+  AuthedEventsEventIdTeamRoute: typeof AuthedEventsEventIdTeamRoute
+  AuthedEventsEventIdIndexRoute: typeof AuthedEventsEventIdIndexRoute
+}
+
 const AuthedEventsEventIdRouteChildren: AuthedEventsEventIdRouteChildren = {
+  AuthedEventsEventIdCalendarRoute: AuthedEventsEventIdCalendarRoute,
+  AuthedEventsEventIdDashboardRoute: AuthedEventsEventIdDashboardRoute,
+  AuthedEventsEventIdRoomsRoute: AuthedEventsEventIdRoomsRouteWithChildren,
+  AuthedEventsEventIdSettingsRoute: AuthedEventsEventIdSettingsRoute,
+  AuthedEventsEventIdTeamRoute: AuthedEventsEventIdTeamRoute,
   AuthedEventsEventIdIndexRoute: AuthedEventsEventIdIndexRoute,
-  AuthedEventsEventIdRoomsRoomIdRoute: AuthedEventsEventIdRoomsRoomIdRoute,
-  AuthedEventsEventIdRoomsIndexRoute: AuthedEventsEventIdRoomsIndexRoute,
 }
 
 const AuthedEventsEventIdRouteWithChildren =
   AuthedEventsEventIdRoute._addFileChildren(AuthedEventsEventIdRouteChildren)
 
 interface AuthedRouteChildren {
-  AuthedDashboardRoute: typeof AuthedDashboardRoute
+  AuthedContactsRoute: typeof AuthedContactsRoute
   AuthedInvitationsRoute: typeof AuthedInvitationsRoute
   AuthedProfileRoute: typeof AuthedProfileRoute
-  AuthedTestbedRoute: typeof AuthedTestbedRoute
   AuthedEventsEventIdRoute: typeof AuthedEventsEventIdRouteWithChildren
   AuthedEventsNewRoute: typeof AuthedEventsNewRoute
   AuthedEventsIndexRoute: typeof AuthedEventsIndexRoute
 }
 
 const AuthedRouteChildren: AuthedRouteChildren = {
-  AuthedDashboardRoute: AuthedDashboardRoute,
+  AuthedContactsRoute: AuthedContactsRoute,
   AuthedInvitationsRoute: AuthedInvitationsRoute,
   AuthedProfileRoute: AuthedProfileRoute,
-  AuthedTestbedRoute: AuthedTestbedRoute,
   AuthedEventsEventIdRoute: AuthedEventsEventIdRouteWithChildren,
   AuthedEventsNewRoute: AuthedEventsNewRoute,
   AuthedEventsIndexRoute: AuthedEventsIndexRoute,
@@ -463,7 +541,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthedRoute: AuthedRouteWithChildren,
   FeaturesRoute: FeaturesRoute,
-  PlansRoute: PlansRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   VerifySuccessRoute: VerifySuccessRoute,
   AuthSignInRoute: AuthSignInRoute,

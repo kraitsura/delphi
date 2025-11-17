@@ -27,11 +27,11 @@ export function HeroSection() {
 				<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 					{isAuthenticated ? (
 						<Link
-							to="/dashboard"
+							to="/events"
 							preload="intent"
 							className="w-full sm:w-auto px-12 py-4 bg-black dark:bg-white text-white dark:text-black font-mono font-bold text-sm uppercase tracking-wider border-2 border-black dark:border-white hover:bg-white hover:text-black dark:hover:bg-black dark:hover:text-white transition-colors"
 						>
-							Go to Dashboard
+							Go to Events
 						</Link>
 					) : (
 						<>

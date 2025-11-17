@@ -1,5 +1,8 @@
 import type { DashboardConfig } from "@/lib/fluid-ui/types";
-import { validateDashboardConfig, type ValidationOptions } from "@/lib/fluid-ui/validators";
+import {
+	type ValidationOptions,
+	validateDashboardConfig,
+} from "@/lib/fluid-ui/validators";
 import { DashboardError } from "./dashboard-error";
 import { GridRow } from "./grid-row";
 import { TextRow } from "./text-row";
@@ -10,7 +13,11 @@ interface LayoutControllerProps {
 	validationOptions?: ValidationOptions;
 }
 
-export function LayoutController({ config, eventId, validationOptions }: LayoutControllerProps) {
+export function LayoutController({
+	config,
+	eventId,
+	validationOptions,
+}: LayoutControllerProps) {
 	// Validate configuration
 	const validation = validateDashboardConfig(config, validationOptions);
 

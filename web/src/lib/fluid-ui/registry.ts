@@ -117,3 +117,133 @@ export function calculateGridLayout(
 	// Default to equal split
 	return components.map(() => "1fr").join(" ");
 }
+
+/**
+ * Export component metadata in LLM-friendly format for AI agent
+ * Used to inform the agent about available components and their usage
+ */
+export function getComponentMetadataForAgent(): string {
+	const components = Array.from(registry.entries());
+
+	const metadata = components.map(([type, entry]) => {
+		const meta = entry.metadata;
+		return {
+			type,
+			name: meta.name,
+			description: meta.description,
+			props: Object.entries(meta.props).map(([name, schema]) => ({
+				name,
+				type: schema.type,
+				required: schema.required,
+				description: schema.description,
+				default: schema.default,
+				values: (schema as any).values,
+			})),
+			layoutRules: {
+				preferredRatio: meta.layoutRules.preferredRatio,
+				minWidth: meta.layoutRules.minWidth,
+				minHeight: meta.layoutRules.minHeight,
+			},
+			connections: meta.connections,
+		};
+	});
+
+	return `
+Available Components for Dynamic UI:
+
+${metadata
+	.map(
+		(c) => `
+### ${c.name} (${c.type})
+Description: ${c.description}
+
+Required Props:
+${
+	c.props
+		.filter((p) => p.required)
+		.map((p) => `  - ${p.name}: ${p.type} - ${p.description}`)
+		.join("\n") || "  (none)"
+}
+
+Optional Props:
+${
+	c.props
+		.filter((p) => !p.required)
+		.map(
+			(p) =>
+				`  - ${p.name}: ${p.type}${p.default !== undefined ? ` (default: ${JSON.stringify(p.default)})` : ""}${p.values ? ` [${p.values.join(", ")}]` : ""} - ${p.description}`,
+		)
+		.join("\n") || "  (none)"
+}
+
+Layout: ${c.layoutRules.preferredRatio} ratio, min ${c.layoutRules.minWidth}
+
+${c.connections?.canBeMaster ? `🔵 Master Component - Emits: ${c.connections.emits?.join(", ") || "none"}` : ""}
+${c.connections?.canBeDetail ? `🟢 Detail Component - Listens: ${c.connections.listensTo?.join(", ") || "none"}` : ""}
+`,
+	)
+	.join("\n---\n")}
+
+## How to Use Components
+
+### Single Component Response:
+{
+  "renderType": "component_grid",
+  "componentConfig": {
+    "sections": [{
+      "type": "grid",
+      "components": [
+        { "type": "TaskListCard", "props": { "eventId": "evt_123", "limit": 10 } }
+      ]
+    }]
+  }
+}
+
+### Dashboard Layout (Multiple Components):
+{
+  "renderType": "component_grid",
+  "componentConfig": {
+    "sections": [
+      {
+        "type": "text",
+        "content": "# Event Overview\\nHere are your key metrics:"
+      },
+      {
+        "type": "grid",
+        "components": [
+          { "type": "KPIDashboard", "props": { "eventId": "evt_123" } },
+          { "type": "ProgressSummary", "props": { "eventId": "evt_123" } }
+        ]
+      },
+      {
+        "type": "grid",
+        "components": [
+          { "type": "TaskListCard", "props": { "eventId": "evt_123", "limit": 5 } },
+          { "type": "BudgetSummaryCard", "props": { "eventId": "evt_123" } }
+        ]
+      }
+    ]
+  }
+}
+
+### Master-Detail Pattern:
+Place master component (e.g., VendorsList) in first grid, detail component (e.g., VendorCard) in second grid.
+When user clicks in master, detail component filters automatically via Zustand.
+
+### Interactive Prompts:
+{
+  "renderType": "interactive_prompt",
+  "interactivePrompt": {
+    "promptType": "poll",
+    "data": {
+      "pollId": "poll_123",
+      "question": "Which caterer should we choose?",
+      "options": [...],
+      "allowMultipleChoices": false,
+      "eventId": "evt_123",
+      "roomId": "room_456"
+    }
+  }
+}
+`;
+}

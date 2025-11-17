@@ -5,9 +5,9 @@
  * Each component grid gets its own isolated state to prevent interference.
  */
 
-import React, { createContext, useContext, useRef, type ReactNode } from 'react';
-import { useStore } from 'zustand';
-import { createDashboardStore, type DashboardStore } from './store';
+import { createContext, type ReactNode, useContext, useRef } from "react";
+import { useStore } from "zustand";
+import { createDashboardStore, type DashboardStore } from "./store";
 
 // ============================================================================
 // CONTEXT
@@ -39,10 +39,10 @@ interface DashboardStoreProviderProps {
 export function DashboardStoreProvider({
 	children,
 }: DashboardStoreProviderProps) {
-	const storeRef = useRef<DashboardStoreApi>();
+	const storeRef = useRef<DashboardStoreApi | undefined>(undefined);
 
 	if (!storeRef.current) {
-		storeRef.current = createDashboardStore();
+		storeRef.current = createDashboardStore({});
 	}
 
 	return (
@@ -67,13 +67,13 @@ export function DashboardStoreProvider({
  * @throws Error if used outside DashboardStoreProvider
  */
 export function useDashboardStore<T>(
-	selector: (state: DashboardStore) => T
+	selector: (state: DashboardStore) => T,
 ): T {
 	const store = useContext(DashboardStoreContext);
 
 	if (!store) {
 		throw new Error(
-			'useDashboardStore must be used within DashboardStoreProvider'
+			"useDashboardStore must be used within DashboardStoreProvider",
 		);
 	}
 
@@ -93,7 +93,7 @@ export function useDashboardStoreApi(): DashboardStoreApi {
 
 	if (!store) {
 		throw new Error(
-			'useDashboardStoreApi must be used within DashboardStoreProvider'
+			"useDashboardStoreApi must be used within DashboardStoreProvider",
 		);
 	}
 
@@ -111,9 +111,9 @@ export function useDashboardStoreApi(): DashboardStoreApi {
  * const vendorId = useSelection('vendorId');
  * const taskId = useSelection('taskId');
  */
-export function useSelection<K extends keyof DashboardStore['selections']>(
-	key: K
-): DashboardStore['selections'][K] {
+export function useSelection<K extends keyof DashboardStore["selections"]>(
+	key: K,
+): DashboardStore["selections"][K] {
 	return useDashboardStore((state) => state.selections[key]);
 }
 
@@ -123,7 +123,7 @@ export function useSelection<K extends keyof DashboardStore['selections']>(
  * Usage:
  * const selections = useAllSelections();
  */
-export function useAllSelections(): DashboardStore['selections'] {
+export function useAllSelections(): DashboardStore["selections"] {
 	return useDashboardStore((state) => state.selections);
 }
 
@@ -146,7 +146,7 @@ export function useSelectAction() {
  */
 export function useIsComponentHighlighted(componentId: string): boolean {
 	return useDashboardStore((state) =>
-		state.highlightedComponents.has(componentId)
+		state.highlightedComponents.has(componentId),
 	);
 }
 
@@ -159,7 +159,7 @@ export function useIsComponentHighlighted(componentId: string): boolean {
  */
 export function useHighlightActions() {
 	const highlightComponent = useDashboardStore(
-		(state) => state.highlightComponent
+		(state) => state.highlightComponent,
 	);
 	const clearHighlights = useDashboardStore((state) => state.clearHighlights);
 
@@ -176,10 +176,10 @@ export function useHighlightActions() {
  * const animationType = useComponentAnimation('component-id');
  */
 export function useComponentAnimation(
-	componentId: string
-): 'pulse' | 'shake' | 'glow' | null {
+	componentId: string,
+): "pulse" | "shake" | "glow" | null {
 	return useDashboardStore(
-		(state) => state.animatingComponents.get(componentId) || null
+		(state) => state.animatingComponents.get(componentId) || null,
 	);
 }
 

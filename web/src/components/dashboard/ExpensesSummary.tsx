@@ -1,11 +1,11 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface ExpensesSummaryProps {
 	eventId: Id<"events">;
@@ -18,13 +18,16 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 	const { showChart = true, showCategories = true, compact = false } = props;
 
 	// Zustand state
-	const selectedCategory = useDashboardStore((state) => state.selections.category);
+	const selectedCategory = useDashboardStore(
+		(state) => state.selections.category,
+	);
 	const select = useDashboardStore((state) => state.select);
 	const clearSelection = useDashboardStore((state) => state.clearSelection);
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
-	// TODO: Implement expenses API
-	const expenses: unknown[] = [];
+	const expenses = useQuery(api.expenses.listByEvent, {
+		eventId: props.eventId,
+	});
 
 	const handleCategoryClick = (category: string) => {
 		const newCategory = selectedCategory === category ? null : category;
@@ -46,14 +49,13 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 		const committed = event.budget?.committed || 0;
 		const remaining = total - spent - committed;
 
-		// Category breakdown
+		// Category breakdown from actual expenses
 		const categoryTotals = new Map<string, number>();
 		expenses.forEach((expense) => {
-			const exp = expense as Record<string, unknown>;
-			const category = (exp.category as string) || "Other";
+			const category = expense.category || "other";
 			categoryTotals.set(
 				category,
-				(categoryTotals.get(category) || 0) + (exp.amount as number),
+				(categoryTotals.get(category) || 0) + expense.amount,
 			);
 		});
 
@@ -73,7 +75,7 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 			percentageUsed: total > 0 ? ((spent + committed) / total) * 100 : 0,
 			categoryBreakdown,
 		};
-	}, [event]);
+	}, [event, expenses]);
 
 	if (event === undefined || expenses === undefined) {
 		return <ExpensesSummarySkeleton />;
@@ -157,7 +159,9 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 				)}
 
 				{/* Stats cards */}
-				<div className={`grid gap-4 mb-6 ${compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
+				<div
+					className={`grid gap-4 mb-6 ${compact ? "grid-cols-1" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}
+				>
 					<div className="space-y-1">
 						<div className="text-xs text-muted-foreground uppercase tracking-wide">
 							Total Budget
@@ -211,7 +215,8 @@ export function ExpensesSummary(props: ExpensesSummaryProps) {
 									>
 										<div className="flex justify-between text-sm">
 											<span className={`${isSelected ? "font-semibold" : ""}`}>
-												{isSelected && "→ "}{cat.category}
+												{isSelected && "→ "}
+												{cat.category}
 											</span>
 											<span className="text-muted-foreground">
 												${cat.amount.toLocaleString()} (

@@ -1,13 +1,13 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface DayOfChecklistProps {
 	eventId: Id<"events">;
@@ -16,7 +16,7 @@ export interface DayOfChecklistProps {
 }
 
 export function DayOfChecklist(props: DayOfChecklistProps) {
-	const { showTimes = true, autoScroll = false } = props;
+	const { showTimes = true } = props;
 
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
@@ -33,7 +33,7 @@ export function DayOfChecklist(props: DayOfChecklistProps) {
 			.sort((a: any, b: any) => (a.dayOfSequence || 0) - (b.dayOfSequence || 0))
 			.map((task: any, index) => {
 				// Calculate estimated time based on sequence and duration
-				const eventDate = new Date(event.date);
+				const eventDate = new Date(event.eventDate || Date.now());
 				let estimatedTime = eventDate.getTime();
 
 				// Add cumulative duration from previous tasks
@@ -49,7 +49,7 @@ export function DayOfChecklist(props: DayOfChecklistProps) {
 			});
 	}, [tasks, event]);
 
-	const handleTaskToggle = (taskId: string, task: any, checked: boolean) => {
+	const handleTaskToggle = (taskId: string, _task: any, _checked: boolean) => {
 		// In a real app, this would update the task status via Convex mutation
 		// For now, just update Zustand selection
 		select("taskId", taskId);
@@ -114,7 +114,6 @@ export function DayOfChecklist(props: DayOfChecklistProps) {
 						const isCompleted = task.status === "completed";
 						const isCurrent = index === currentTaskIndex;
 						const isPast = task.estimatedTime < now;
-						const isUpcoming = task.estimatedTime > now;
 
 						return (
 							<div
@@ -192,7 +191,9 @@ export function DayOfChecklist(props: DayOfChecklistProps) {
 											<Badge className="bg-primary text-xs">Now</Badge>
 										)}
 										{isCompleted && (
-											<span className="text-green-600">{SYMBOLS.CHECK_MARK}</span>
+											<span className="text-green-600">
+												{SYMBOLS.CHECK_MARK}
+											</span>
 										)}
 										{task.status === "blocked" && (
 											<Badge variant="destructive" className="text-xs">
@@ -209,7 +210,9 @@ export function DayOfChecklist(props: DayOfChecklistProps) {
 				{/* Progress summary */}
 				<div className="mt-6 pt-4 border-t">
 					<div className="flex items-center justify-between mb-2">
-						<span className="text-sm text-muted-foreground">Overall Progress</span>
+						<span className="text-sm text-muted-foreground">
+							Overall Progress
+						</span>
 						<span className="text-sm font-medium">
 							{dayOfTasks.filter((t: any) => t.status === "completed").length}/
 							{dayOfTasks.length} complete
@@ -256,7 +259,9 @@ function DayOfChecklistEmpty() {
 			</CardHeader>
 			<CardContent className="py-12 text-center text-muted-foreground">
 				<p>No event day tasks yet</p>
-				<p className="text-xs mt-2">Add tasks with the &quot;Day Of&quot; phase</p>
+				<p className="text-xs mt-2">
+					Add tasks with the &quot;Day Of&quot; phase
+				</p>
 			</CardContent>
 		</Card>
 	);

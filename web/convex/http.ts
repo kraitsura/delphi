@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 import { authComponent, createAuth } from "./auth";
 
 const http = httpRouter();
@@ -49,14 +50,39 @@ http.route({
         );
       }
 
-      const body = await request.json();
+      const body = await request.json() as {
+        roomId: string;
+        eventId: string;
+        text: string;
+        metadata?: {
+          invokedBy: string;
+          userMessage: string;
+          timestamp?: number;
+          messagesFetched?: number;
+          conversationTurns?: number;
+        };
+      };
+
+      // Ensure metadata has required fields
+      if (!body.metadata || !body.metadata.invokedBy || !body.metadata.userMessage) {
+        return new Response(
+          JSON.stringify({ error: "Missing required metadata fields" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
 
       // Save agent response to database
       await ctx.runMutation(api.agent.saveResponse, {
-        roomId: body.roomId,
-        eventId: body.eventId,
+        roomId: body.roomId as Id<"rooms">,
+        eventId: body.eventId as Id<"events">,
         text: body.text,
-        metadata: body.metadata,
+        metadata: {
+          invokedBy: body.metadata.invokedBy as Id<"users">,
+          userMessage: body.metadata.userMessage,
+          timestamp: body.metadata.timestamp,
+          messagesFetched: body.metadata.messagesFetched,
+          conversationTurns: body.metadata.conversationTurns,
+        },
       });
 
       return new Response(JSON.stringify({ success: true }), {

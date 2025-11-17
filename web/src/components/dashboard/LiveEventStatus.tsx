@@ -1,10 +1,10 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo, useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
@@ -17,15 +17,14 @@ export interface LiveEventStatusProps {
 export function LiveEventStatus(props: LiveEventStatusProps) {
 	const { showTeam = true, updateInterval = 30000 } = props;
 
-	const [currentTime, setCurrentTime] = useState(Date.now());
-
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
 
-	// Update current time periodically
+	// Force periodic re-renders to update time-sensitive displays
+	const [, setUpdateTrigger] = useState(0);
 	useEffect(() => {
 		const interval = setInterval(() => {
-			setCurrentTime(Date.now());
+			setUpdateTrigger((prev) => prev + 1);
 		}, updateInterval);
 
 		return () => clearInterval(interval);
@@ -38,14 +37,22 @@ export function LiveEventStatus(props: LiveEventStatusProps) {
 		const allTasks = tasks;
 
 		const totalTasks = allTasks.length;
-		const completedTasks = allTasks.filter((t: any) => t.status === "completed").length;
-		const inProgressTasks = allTasks.filter((t: any) => t.status === "in_progress").length;
-		const blockedTasks = allTasks.filter((t: any) => t.status === "blocked").length;
+		const completedTasks = allTasks.filter(
+			(t: any) => t.status === "completed",
+		).length;
+		const inProgressTasks = allTasks.filter(
+			(t: any) => t.status === "in_progress",
+		).length;
+		const blockedTasks = allTasks.filter(
+			(t: any) => t.status === "blocked",
+		).length;
 
 		// Find current task
 		const sortedDayOfTasks = dayOfTasks
 			.filter((t: any) => t.dayOfSequence !== undefined)
-			.sort((a: any, b: any) => (a.dayOfSequence || 0) - (b.dayOfSequence || 0));
+			.sort(
+				(a: any, b: any) => (a.dayOfSequence || 0) - (b.dayOfSequence || 0),
+			);
 
 		let currentTask = null;
 		let nextTask = null;
@@ -80,9 +87,8 @@ export function LiveEventStatus(props: LiveEventStatusProps) {
 			}
 		});
 
-		const eventDate = new Date(event.date);
-		const isToday =
-			eventDate.toDateString() === new Date().toDateString();
+		const eventDate = new Date(event.eventDate || Date.now());
+		const isToday = eventDate.toDateString() === new Date().toDateString();
 
 		const status = isToday
 			? "live"
@@ -99,24 +105,19 @@ export function LiveEventStatus(props: LiveEventStatusProps) {
 			nextTask,
 			teamMembers: Array.from(teamMembers.values()),
 			status,
-			progress: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
+			progress:
+				totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
 		};
-	}, [tasks, event, currentTime]);
+	}, [tasks, event]);
 
-	const handleTaskClick = (taskId: string, taskData: any) => {
-		emit({
-			type: "taskSelected",
-			payload: { taskId, taskData },
-		});
+	const handleTaskClick = (_taskId: string, _taskData: any) => {
+		// Task selection - could be handled by parent component or router
+		// TODO: Implement task selection handler
 	};
 
-	const handleMemberClick = (member: any) => {
-		if (member.name) {
-			emit({
-				type: "teamMemberSelected",
-				payload: { userId: member.name, userName: member.name },
-			});
-		}
+	const handleMemberClick = (_member: any) => {
+		// Team member selection - could be handled by parent component or router
+		// TODO: Implement member selection handler
 	};
 
 	if (tasks === undefined || event === undefined) {
@@ -143,9 +144,7 @@ export function LiveEventStatus(props: LiveEventStatusProps) {
 									: "secondary"
 						}
 						className={
-							eventStatus.status === "live"
-								? "bg-green-600 animate-pulse"
-								: ""
+							eventStatus.status === "live" ? "bg-green-600 animate-pulse" : ""
 						}
 					>
 						{eventStatus.status === "live" && `${SYMBOLS.CIRCLE} `}
@@ -177,53 +176,48 @@ export function LiveEventStatus(props: LiveEventStatusProps) {
 				</div>
 
 				{/* Current task */}
-				{eventStatus.currentTask && (
-					<div className="mb-6 p-4 rounded-lg bg-primary/10 border-2 border-primary">
-						<div className="flex items-start justify-between mb-2">
-							<div className="flex items-center gap-2">
-								<span className="text-lg">{SYMBOLS.STAR}</span>
-								<h3 className="font-semibold">Happening Now</h3>
-							</div>
-							<Badge variant="outline">
-								#{eventStatus.currentTask.dayOfSequence}
-							</Badge>
-						</div>
+				{eventStatus.currentTask &&
+					(() => {
+						const currentTask = eventStatus.currentTask;
+						return (
+							<div className="mb-6 p-4 rounded-lg bg-primary/10 border-2 border-primary">
+								<div className="flex items-start justify-between mb-2">
+									<div className="flex items-center gap-2">
+										<span className="text-lg">{SYMBOLS.STAR}</span>
+										<h3 className="font-semibold">Happening Now</h3>
+									</div>
+									<Badge variant="outline">#{currentTask.dayOfSequence}</Badge>
+								</div>
 
-						<div
-							className="cursor-pointer"
-							onClick={() =>
-								handleTaskClick(
-									eventStatus.currentTask._id,
-									eventStatus.currentTask,
-								)
-							}
-						>
-							<h4 className="font-medium mb-2">{eventStatus.currentTask.title}</h4>
-							{eventStatus.currentTask.description && (
-								<p className="text-sm text-muted-foreground mb-2">
-									{eventStatus.currentTask.description}
-								</p>
-							)}
-							<div className="flex flex-wrap items-center gap-2">
-								{eventStatus.currentTask.assignee && (
-									<Badge variant="outline">
-										{eventStatus.currentTask.assignee}
-									</Badge>
-								)}
-								{eventStatus.currentTask.vendor && (
-									<Badge variant="outline">
-										{SYMBOLS.HANDSHAKE} {eventStatus.currentTask.vendor}
-									</Badge>
-								)}
-								{eventStatus.currentTask.estimatedDuration && (
-									<Badge variant="outline">
-										{eventStatus.currentTask.estimatedDuration}min
-									</Badge>
-								)}
+								<div
+									className="cursor-pointer"
+									onClick={() => handleTaskClick(currentTask._id, currentTask)}
+								>
+									<h4 className="font-medium mb-2">{currentTask.title}</h4>
+									{currentTask.description && (
+										<p className="text-sm text-muted-foreground mb-2">
+											{currentTask.description}
+										</p>
+									)}
+									<div className="flex flex-wrap items-center gap-2">
+										{currentTask.assignee && (
+											<Badge variant="outline">{currentTask.assignee}</Badge>
+										)}
+										{currentTask.vendor && (
+											<Badge variant="outline">
+												{SYMBOLS.HANDSHAKE} {currentTask.vendor}
+											</Badge>
+										)}
+										{currentTask.estimatedDuration && (
+											<Badge variant="outline">
+												{currentTask.estimatedDuration}min
+											</Badge>
+										)}
+									</div>
+								</div>
 							</div>
-						</div>
-					</div>
-				)}
+						);
+					})()}
 
 				{/* Next task */}
 				{eventStatus.nextTask && (
@@ -231,9 +225,13 @@ export function LiveEventStatus(props: LiveEventStatusProps) {
 						<div className="flex items-start justify-between">
 							<div>
 								<span className="text-xs text-muted-foreground">Up Next</span>
-								<h4 className="font-normal text-sm mt-1">{eventStatus.nextTask.title}</h4>
+								<h4 className="font-normal text-sm mt-1">
+									{eventStatus.nextTask.title}
+								</h4>
 							</div>
-							<Badge variant="outline">#{eventStatus.nextTask.dayOfSequence}</Badge>
+							<Badge variant="outline">
+								#{eventStatus.nextTask.dayOfSequence}
+							</Badge>
 						</div>
 					</div>
 				)}
@@ -262,7 +260,9 @@ export function LiveEventStatus(props: LiveEventStatusProps) {
 
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-2">
-												<span className="font-medium text-sm">{member.name}</span>
+												<span className="font-medium text-sm">
+													{member.name}
+												</span>
 												<Badge variant="outline" className="text-xs">
 													{member.tasks.length} tasks
 												</Badge>

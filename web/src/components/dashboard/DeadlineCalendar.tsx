@@ -1,12 +1,12 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface DeadlineCalendarProps {
 	eventId: Id<"events">;
@@ -15,7 +15,7 @@ export interface DeadlineCalendarProps {
 }
 
 export function DeadlineCalendar(props: DeadlineCalendarProps) {
-	const { view = "month", highlightOverdue = true } = props;
+	const { highlightOverdue = true } = props;
 
 	// Zustand state - could track selected date range if needed
 	const select = useDashboardStore((state) => state.select);
@@ -86,24 +86,26 @@ export function DeadlineCalendar(props: DeadlineCalendarProps) {
 			weeks.push(days.slice(i, i + 7));
 		}
 
-		return { days, weeks, monthName: firstDay.toLocaleDateString("en-US", { month: "long", year: "numeric" }) };
+		return {
+			days,
+			weeks,
+			monthName: firstDay.toLocaleDateString("en-US", {
+				month: "long",
+				year: "numeric",
+			}),
+		};
 	}, [tasks]);
 
 	const handleDayClick = (date: number, dayTasks: any[]) => {
 		if (dayTasks.length === 0) return;
 
-		setSelectedDate(date);
-		emit({
-			type: "dateSelected",
-			payload: { date },
-		});
+		select("dateRange", [date, date]);
 	};
 
-	const handleTaskClick = (taskId: string, taskData: any) => {
-		emit({
-			type: "taskSelected",
-			payload: { taskId, taskData },
-		});
+	const handleTaskClick = (taskId: string, _taskData: any) => {
+		// Task selection - could be handled by parent component or router
+		// For now, just using Zustand to track selection
+		select("taskId", taskId);
 	};
 
 	if (tasks === undefined) {
@@ -123,7 +125,9 @@ export function DeadlineCalendar(props: DeadlineCalendarProps) {
 				<CardTitle className="fluid-component-title">
 					{SYMBOLS.BLACK_SQUARE} Deadline Calendar
 				</CardTitle>
-				<span className="text-sm text-muted-foreground">{calendarData.monthName}</span>
+				<span className="text-sm text-muted-foreground">
+					{calendarData.monthName}
+				</span>
 			</CardHeader>
 
 			<CardContent className="fluid-component-content">
@@ -147,14 +151,18 @@ export function DeadlineCalendar(props: DeadlineCalendarProps) {
 							<div key={weekIndex} className="grid grid-cols-7 gap-1">
 								{week.map((dayData: any, dayIndex) => {
 									if (!dayData.isCurrentMonth) {
-										return <div key={dayIndex} className="h-20 bg-muted/20 rounded" />;
+										return (
+											<div
+												key={dayIndex}
+												className="h-20 bg-muted/20 rounded"
+											/>
+										);
 									}
 
 									const hasOverdue =
 										highlightOverdue &&
 										dayData.tasks.some(
-											(t: any) =>
-												t.dueDate < now && t.status !== "completed",
+											(t: any) => t.dueDate < now && t.status !== "completed",
 										);
 
 									return (
@@ -170,7 +178,8 @@ export function DeadlineCalendar(props: DeadlineCalendarProps) {
 													: ""
 											} ${selectedDate === dayData.date ? "bg-accent/50 border-primary" : ""}`}
 											onClick={() =>
-												dayData.date && handleDayClick(dayData.date, dayData.tasks)
+												dayData.date &&
+												handleDayClick(dayData.date, dayData.tasks)
 											}
 										>
 											<div className="p-1 h-full flex flex-col">
@@ -192,21 +201,23 @@ export function DeadlineCalendar(props: DeadlineCalendarProps) {
 
 												{/* Task dots */}
 												<div className="flex flex-wrap gap-0.5">
-													{dayData.tasks.slice(0, 3).map((task: any, idx: number) => (
-														<div
-															key={idx}
-															className={`w-1.5 h-1.5 rounded-full ${
-																task.status === "completed"
-																	? "bg-green-600"
-																	: task.status === "blocked"
-																		? "bg-red-600"
-																		: task.status === "in_progress"
-																			? "bg-blue-600"
-																			: "bg-gray-400"
-															}`}
-															title={task.title}
-														/>
-													))}
+													{dayData.tasks
+														.slice(0, 3)
+														.map((task: any, idx: number) => (
+															<div
+																key={idx}
+																className={`w-1.5 h-1.5 rounded-full ${
+																	task.status === "completed"
+																		? "bg-green-600"
+																		: task.status === "blocked"
+																			? "bg-red-600"
+																			: task.status === "in_progress"
+																				? "bg-blue-600"
+																				: "bg-gray-400"
+																}`}
+																title={task.title}
+															/>
+														))}
 												</div>
 											</div>
 										</div>
@@ -222,7 +233,9 @@ export function DeadlineCalendar(props: DeadlineCalendarProps) {
 					<div className="mt-4 pt-4 border-t">
 						<h4 className="text-sm font-medium mb-2">
 							Tasks on{" "}
-							{new Date(selectedDate).toLocaleDateString("en-US", {
+							{new Date(
+								Array.isArray(selectedDate) ? selectedDate[0] : selectedDate,
+							).toLocaleDateString("en-US", {
 								month: "long",
 								day: "numeric",
 							})}

@@ -1,5 +1,6 @@
 import { api } from "@convex/_generated/api";
 import { useMutation } from "convex/react";
+import { useCallback } from "react";
 import { toast } from "sonner";
 
 /**
@@ -19,19 +20,36 @@ export function useSendMessage() {
 	const deleteMessage = useMutation(api.messages.remove);
 	const markAsRead = useMutation(api.messages.markRoomAsRead);
 
-	const handleSend = async (
-		roomId: Parameters<typeof sendMessage>[0]["roomId"],
-		text: string,
-	) => {
-		try {
-			await sendMessage({ roomId, text });
-		} catch (error) {
-			toast.error(
-				`Failed to send message: ${error instanceof Error ? error.message : "An error occurred"}`,
-			);
-			throw error;
-		}
-	};
+	const handleSend = useCallback(
+		async (
+			roomId: Parameters<typeof sendMessage>[0]["roomId"],
+			text: string,
+			parentMessageId?: Parameters<typeof sendMessage>[0]["parentMessageId"],
+		) => {
+			try {
+				// Timing: Measure mutation latency
+				const sendStartTime = performance.now();
+				console.log("[Message Send] Starting mutation...");
+
+				await sendMessage({ roomId, text, parentMessageId });
+
+				const sendEndTime = performance.now();
+				const mutationLatency = sendEndTime - sendStartTime;
+				console.log(
+					`[Message Send] Mutation completed in ${mutationLatency.toFixed(2)}ms`,
+				);
+
+				// Note: UI update happens via Convex reactive subscription
+				// Check browser console for "[Message List] New message detected" to see total latency
+			} catch (error) {
+				toast.error(
+					`Failed to send message: ${error instanceof Error ? error.message : "An error occurred"}`,
+				);
+				throw error;
+			}
+		},
+		[sendMessage],
+	);
 
 	const handleEdit = async (
 		messageId: Parameters<typeof editMessage>[0]["messageId"],

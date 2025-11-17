@@ -53,7 +53,7 @@ export function SignUpForm() {
 		try {
 			await authClient.signIn.social({
 				provider: "google",
-				callbackURL: "/dashboard",
+				callbackURL: "/events",
 			});
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Google sign up failed");

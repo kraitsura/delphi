@@ -9,9 +9,9 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import {
   getAuthenticatedUser,
-  requireCanPostInRoom,
   requireRoomAccess,
   isRoomEventCoordinator,
+  isEventCoordinator,
 } from "./authHelpers";
 
 // ==========================================
@@ -20,7 +20,7 @@ import {
 
 /**
  * Send a new message in a room
- * Requires: User must be a room participant with canPost permission
+ * Requires: User must be event coordinator OR room participant
  */
 export const send = mutation({
   args: {
@@ -37,26 +37,74 @@ export const send = mutation({
         })
       )
     ),
+    parentMessageId: v.optional(v.id("messages")), // Phase 2: Threading support
+    // Track 4: AI message support
+    isAIGenerated: v.optional(v.boolean()),
+    aiMetadata: v.optional(v.any()), // Structured AI metadata for Track 4
   },
   handler: async (ctx, args) => {
-    const { userProfile } = await getAuthenticatedUser(ctx);
-
-    // Validate room exists
-    const room = await ctx.db.get(args.roomId);
-    if (!room) {
-      throw new Error("Room not found");
-    }
-
-    // Check posting permission
-    await requireCanPostInRoom(ctx, args.roomId, userProfile._id);
-
-    // Validate message text
+    // Validate message text early (before any DB queries)
     if (!args.text.trim()) {
       throw new Error("Message text cannot be empty");
     }
 
     if (args.text.length > 10000) {
       throw new Error("Message text cannot exceed 10,000 characters");
+    }
+
+    // Parallelize authentication and room fetch
+    const [{ userProfile }, room] = await Promise.all([
+      getAuthenticatedUser(ctx),
+      ctx.db.get(args.roomId),
+    ]);
+
+    if (!room) {
+      throw new Error("Room not found");
+    }
+
+    // Simplified permission check: user is coordinator OR room participant
+    // If they're in the room, they can post - that's the whole point!
+    const event = await ctx.db.get(room.eventId);
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    const isCoordinator = isEventCoordinator(event, userProfile._id);
+
+    if (!isCoordinator) {
+      // Check if user is a room participant
+      const participant = await ctx.db
+        .query("roomParticipants")
+        .withIndex("by_room_and_user", (q) =>
+          q.eq("roomId", args.roomId).eq("userId", userProfile._id)
+        )
+        .unique();
+
+      if (!participant) {
+        throw new Error("Forbidden: You are not a member of this room");
+      }
+    }
+
+    // Phase 2: Determine threadId for threading support
+    let threadId: string | undefined = undefined;
+    if (args.parentMessageId) {
+      const parentMsg = await ctx.db.get(args.parentMessageId);
+      if (!parentMsg) {
+        throw new Error("Parent message not found");
+      }
+
+      // Verify parent message is in the same room
+      if (parentMsg.roomId !== args.roomId) {
+        throw new Error("Parent message must be in the same room");
+      }
+
+      // Determine threadId: inherit from parent or use parentMessageId as root
+      threadId = parentMsg.threadId || args.parentMessageId;
+
+      // Increment reply count on parent message
+      await ctx.db.patch(args.parentMessageId, {
+        replyCount: (parentMsg.replyCount || 0) + 1,
+      });
     }
 
     // Create the message
@@ -68,7 +116,11 @@ export const send = mutation({
       attachments: args.attachments,
       isEdited: false,
       isDeleted: false,
-      isAIGenerated: false,
+      isAIGenerated: args.isAIGenerated ?? false, // Track 4: Support AI messages
+      aiMetadata: args.aiMetadata, // Track 4: Store AI metadata
+      parentMessageId: args.parentMessageId, // Phase 2: Threading
+      threadId, // Phase 2: Threading
+      replyCount: 0, // Phase 2: Initialize reply count
       createdAt: Date.now(),
     });
 
@@ -268,10 +320,46 @@ export const listByRoom = query({
     const authors = await Promise.all(authorIds.map((id) => ctx.db.get(id)));
     const authorMap = new Map(authors.filter((a) => a !== null).map((a) => [a!._id, a]));
 
-    // Combine messages with author data
+    // Batch fetch all root messages for replies (to prevent loading flash)
+    const rootMessageIds = Array.from(
+      new Set(
+        messages
+          .filter((m) => m.parentMessageId || m.threadId)
+          .map((m) => {
+            // Get the thread root: threadId if exists, otherwise parentMessageId
+            if (m.threadId) {
+              return m.threadId;
+            }
+            return m.parentMessageId;
+          })
+          .filter((id): id is string => id !== undefined)
+      )
+    );
+
+    const rootMessages = await Promise.all(
+      rootMessageIds.map(async (id) => {
+        const msg = await ctx.db.get(id as any);
+        if (!msg || !("authorId" in msg)) return null;
+        return {
+          ...msg,
+          author: authorMap.get(msg.authorId),
+        };
+      })
+    );
+    const rootMessageMap = new Map(
+      rootMessages.filter((m) => m !== null).map((m) => [m!._id, m])
+    );
+
+    // Combine messages with author data and root message data
     return messages.map((m) => ({
       ...m,
       author: authorMap.get(m.authorId),
+      rootMessage:
+        m.threadId
+          ? rootMessageMap.get(m.threadId as any)
+          : m.parentMessageId
+            ? rootMessageMap.get(m.parentMessageId)
+            : undefined,
     }));
   },
 });
@@ -430,6 +518,62 @@ export const getRecentByEvent = query({
       ...m,
       author: authorMap.get(m.authorId),
       room: roomMap.get(m.roomId),
+    }));
+  },
+});
+
+/**
+ * Get all messages in a thread (Phase 2: Threading)
+ * Returns all messages in a thread, ordered chronologically
+ * Includes the root message and all replies
+ */
+export const getThread = query({
+  args: {
+    messageId: v.id("messages"),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    // Get the root message
+    const rootMessage = await ctx.db.get(args.messageId);
+    if (!rootMessage) {
+      throw new Error("Message not found");
+    }
+
+    // Verify user has access to the room
+    await requireRoomAccess(ctx, rootMessage.roomId, userProfile._id);
+
+    // Determine thread root: if message has threadId, use it; otherwise this message is the root
+    const threadId = rootMessage.threadId || args.messageId;
+
+    // Fetch all messages in thread using the by_thread index
+    const threadMessages = await ctx.db
+      .query("messages")
+      .withIndex("by_thread", (q) => q.eq("threadId", threadId))
+      .order("asc") // Chronological order (oldest first)
+      .filter((q) => q.eq(q.field("isDeleted"), false))
+      .collect();
+
+    // If the root message doesn't have threadId set (it's the original message),
+    // we need to include it separately since it won't be in the by_thread query
+    let allThreadMessages = threadMessages;
+    if (!rootMessage.threadId && threadMessages.length > 0) {
+      // Only include root if there are actual replies
+      allThreadMessages = [rootMessage, ...threadMessages];
+    } else if (!rootMessage.threadId && threadMessages.length === 0) {
+      // This message has no thread yet, just return the single message
+      allThreadMessages = [rootMessage];
+    }
+
+    // Batch fetch all authors
+    const authorIds = Array.from(new Set(allThreadMessages.map((m) => m.authorId)));
+    const authors = await Promise.all(authorIds.map((id) => ctx.db.get(id)));
+    const authorMap = new Map(authors.filter((a) => a !== null).map((a) => [a!._id, a]));
+
+    // Return messages with author data
+    return allThreadMessages.map((m) => ({
+      ...m,
+      author: authorMap.get(m.authorId),
     }));
   },
 });

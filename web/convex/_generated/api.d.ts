@@ -15,6 +15,8 @@ import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
 import type * as cascadeHelpers from "../cascadeHelpers.js";
 import type * as checkpoints from "../checkpoints.js";
+import type * as contacts from "../contacts.js";
+import type * as crons from "../crons.js";
 import type * as dashboards from "../dashboards.js";
 import type * as decisions from "../decisions.js";
 import type * as emails from "../emails.js";
@@ -33,6 +35,8 @@ import type * as model_permissions from "../model/permissions.js";
 import type * as paymentSchedules from "../paymentSchedules.js";
 import type * as pollVotes from "../pollVotes.js";
 import type * as polls from "../polls.js";
+import type * as presence from "../presence.js";
+import type * as proposals from "../proposals.js";
 import type * as rateLimiterDemo from "../rateLimiterDemo.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as roomParticipants from "../roomParticipants.js";
@@ -40,6 +44,7 @@ import type * as rooms from "../rooms.js";
 import type * as taskGroups from "../taskGroups.js";
 import type * as tasks from "../tasks.js";
 import type * as timelineEvents from "../timelineEvents.js";
+import type * as usageTracking from "../usageTracking.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 import type * as vendors from "../vendors.js";
@@ -58,6 +63,8 @@ declare const fullApi: ApiFromModules<{
   authHelpers: typeof authHelpers;
   cascadeHelpers: typeof cascadeHelpers;
   checkpoints: typeof checkpoints;
+  contacts: typeof contacts;
+  crons: typeof crons;
   dashboards: typeof dashboards;
   decisions: typeof decisions;
   emails: typeof emails;
@@ -76,6 +83,8 @@ declare const fullApi: ApiFromModules<{
   paymentSchedules: typeof paymentSchedules;
   pollVotes: typeof pollVotes;
   polls: typeof polls;
+  presence: typeof presence;
+  proposals: typeof proposals;
   rateLimiterDemo: typeof rateLimiterDemo;
   rateLimits: typeof rateLimits;
   roomParticipants: typeof roomParticipants;
@@ -83,6 +92,7 @@ declare const fullApi: ApiFromModules<{
   taskGroups: typeof taskGroups;
   tasks: typeof tasks;
   timelineEvents: typeof timelineEvents;
+  usageTracking: typeof usageTracking;
   users: typeof users;
   validators: typeof validators;
   vendors: typeof vendors;
@@ -2212,6 +2222,68 @@ export declare const components: {
       findOne: FunctionReference<"query", "internal", any, any>;
       update: FunctionReference<"mutation", "internal", any, any>;
       updateMany: FunctionReference<"mutation", "internal", any, any>;
+    };
+  };
+  presence: {
+    public: {
+      disconnect: FunctionReference<
+        "mutation",
+        "internal",
+        { sessionToken: string },
+        null
+      >;
+      heartbeat: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          interval?: number;
+          roomId: string;
+          sessionId: string;
+          userId: string;
+        },
+        { roomToken: string; sessionToken: string }
+      >;
+      list: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; roomToken: string },
+        Array<{
+          data?: any;
+          lastDisconnected: number;
+          online: boolean;
+          userId: string;
+        }>
+      >;
+      listRoom: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; onlineOnly?: boolean; roomId: string },
+        Array<{ lastDisconnected: number; online: boolean; userId: string }>
+      >;
+      listUser: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; onlineOnly?: boolean; userId: string },
+        Array<{ lastDisconnected: number; online: boolean; roomId: string }>
+      >;
+      removeRoom: FunctionReference<
+        "mutation",
+        "internal",
+        { roomId: string },
+        null
+      >;
+      removeRoomUser: FunctionReference<
+        "mutation",
+        "internal",
+        { roomId: string; userId: string },
+        null
+      >;
+      updateRoomUser: FunctionReference<
+        "mutation",
+        "internal",
+        { data?: any; roomId: string; userId: string },
+        null
+      >;
     };
   };
   rateLimiter: {

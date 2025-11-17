@@ -3,19 +3,16 @@ import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import {
-	Calendar,
+	Clock,
 	Mail,
-	MoreVertical,
+	MoreHorizontal,
 	RefreshCw,
-	Shield,
 	Trash2,
-	User,
-	X,
+	UserCheck,
+	UserX,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -73,102 +70,81 @@ export function InvitationsList({ eventId }: InvitationsListProps) {
 		}
 	};
 
-	const getRoleIcon = (role: string) => {
+	const getRoleColor = (role: string) => {
 		switch (role) {
 			case "coordinator":
-				return <Shield className="h-4 w-4" />;
+				return "text-blue-600 dark:text-blue-400";
 			case "collaborator":
-				return <User className="h-4 w-4" />;
+				return "text-purple-600 dark:text-purple-400";
 			case "guest":
-				return <Mail className="h-4 w-4" />;
+				return "text-gray-500 dark:text-gray-400";
 			default:
-				return <User className="h-4 w-4" />;
+				return "text-gray-500 dark:text-gray-400";
 		}
 	};
 
-	const getRoleBadgeVariant = (role: string) => {
-		switch (role) {
-			case "coordinator":
-				return "default";
-			case "collaborator":
-				return "secondary";
-			case "guest":
-				return "outline";
-			default:
-				return "secondary";
-		}
-	};
-
-	const getStatusBadge = (status: string, isExpired: boolean) => {
+	const getStatusDisplay = (status: string, isExpired: boolean) => {
 		if (isExpired && status === "pending") {
-			return (
-				<Badge variant="destructive" className="flex items-center gap-1">
-					<X className="h-3 w-3" />
-					Expired
-				</Badge>
-			);
+			return {
+				icon: <Clock className="h-3.5 w-3.5" />,
+				text: "Expired",
+				className: "text-red-500 dark:text-red-400",
+			};
 		}
 
 		switch (status) {
 			case "pending":
-				return (
-					<Badge variant="default" className="flex items-center gap-1">
-						<Calendar className="h-3 w-3" />
-						Pending
-					</Badge>
-				);
+				return {
+					icon: <Clock className="h-3.5 w-3.5" />,
+					text: "Pending",
+					className: "text-amber-500 dark:text-amber-400",
+				};
 			case "accepted":
-				return (
-					<Badge
-						variant="outline"
-						className="bg-green-50 text-green-700 border-green-200"
-					>
-						Accepted
-					</Badge>
-				);
+				return {
+					icon: <UserCheck className="h-3.5 w-3.5" />,
+					text: "Accepted",
+					className: "text-green-600 dark:text-green-400",
+				};
 			case "declined":
-				return (
-					<Badge
-						variant="outline"
-						className="bg-red-50 text-red-700 border-red-200"
-					>
-						Declined
-					</Badge>
-				);
+				return {
+					icon: <UserX className="h-3.5 w-3.5" />,
+					text: "Declined",
+					className: "text-red-500 dark:text-red-400",
+				};
 			case "cancelled":
-				return (
-					<Badge variant="outline" className="text-gray-500">
-						Cancelled
-					</Badge>
-				);
+				return {
+					icon: <UserX className="h-3.5 w-3.5" />,
+					text: "Cancelled",
+					className: "text-gray-400 dark:text-gray-500",
+				};
 			default:
-				return <Badge variant="outline">{status}</Badge>;
+				return {
+					icon: <Clock className="h-3.5 w-3.5" />,
+					text: status,
+					className: "text-gray-500 dark:text-gray-400",
+				};
 		}
 	};
 
 	if (!invitations) {
 		return (
-			<div className="text-center py-8 text-gray-500 dark:text-gray-400">
-				Loading invitations...
+			<div className="flex items-center justify-center py-16">
+				<p className="text-sm text-gray-400 dark:text-gray-500">Loading...</p>
 			</div>
 		);
 	}
 
 	if (invitations.length === 0) {
 		return (
-			<Card>
-				<CardContent className="pt-6">
-					<div className="text-center py-8">
-						<Mail className="h-12 w-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-						<p className="text-gray-500 dark:text-gray-400 font-medium">
-							No invitations sent yet
-						</p>
-						<p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-							Invite collaborators to help plan this event
-						</p>
-					</div>
-				</CardContent>
-			</Card>
+			<div className="flex flex-col items-center justify-center py-24">
+				<Mail className="h-10 w-10 text-gray-300 dark:text-gray-700 mb-4" />
+				<p className="text-sm text-gray-500 dark:text-gray-400">
+					No invitations yet
+				</p>
+				<p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+					Invite collaborators to get started
+				</p>
+			</div>
 		);
 	}
 
@@ -181,136 +157,163 @@ export function InvitationsList({ eventId }: InvitationsListProps) {
 	);
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-10">
 			{/* Pending Invitations */}
 			{pendingInvitations.length > 0 && (
-				<div className="space-y-3">
-					<h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-						Pending Invitations ({pendingInvitations.length})
-					</h3>
-					{pendingInvitations.map((invitation) => (
-						<Card key={invitation._id}>
-							<CardContent className="pt-6">
-								<div className="flex items-start justify-between">
-									<div className="flex-1">
-										<div className="flex items-center gap-2 mb-2">
-											<Mail className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-											<span className="font-medium dark:text-gray-100">
-												{invitation.invitedEmail}
-											</span>
-										</div>
-										<div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-											<div className="flex items-center gap-1">
-												{getRoleIcon(invitation.role)}
-												<Badge variant={getRoleBadgeVariant(invitation.role)}>
+				<div className="space-y-4">
+					<div className="flex items-baseline gap-2">
+						<h2 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-medium">
+							Pending
+						</h2>
+						<div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+					</div>
+					<div className="space-y-1">
+						{pendingInvitations.map((invitation) => {
+							const statusDisplay = getStatusDisplay(
+								invitation.status,
+								invitation.isExpired,
+							);
+							return (
+								<div
+									key={invitation._id}
+									className="group py-4 px-3 -mx-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/30 transition-colors"
+								>
+									<div className="flex items-start justify-between gap-4">
+										<div className="flex-1 min-w-0 space-y-2">
+											<div className="flex items-center gap-3">
+												<Mail className="h-4 w-4 text-gray-300 dark:text-gray-700 flex-shrink-0" />
+												<span className="font-medium text-gray-900 dark:text-white truncate">
+													{invitation.invitedEmail}
+												</span>
+												<span
+													className={`text-xs font-medium capitalize ${getRoleColor(invitation.role)}`}
+												>
 													{invitation.role}
-												</Badge>
+												</span>
 											</div>
-											<span>•</span>
-											<span>
-												Sent{" "}
-												{formatDistanceToNow(invitation.createdAt, {
-													addSuffix: true,
-												})}
-											</span>
-											<span>•</span>
-											<span className="text-xs">
-												by {invitation.inviterName}
-											</span>
+											<div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-600 pl-7">
+												<span>
+													{formatDistanceToNow(invitation.createdAt, {
+														addSuffix: true,
+													})}
+												</span>
+												<span>•</span>
+												<span>by {invitation.inviterName}</span>
+												<span>•</span>
+												<span className="text-gray-500 dark:text-gray-500">
+													expires{" "}
+													{formatDistanceToNow(invitation.expiresAt, {
+														addSuffix: true,
+													})}
+												</span>
+											</div>
+											{invitation.message && (
+												<p className="text-sm text-gray-500 dark:text-gray-500 italic pl-7">
+													"{invitation.message}"
+												</p>
+											)}
 										</div>
-										{invitation.message && (
-											<p className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
-												"{invitation.message}"
-											</p>
-										)}
-										<div className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-											Expires{" "}
-											{formatDistanceToNow(invitation.expiresAt, {
-												addSuffix: true,
-											})}
+										<div className="flex items-center gap-2 flex-shrink-0">
+											<div
+												className={`flex items-center gap-1.5 text-xs font-medium ${statusDisplay.className}`}
+											>
+												{statusDisplay.icon}
+												{statusDisplay.text}
+											</div>
+											<DropdownMenu>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon"
+														className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+													>
+														<MoreHorizontal className="h-4 w-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="end">
+													<DropdownMenuItem
+														onClick={() => handleResend(invitation._id)}
+													>
+														<RefreshCw className="h-4 w-4 mr-2" />
+														Resend
+													</DropdownMenuItem>
+													<DropdownMenuItem
+														onClick={() => handleCancel(invitation._id)}
+														className="text-red-600 dark:text-red-400"
+													>
+														<Trash2 className="h-4 w-4 mr-2" />
+														Cancel
+													</DropdownMenuItem>
+												</DropdownMenuContent>
+											</DropdownMenu>
 										</div>
-									</div>
-									<div className="flex items-center gap-2 ml-4">
-										{getStatusBadge(invitation.status, invitation.isExpired)}
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button variant="ghost" size="icon">
-													<MoreVertical className="h-4 w-4" />
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
-												<DropdownMenuItem
-													onClick={() => handleResend(invitation._id)}
-												>
-													<RefreshCw className="h-4 w-4 mr-2" />
-													Resend Invitation
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onClick={() => handleCancel(invitation._id)}
-													className="text-red-600"
-												>
-													<Trash2 className="h-4 w-4 mr-2" />
-													Cancel Invitation
-												</DropdownMenuItem>
-											</DropdownMenuContent>
-										</DropdownMenu>
 									</div>
 								</div>
-							</CardContent>
-						</Card>
-					))}
+							);
+						})}
+					</div>
 				</div>
 			)}
 
 			{/* Historical Invitations */}
 			{historicalInvitations.length > 0 && (
-				<div className="space-y-3">
-					<h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-						Invitation History ({historicalInvitations.length})
-					</h3>
-					{historicalInvitations.map((invitation) => (
-						<Card key={invitation._id} className="opacity-75 dark:opacity-60">
-							<CardContent className="pt-6">
-								<div className="flex items-start justify-between">
-									<div className="flex-1">
-										<div className="flex items-center gap-2 mb-2">
-											<Mail className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-											<span className="font-medium dark:text-gray-100">
-												{invitation.invitedEmail}
-											</span>
-										</div>
-										<div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-											<div className="flex items-center gap-1">
-												{getRoleIcon(invitation.role)}
-												<Badge variant={getRoleBadgeVariant(invitation.role)}>
+				<div className="space-y-4">
+					<div className="flex items-baseline gap-2">
+						<h2 className="text-xs uppercase tracking-wider text-gray-400 dark:text-gray-600 font-medium">
+							History
+						</h2>
+						<div className="h-px flex-1 bg-gray-100 dark:bg-gray-800" />
+					</div>
+					<div className="space-y-1 opacity-60">
+						{historicalInvitations.map((invitation) => {
+							const statusDisplay = getStatusDisplay(
+								invitation.status,
+								invitation.isExpired,
+							);
+							return (
+								<div
+									key={invitation._id}
+									className="py-4 px-3 -mx-3 rounded-lg"
+								>
+									<div className="flex items-start justify-between gap-4">
+										<div className="flex-1 min-w-0 space-y-2">
+											<div className="flex items-center gap-3">
+												<Mail className="h-4 w-4 text-gray-300 dark:text-gray-700 flex-shrink-0" />
+												<span className="font-medium text-gray-700 dark:text-gray-300 truncate">
+													{invitation.invitedEmail}
+												</span>
+												<span
+													className={`text-xs font-medium capitalize ${getRoleColor(invitation.role)}`}
+												>
 													{invitation.role}
-												</Badge>
+												</span>
 											</div>
-											<span>•</span>
-											<span>
-												Sent{" "}
-												{formatDistanceToNow(invitation.createdAt, {
-													addSuffix: true,
-												})}
-											</span>
-											<span>•</span>
-											<span className="text-xs">
-												by {invitation.inviterName}
-											</span>
+											<div className="flex items-center gap-3 text-xs text-gray-400 dark:text-gray-600 pl-7">
+												<span>
+													{formatDistanceToNow(invitation.createdAt, {
+														addSuffix: true,
+													})}
+												</span>
+												<span>•</span>
+												<span>by {invitation.inviterName}</span>
+											</div>
+											{invitation.message && (
+												<p className="text-sm text-gray-500 dark:text-gray-600 italic pl-7">
+													"{invitation.message}"
+												</p>
+											)}
 										</div>
-										{invitation.message && (
-											<p className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
-												"{invitation.message}"
-											</p>
-										)}
-									</div>
-									<div className="ml-4">
-										{getStatusBadge(invitation.status, invitation.isExpired)}
+										<div
+											className={`flex items-center gap-1.5 text-xs font-medium flex-shrink-0 ${statusDisplay.className}`}
+										>
+											{statusDisplay.icon}
+											{statusDisplay.text}
+										</div>
 									</div>
 								</div>
-							</CardContent>
-						</Card>
-					))}
+							);
+						})}
+					</div>
 				</div>
 			)}
 		</div>

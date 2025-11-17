@@ -8,25 +8,30 @@
 
 // Calendar Component
 import { CalendarView, CalendarViewMetadata } from "./CalendarView";
+// Filter Component
+import { ComponentFilterInput } from "./ComponentFilterInput";
 // Event Components
 import { EventDetails, EventDetailsMetadata } from "./EventDetails";
 import { ExpensesList, ExpensesListMetadata } from "./ExpensesList";
 // Budget Components
 import { ExpensesSummary, ExpensesSummaryMetadata } from "./ExpensesSummary";
 import { GuestList, GuestListMetadata } from "./GuestList";
+// Summary Components
+import { KPIDashboard, KPIDashboardMetadata } from "./KPIDashboard";
 import { MilestoneTracker, MilestoneTrackerMetadata } from "./MilestoneTracker";
 import { PollResults, PollResultsMetadata } from "./PollResults";
 import { PollsList, PollsListMetadata } from "./PollsList";
+import { ProgressSummary, ProgressSummaryMetadata } from "./ProgressSummary";
 // Collaboration Components
 import { RoomActivity, RoomActivityMetadata } from "./RoomActivity";
 import { RSVPStatus, RSVPStatusMetadata } from "./RSVPStatus";
+import { TaskCreator, TaskCreatorMetadata } from "./TaskCreator";
+import { TaskDetails, TaskDetailsMetadata } from "./TaskDetails";
+import { TaskEditor, TaskEditorMetadata } from "./TaskEditor";
+import { TaskGroupDetails, TaskGroupDetailsMetadata } from "./TaskGroupDetails";
 import { TasksKanban, TasksKanbanMetadata } from "./TasksKanban";
 // Task Components
 import { TasksList, TasksListMetadata } from "./TasksList";
-import { TaskCreator, TaskCreatorMetadata } from "./TaskCreator";
-import { TaskEditor, TaskEditorMetadata } from "./TaskEditor";
-import { TaskDetails, TaskDetailsMetadata } from "./TaskDetails";
-import { TaskGroupDetails, TaskGroupDetailsMetadata } from "./TaskGroupDetails";
 // Timeline Components
 import { Timeline, TimelineMetadata } from "./Timeline";
 import { UpcomingEvents, UpcomingEventsMetadata } from "./UpcomingEvents";
@@ -37,6 +42,7 @@ import { VendorsList, VendorsListMetadata } from "./VendorsList";
 
 // Re-export all components and metadata
 export { CalendarView, CalendarViewMetadata };
+export { ComponentFilterInput };
 export { EventDetails, EventDetailsMetadata };
 export { ExpensesList, ExpensesListMetadata };
 export { ExpensesSummary, ExpensesSummaryMetadata };
@@ -57,6 +63,8 @@ export { UpcomingEvents, UpcomingEventsMetadata };
 export { UpcomingPayments, UpcomingPaymentsMetadata };
 export { VendorDetails, VendorDetailsMetadata };
 export { VendorsList, VendorsListMetadata };
+export { KPIDashboard, KPIDashboardMetadata };
+export { ProgressSummary, ProgressSummaryMetadata };
 
 /**
  * Register all dashboard components with the Fluid UI registry
@@ -68,12 +76,20 @@ export function registerDashboardComponents() {
 
 	console.log("Dashboard components registered:", {
 		event: ["EventDetails", "UpcomingEvents"],
-		task: ["TasksList", "TasksKanban", "TaskCreator", "TaskEditor", "TaskDetails", "TaskGroupDetails"],
+		task: [
+			"TasksList",
+			"TasksKanban",
+			"TaskCreator",
+			"TaskEditor",
+			"TaskDetails",
+			"TaskGroupDetails",
+		],
 		budget: ["ExpensesSummary", "ExpensesList", "UpcomingPayments"],
 		timeline: ["Timeline", "MilestoneTracker"],
 		people: ["VendorsList", "VendorDetails", "GuestList", "RSVPStatus"],
 		collaboration: ["RoomActivity", "PollsList", "PollResults"],
 		calendar: ["CalendarView"],
+		summary: ["KPIDashboard", "ProgressSummary"],
 	});
 }
 
@@ -103,26 +119,31 @@ export function getDashboardComponentsMetadata() {
 		GuestList: GuestListMetadata,
 		RSVPStatus: RSVPStatusMetadata,
 		CalendarView: CalendarViewMetadata,
+		KPIDashboard: KPIDashboardMetadata,
+		ProgressSummary: ProgressSummaryMetadata,
 	};
 }
 
 export type { CalendarViewProps } from "./CalendarView";
+export type { ComponentFilterInputProps } from "./ComponentFilterInput";
 // Re-export types
 export type { EventDetailsProps } from "./EventDetails";
 export type { ExpensesListProps } from "./ExpensesList";
 export type { ExpensesSummaryProps } from "./ExpensesSummary";
 export type { GuestListProps } from "./GuestList";
+export type { KPIDashboardProps } from "./KPIDashboard";
 export type { MilestoneTrackerProps } from "./MilestoneTracker";
 export type { PollResultsProps } from "./PollResults";
 export type { PollsListProps } from "./PollsList";
+export type { ProgressSummaryProps } from "./ProgressSummary";
 export type { RoomActivityProps } from "./RoomActivity";
 export type { RSVPStatusProps } from "./RSVPStatus";
+export type { TaskCreatorProps } from "./TaskCreator";
+export type { TaskDetailsProps } from "./TaskDetails";
+export type { TaskEditorProps } from "./TaskEditor";
+export type { TaskGroupDetailsProps } from "./TaskGroupDetails";
 export type { TasksKanbanProps } from "./TasksKanban";
 export type { TasksListProps } from "./TasksList";
-export type { TaskCreatorProps } from "./TaskCreator";
-export type { TaskEditorProps } from "./TaskEditor";
-export type { TaskDetailsProps } from "./TaskDetails";
-export type { TaskGroupDetailsProps } from "./TaskGroupDetails";
 export type { TimelineProps } from "./Timeline";
 export type { UpcomingEventsProps } from "./UpcomingEvents";
 export type { UpcomingPaymentsProps } from "./UpcomingPayments";

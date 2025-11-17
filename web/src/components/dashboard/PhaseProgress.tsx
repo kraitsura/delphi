@@ -1,12 +1,12 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface PhaseProgressProps {
 	eventId: Id<"events">;
@@ -27,7 +27,11 @@ export function PhaseProgress(props: PhaseProgressProps) {
 	const phases = useMemo(() => {
 		return [
 			{ id: "planning", label: "Planning", icon: SYMBOLS.PENCIL },
-			{ id: "vendor_selection", label: "Vendor Selection", icon: SYMBOLS.HANDSHAKE },
+			{
+				id: "vendor_selection",
+				label: "Vendor Selection",
+				icon: SYMBOLS.HANDSHAKE,
+			},
 			{ id: "design", label: "Design", icon: SYMBOLS.PALETTE },
 			{ id: "logistics", label: "Logistics", icon: SYMBOLS.TRUCK },
 			{ id: "day_of", label: "Day Of", icon: SYMBOLS.CALENDAR },
@@ -39,10 +43,18 @@ export function PhaseProgress(props: PhaseProgressProps) {
 		if (!tasks) return [];
 
 		return phases.map((phase) => {
-			const phaseTasks = tasks.filter((t: any) => (t.phase || "planning") === phase.id);
-			const completed = phaseTasks.filter((t: any) => t.status === "completed").length;
-			const inProgress = phaseTasks.filter((t: any) => t.status === "in_progress").length;
-			const blocked = phaseTasks.filter((t: any) => t.status === "blocked").length;
+			const phaseTasks = tasks.filter(
+				(t: any) => (t.phase || "planning") === phase.id,
+			);
+			const completed = phaseTasks.filter(
+				(t: any) => t.status === "completed",
+			).length;
+			const inProgress = phaseTasks.filter(
+				(t: any) => t.status === "in_progress",
+			).length;
+			const blocked = phaseTasks.filter(
+				(t: any) => t.status === "blocked",
+			).length;
 			const total = phaseTasks.length;
 			const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -69,11 +81,14 @@ export function PhaseProgress(props: PhaseProgressProps) {
 
 	const overallProgress = useMemo(() => {
 		const totalTasks = phaseStats.reduce((sum, phase) => sum + phase.total, 0);
-		const completedTasks = phaseStats.reduce((sum, phase) => sum + phase.completed, 0);
+		const completedTasks = phaseStats.reduce(
+			(sum, phase) => sum + phase.completed,
+			0,
+		);
 		return totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 	}, [phaseStats]);
 
-	const handlePhaseClick = (phaseId: string, phaseName: string) => {
+	const handlePhaseClick = (phaseId: string, _phaseName: string) => {
 		const newPhase = selectedPhase === phaseId ? null : phaseId;
 
 		if (newPhase) {
@@ -100,7 +115,9 @@ export function PhaseProgress(props: PhaseProgressProps) {
 					{SYMBOLS.BLACK_SQUARE} Phase Progress
 				</CardTitle>
 				<div className="flex items-center gap-2">
-					<span className="text-sm text-muted-foreground">Overall Progress</span>
+					<span className="text-sm text-muted-foreground">
+						Overall Progress
+					</span>
 					<Badge variant="outline">{overallProgress}%</Badge>
 				</div>
 			</CardHeader>
@@ -240,7 +257,8 @@ function PhaseProgressEmpty() {
 
 export const PhaseProgressMetadata = {
 	name: "PhaseProgress",
-	description: "Visual progress tracker across all planning phases (Master component using Zustand)",
+	description:
+		"Visual progress tracker across all planning phases (Master component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
@@ -251,7 +269,8 @@ export const PhaseProgressMetadata = {
 		role: "master",
 		writes: ["selections.phase"],
 		reads: ["selections.phase"],
-		behavior: "Clicking a phase updates selections.phase. Clicking again clears it. Shows selected state.",
+		behavior:
+			"Clicking a phase updates selections.phase. Clicking again clears it. Shows selected state.",
 	},
 	props: {
 		eventId: {

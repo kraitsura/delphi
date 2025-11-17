@@ -7,7 +7,9 @@
     "dev": "wrangler dev --local --persist",
     "deploy": "wrangler deploy",
     "tail": "wrangler tail",
-    "types": "wrangler types"
+    "types": "wrangler types",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": ["cloudflare", "workers", "durable-objects", "ai", "agent"],
   "author": "Delphi Team",
@@ -16,8 +18,10 @@
     "convex": "^1.29.0"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.25",
     "@cloudflare/workers-types": "^4.20241127.0",
     "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
     "wrangler": "^4.47.0"
   }
 }

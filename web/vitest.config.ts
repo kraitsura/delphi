@@ -4,6 +4,8 @@ import path from "path";
 export default defineConfig({
   test: {
     globals: true,
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
     server: {
       deps: {
         inline: ["convex-test"],
@@ -29,6 +31,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "@convex": path.resolve(__dirname, "./convex"),
     },
   },
 });

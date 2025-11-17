@@ -1,14 +1,14 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
-import { useQuery, useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { TasksList } from "./TasksList";
 
 export interface TaskGroupDetailsProps {
@@ -21,7 +21,6 @@ export interface TaskGroupDetailsProps {
 
 export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 	const {
-		id,
 		eventId,
 		showGroupStats = true,
 		showAddButton = true,
@@ -30,9 +29,15 @@ export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 
 	// Zustand selections
 	const selectedPhase = useDashboardStore((state) => state.selections.phase);
-	const selectedVendor = useDashboardStore((state) => state.selections.vendorId);
-	const selectedCategory = useDashboardStore((state) => state.selections.category);
-	const selectedAssignee = useDashboardStore((state) => state.selections.assigneeId);
+	const selectedVendor = useDashboardStore(
+		(state) => state.selections.vendorId,
+	);
+	const selectedCategory = useDashboardStore(
+		(state) => state.selections.category,
+	);
+	const selectedAssignee = useDashboardStore(
+		(state) => state.selections.assigneeId,
+	);
 	const selectedStatus = useDashboardStore((state) => state.selections.status);
 	const openModal = useDashboardStore((state) => state.openModal);
 	const showToast = useDashboardStore((state) => state.showToast);
@@ -66,7 +71,7 @@ export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 		}
 
 		if (selectedAssignee) {
-			filtered = filtered.filter((t) => t.assigneeId === selectedAssignee);
+			filtered = filtered.filter((t) => t.assignedTo === selectedAssignee);
 		}
 
 		if (selectedStatus) {
@@ -74,16 +79,28 @@ export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 		}
 
 		return filtered;
-	}, [tasks, selectedPhase, selectedVendor, selectedCategory, selectedAssignee, selectedStatus]);
+	}, [
+		tasks,
+		selectedPhase,
+		selectedVendor,
+		selectedCategory,
+		selectedAssignee,
+		selectedStatus,
+	]);
 
 	// Calculate group stats
 	const stats = useMemo(() => {
 		const total = filteredTasks.length;
-		const completed = filteredTasks.filter((t) => t.status === "completed").length;
-		const inProgress = filteredTasks.filter((t) => t.status === "in_progress").length;
+		const completed = filteredTasks.filter(
+			(t) => t.status === "completed",
+		).length;
+		const inProgress = filteredTasks.filter(
+			(t) => t.status === "in_progress",
+		).length;
 		const blocked = filteredTasks.filter((t) => t.status === "blocked").length;
-		const notStarted = filteredTasks.filter((t) => t.status === "not_started").length;
-		const completionPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+		const notStarted = filteredTasks.filter((t) => t.status === "todo").length;
+		const completionPercent =
+			total > 0 ? Math.round((completed / total) * 100) : 0;
 
 		return {
 			total,
@@ -100,13 +117,22 @@ export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 		const parts: string[] = [];
 
 		if (selectedPhase) parts.push(`Phase: ${selectedPhase}`);
-		if (selectedVendor) parts.push(`Vendor: ${selectedVendor.substring(0, 8)}...`);
+		if (selectedVendor)
+			parts.push(`Vendor: ${selectedVendor.substring(0, 8)}...`);
 		if (selectedCategory) parts.push(`Category: ${selectedCategory}`);
-		if (selectedAssignee) parts.push(`Assignee: ${selectedAssignee.substring(0, 8)}...`);
-		if (selectedStatus) parts.push(`Status: ${selectedStatus.replace("_", " ")}`);
+		if (selectedAssignee)
+			parts.push(`Assignee: ${selectedAssignee.substring(0, 8)}...`);
+		if (selectedStatus)
+			parts.push(`Status: ${selectedStatus.replace("_", " ")}`);
 
 		return parts.length > 0 ? parts.join(" • ") : "All Tasks";
-	}, [selectedPhase, selectedVendor, selectedCategory, selectedAssignee, selectedStatus]);
+	}, [
+		selectedPhase,
+		selectedVendor,
+		selectedCategory,
+		selectedAssignee,
+		selectedStatus,
+	]);
 
 	const handleAddTask = () => {
 		// Expand the task creator panel if it exists
@@ -115,23 +141,32 @@ export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 	};
 
 	const handleCompleteAll = async () => {
-		if (!confirm(`Mark all ${stats.total - stats.completed} incomplete tasks as completed?`)) {
+		if (
+			!confirm(
+				`Mark all ${stats.total - stats.completed} incomplete tasks as completed?`,
+			)
+		) {
 			return;
 		}
 
 		setIsCompletingAll(true);
 
 		try {
-			const incompleteTasks = filteredTasks.filter((t) => t.status !== "completed");
+			const incompleteTasks = filteredTasks.filter(
+				(t) => t.status !== "completed",
+			);
 
 			// Update all tasks in parallel
 			await Promise.all(
 				incompleteTasks.map((task) =>
-					updateStatus({ taskId: task._id, status: "completed" })
-				)
+					updateStatus({ taskId: task._id, status: "completed" }),
+				),
 			);
 
-			showToast(`${incompleteTasks.length} tasks marked as completed`, "success");
+			showToast(
+				`${incompleteTasks.length} tasks marked as completed`,
+				"success",
+			);
 		} catch (error) {
 			console.error("Failed to complete all tasks:", error);
 			showToast("Failed to complete all tasks", "error");
@@ -142,7 +177,10 @@ export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 
 	const handleTaskSelect = (taskId: Id<"tasks">) => {
 		// Open task details modal
-		openModal(`task-details-${taskId}`, "TaskDetails", { taskId, modalId: `task-details-${taskId}` });
+		openModal(`task-details-${taskId}`, "TaskDetails", {
+			taskId,
+			modalId: `task-details-${taskId}`,
+		});
 	};
 
 	// Loading state
@@ -244,7 +282,9 @@ export function TaskGroupDetails(props: TaskGroupDetailsProps) {
 									disabled={isCompletingAll}
 									className="fluid-button"
 								>
-									{isCompletingAll ? "Completing..." : `${SYMBOLS.CHECK} Complete All`}
+									{isCompletingAll
+										? "Completing..."
+										: `${SYMBOLS.CHECK_MARK} Complete All`}
 								</Button>
 							</div>
 						)}
@@ -305,7 +345,8 @@ function TaskGroupDetailsSkeleton() {
 
 export const TaskGroupDetailsMetadata = {
 	name: "TaskGroupDetails",
-	description: "Group view with task list, stats, and bulk actions based on Zustand selections",
+	description:
+		"Group view with task list, stats, and bulk actions based on Zustand selections",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,

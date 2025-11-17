@@ -1,13 +1,13 @@
 import { api } from "convex/_generated/api";
 import type { Doc, Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface ExpensesListProps {
 	eventId: Id<"events">;
@@ -29,8 +29,13 @@ export function ExpensesList(props: ExpensesListProps) {
 	} = props;
 
 	// Zustand: Read selections from store (detail component)
-	const selectedCategory = useDashboardStore((state) => state.selections.category);
-	const selectedVendor = useDashboardStore((state) => state.selections.vendorId);
+	const selectedCategory = useDashboardStore(
+		(state) => state.selections.category,
+	);
+	const selectedVendor = useDashboardStore(
+		(state) => state.selections.vendorId,
+	);
+	const openModal = useDashboardStore((state) => state.openModal);
 
 	const expenses = useQuery(api.expenses.listByEvent, {
 		eventId: props.eventId,
@@ -167,6 +172,12 @@ export function ExpensesList(props: ExpensesListProps) {
 						<div
 							key={expense._id}
 							className="grid grid-cols-12 gap-2 py-3 border-b border-border/50 hover:bg-accent/50 transition-colors cursor-pointer text-sm"
+							onClick={() =>
+								openModal("expense-details", "ExpenseDetailsModal", {
+									expenseId: expense._id,
+									modalId: "expense-details",
+								})
+							}
 						>
 							<div className="col-span-2 text-muted-foreground">
 								{formatDate(expense._creationTime)}
@@ -210,7 +221,16 @@ export function ExpensesList(props: ExpensesListProps) {
 							${totalAmount.toLocaleString()}
 						</span>
 					</div>
-					<Button variant="outline" size="sm">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							openModal("add-expense", "AddExpenseModal", {
+								eventId: props.eventId,
+								modalId: "add-expense",
+							})
+						}
+					>
 						Add Expense
 					</Button>
 				</div>
@@ -252,7 +272,8 @@ function ExpensesListEmpty() {
 
 export const ExpensesListMetadata = {
 	name: "ExpensesList",
-	description: "Detailed expense table with filtering and sorting. Detail component - reads category and vendorId from Zustand store.",
+	description:
+		"Detailed expense table with filtering and sorting. Detail component - reads category and vendorId from Zustand store.",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,

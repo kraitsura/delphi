@@ -1,9 +1,9 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo, useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
@@ -39,22 +39,24 @@ export function RunOfShowTimeline(props: RunOfShowTimelineProps) {
 				block: "center",
 			});
 		}
-	}, [currentTime, autoScroll]);
+	}, [autoScroll]);
 
 	const runOfShow = useMemo(() => {
 		if (!tasks || !event) return [];
 
-		const eventDate = new Date(event.date);
+		const eventDate = new Date(event.eventDate || Date.now());
 
 		// Get day-of tasks sorted by sequence
 		const dayOfTasks = tasks
 			.filter((t: any) => t.phase === "day_of" && t.dayOfSequence !== undefined)
-			.sort((a: any, b: any) => (a.dayOfSequence || 0) - (b.dayOfSequence || 0));
+			.sort(
+				(a: any, b: any) => (a.dayOfSequence || 0) - (b.dayOfSequence || 0),
+			);
 
 		// Calculate start time for each task
 		let cumulativeTime = eventDate.getTime();
 
-		return dayOfTasks.map((task: any, index) => {
+		return dayOfTasks.map((task: any) => {
 			const startTime = cumulativeTime;
 			const duration = task.estimatedDuration || 30; // minutes
 			const endTime = startTime + duration * 60 * 1000;
@@ -78,16 +80,9 @@ export function RunOfShowTimeline(props: RunOfShowTimelineProps) {
 		});
 	}, [tasks, event, currentTime]);
 
-	const handleTaskClick = (taskId: string, taskData: any) => {
-		emit({
-			type: "taskSelected",
-			payload: { taskId, taskData },
-		});
-
-		emit({
-			type: "runOfShowUpdated",
-			payload: { currentTime, currentTaskId: taskData.isCurrent ? taskId : undefined },
-		});
+	const handleTaskClick = (_taskId: string, _taskData: any) => {
+		// Task selection handling - could be implemented with event handlers or routing
+		// Currently disabled as event emitter pattern is not implemented
 	};
 
 	const formatTime = (timestamp: number) => {
@@ -115,7 +110,9 @@ export function RunOfShowTimeline(props: RunOfShowTimelineProps) {
 	}
 
 	const currentTask = runOfShow.find((t) => t.isCurrent);
-	const completedCount = runOfShow.filter((t) => t.status === "completed").length;
+	const completedCount = runOfShow.filter(
+		(t) => t.status === "completed",
+	).length;
 
 	return (
 		<Card className="fluid-component-card">
@@ -141,7 +138,9 @@ export function RunOfShowTimeline(props: RunOfShowTimelineProps) {
 				{/* Current time indicator */}
 				<div className="mb-4 p-3 rounded-lg bg-muted/50 text-center">
 					<div className="text-sm text-muted-foreground">Current Time</div>
-					<div className="text-xl font-mono font-bold">{formatTime(currentTime)}</div>
+					<div className="text-xl font-mono font-bold">
+						{formatTime(currentTime)}
+					</div>
 				</div>
 
 				{/* Timeline */}
@@ -151,7 +150,7 @@ export function RunOfShowTimeline(props: RunOfShowTimelineProps) {
 
 					{/* Timeline items */}
 					<div className="space-y-3 relative z-10">
-						{runOfShow.map((task: any, index) => (
+						{runOfShow.map((task: any) => (
 							<div
 								key={task._id}
 								ref={task.isCurrent ? currentTaskRef : null}
@@ -255,7 +254,9 @@ export function RunOfShowTimeline(props: RunOfShowTimelineProps) {
 										{/* End time */}
 										<div className="text-xs text-muted-foreground text-right">
 											<div>Ends</div>
-											<div className="font-mono">{formatTime(task.endTime)}</div>
+											<div className="font-mono">
+												{formatTime(task.endTime)}
+											</div>
 										</div>
 									</div>
 								</div>
@@ -267,7 +268,9 @@ export function RunOfShowTimeline(props: RunOfShowTimelineProps) {
 					<div className="relative pl-[90px] mt-6 pt-4 border-t">
 						<div className="absolute left-0 top-4 w-[50px] text-right">
 							<div className="text-xs font-mono font-medium">
-								{formatTime(runOfShow[runOfShow.length - 1]?.endTime || Date.now())}
+								{formatTime(
+									runOfShow[runOfShow.length - 1]?.endTime || Date.now(),
+								)}
 							</div>
 						</div>
 						<div className="absolute left-[54px] top-6 w-3 h-3 rounded-full bg-primary border-2 border-primary" />
@@ -312,7 +315,9 @@ function RunOfShowTimelineEmpty() {
 			</CardHeader>
 			<CardContent className="py-12 text-center text-muted-foreground">
 				<p>No run of show scheduled yet</p>
-				<p className="text-xs mt-2">Add tasks with sequence numbers to the &quot;Day Of&quot; phase</p>
+				<p className="text-xs mt-2">
+					Add tasks with sequence numbers to the &quot;Day Of&quot; phase
+				</p>
 			</CardContent>
 		</Card>
 	);

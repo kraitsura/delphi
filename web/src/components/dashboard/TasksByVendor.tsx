@@ -1,12 +1,12 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TasksByVendorProps {
 	eventId: Id<"events">;
@@ -18,7 +18,9 @@ export function TasksByVendor(props: TasksByVendorProps) {
 	const { showProgress = true, showUnassigned = true } = props;
 
 	// Zustand: Read and write vendor selection
-	const selectedVendor = useDashboardStore((state) => state.selections.vendorId);
+	const selectedVendor = useDashboardStore(
+		(state) => state.selections.vendorId,
+	);
 	const select = useDashboardStore((state) => state.select);
 
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
@@ -42,7 +44,9 @@ export function TasksByVendor(props: TasksByVendorProps) {
 			.map(([vendor, tasks]) => {
 				const total = tasks.length;
 				const completed = tasks.filter((t) => t.status === "completed").length;
-				const inProgress = tasks.filter((t) => t.status === "in_progress").length;
+				const inProgress = tasks.filter(
+					(t) => t.status === "in_progress",
+				).length;
 				const blocked = tasks.filter((t) => t.status === "blocked").length;
 				const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
 
@@ -77,7 +81,7 @@ export function TasksByVendor(props: TasksByVendorProps) {
 		}
 	};
 
-	const handleTaskClick = (taskId: string, taskData: any) => {
+	const handleTaskClick = (taskId: string, _taskData: any) => {
 		// Update Zustand store with selected task
 		select("taskId", taskId);
 	};
@@ -125,7 +129,9 @@ export function TasksByVendor(props: TasksByVendorProps) {
 										<h3 className="font-medium text-sm">
 											{group.vendor}
 											{group.vendor === "Unassigned" && (
-												<span className="text-muted-foreground ml-1">(No vendor)</span>
+												<span className="text-muted-foreground ml-1">
+													(No vendor)
+												</span>
 											)}
 										</h3>
 										<Badge variant="outline" className="text-xs">
@@ -203,10 +209,13 @@ export function TasksByVendor(props: TasksByVendorProps) {
 												</div>
 												{task.dueDate && (
 													<span className="text-xs text-muted-foreground">
-														{new Date(task.dueDate).toLocaleDateString("en-US", {
-															month: "short",
-															day: "numeric",
-														})}
+														{new Date(task.dueDate).toLocaleDateString(
+															"en-US",
+															{
+																month: "short",
+																day: "numeric",
+															},
+														)}
 													</span>
 												)}
 											</div>
@@ -256,7 +265,8 @@ function TasksByVendorEmpty() {
 
 export const TasksByVendorMetadata = {
 	name: "TasksByVendor",
-	description: "Groups tasks by vendor/supplier. Master component - updates vendorId and taskId in Zustand store.",
+	description:
+		"Groups tasks by vendor/supplier. Master component - updates vendorId and taskId in Zustand store.",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,

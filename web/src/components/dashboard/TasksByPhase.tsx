@@ -1,12 +1,12 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TasksByPhaseProps {
 	eventId: Id<"events">;
@@ -26,12 +26,42 @@ export function TasksByPhase(props: TasksByPhaseProps) {
 
 	const phases = useMemo(() => {
 		return [
-			{ id: "planning", label: "Planning", icon: SYMBOLS.PENCIL, color: "bg-blue-100 dark:bg-blue-900" },
-			{ id: "vendor_selection", label: "Vendor Selection", icon: SYMBOLS.HANDSHAKE, color: "bg-purple-100 dark:bg-purple-900" },
-			{ id: "design", label: "Design", icon: SYMBOLS.PALETTE, color: "bg-pink-100 dark:bg-pink-900" },
-			{ id: "logistics", label: "Logistics", icon: SYMBOLS.TRUCK, color: "bg-yellow-100 dark:bg-yellow-900" },
-			{ id: "day_of", label: "Day Of", icon: SYMBOLS.CALENDAR, color: "bg-green-100 dark:bg-green-900" },
-			{ id: "post_event", label: "Post Event", icon: SYMBOLS.CHECK_MARK, color: "bg-gray-100 dark:bg-gray-800" },
+			{
+				id: "planning",
+				label: "Planning",
+				icon: SYMBOLS.PENCIL,
+				color: "bg-blue-100 dark:bg-blue-900",
+			},
+			{
+				id: "vendor_selection",
+				label: "Vendor Selection",
+				icon: SYMBOLS.HANDSHAKE,
+				color: "bg-purple-100 dark:bg-purple-900",
+			},
+			{
+				id: "design",
+				label: "Design",
+				icon: SYMBOLS.PALETTE,
+				color: "bg-pink-100 dark:bg-pink-900",
+			},
+			{
+				id: "logistics",
+				label: "Logistics",
+				icon: SYMBOLS.TRUCK,
+				color: "bg-yellow-100 dark:bg-yellow-900",
+			},
+			{
+				id: "day_of",
+				label: "Day Of",
+				icon: SYMBOLS.CALENDAR,
+				color: "bg-green-100 dark:bg-green-900",
+			},
+			{
+				id: "post_event",
+				label: "Post Event",
+				icon: SYMBOLS.CHECK_MARK,
+				color: "bg-gray-100 dark:bg-gray-800",
+			},
 		];
 	}, []);
 
@@ -55,7 +85,7 @@ export function TasksByPhase(props: TasksByPhaseProps) {
 		return groups;
 	}, [tasks, phases]);
 
-	const handlePhaseClick = (phaseId: string, phaseName: string) => {
+	const handlePhaseClick = (phaseId: string, _phaseName: string) => {
 		const newPhase = selectedPhase === phaseId ? null : phaseId;
 
 		if (newPhase) {
@@ -67,7 +97,7 @@ export function TasksByPhase(props: TasksByPhaseProps) {
 		}
 	};
 
-	const handleTaskClick = (taskId: string, taskData: any) => {
+	const handleTaskClick = (taskId: string, _taskData: any) => {
 		// Update Zustand store with selected task
 		select("taskId", taskId);
 	};
@@ -102,7 +132,10 @@ export function TasksByPhase(props: TasksByPhaseProps) {
 						const isSelected = selectedPhase === phase.id;
 
 						return (
-							<div key={phase.id} className="border border-border rounded-lg overflow-hidden">
+							<div
+								key={phase.id}
+								className="border border-border rounded-lg overflow-hidden"
+							>
 								{/* Phase header */}
 								<div
 									className={`p-3 cursor-pointer transition-colors ${
@@ -139,7 +172,9 @@ export function TasksByPhase(props: TasksByPhaseProps) {
 
 								{/* Phase tasks (collapsed when not selected, unless compact mode is off) */}
 								{(!compact || isSelected) && phaseTasks.length > 0 && (
-									<div className={`p-3 space-y-2 ${compact && !isSelected ? "hidden" : ""}`}>
+									<div
+										className={`p-3 space-y-2 ${compact && !isSelected ? "hidden" : ""}`}
+									>
 										{phaseTasks.slice(0, compact ? 3 : 10).map((task: any) => (
 											<div
 												key={task._id}
@@ -245,7 +280,8 @@ function TasksByPhaseEmpty() {
 
 export const TasksByPhaseMetadata = {
 	name: "TasksByPhase",
-	description: "Groups tasks by event planning phase (Master component using Zustand)",
+	description:
+		"Groups tasks by event planning phase (Master component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
@@ -256,7 +292,8 @@ export const TasksByPhaseMetadata = {
 		role: "master",
 		writes: ["selections.phase", "selections.taskId"],
 		reads: ["selections.phase"],
-		behavior: "Clicking a phase updates selections.phase. Clicking again clears it. Clicking a task updates selections.taskId.",
+		behavior:
+			"Clicking a phase updates selections.phase. Clicking again clears it. Clicking a task updates selections.taskId.",
 	},
 	props: {
 		eventId: {

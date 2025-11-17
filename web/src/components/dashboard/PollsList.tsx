@@ -1,12 +1,11 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface PollsListProps {
 	eventId: Id<"events">;
@@ -17,26 +16,25 @@ export interface PollsListProps {
 }
 
 export function PollsList(props: PollsListProps) {
-	const { status = "active", sortBy = "deadline", limit, onPollSelect } = props;
+	const { status = "active", limit, onPollSelect } = props;
 
 	// Zustand state - read selected poll from store
 	const selectedPollId = useDashboardStore((state) => state.selections.pollId);
 	const select = useDashboardStore((state) => state.select);
-	const clearSelection = useDashboardStore((state) => state.clearSelection);
+	const openModal = useDashboardStore((state) => state.openModal);
 
 	const handlePollClick = (pollId: Id<"polls">) => {
-		const newSelection = selectedPollId === pollId ? null : pollId;
-
-		if (newSelection) {
-			// Update Zustand store with selected poll
-			select("pollId", newSelection);
-		} else {
-			// Clear poll selection in Zustand
-			clearSelection("pollId");
-		}
+		// Update Zustand store with selected poll
+		select("pollId", pollId);
 
 		// Also call the callback if provided (backwards compatibility)
 		onPollSelect?.(pollId);
+
+		// Open poll details modal
+		openModal("poll-details", "PollDetailsModal", {
+			pollId,
+			modalId: "poll-details",
+		});
 	};
 
 	const polls = useQuery(api.polls.listByEvent, { eventId: props.eventId });
@@ -83,22 +81,22 @@ export function PollsList(props: PollsListProps) {
 								}`}
 								onClick={() => handlePollClick(poll._id)}
 							>
-							<div className="flex items-start justify-between gap-4">
-								<div className="flex-1">
-									<h4 className="font-normal text-base">{poll.question}</h4>
-									<div className="flex items-center gap-2 mt-1">
-										<span className="text-xs text-muted-foreground">
-											{poll.options.length} options
-										</span>
-										<Badge
-											className={`status-badge status-badge--${poll.isClosed ? "closed" : "active"} text-xs`}
-										>
-											{poll.isClosed ? "Closed" : "Active"}
-										</Badge>
+								<div className="flex items-start justify-between gap-4">
+									<div className="flex-1">
+										<h4 className="font-normal text-base">{poll.question}</h4>
+										<div className="flex items-center gap-2 mt-1">
+											<span className="text-xs text-muted-foreground">
+												{poll.options.length} options
+											</span>
+											<Badge
+												className={`status-badge status-badge--${poll.isClosed ? "closed" : "active"} text-xs`}
+											>
+												{poll.isClosed ? "Closed" : "Active"}
+											</Badge>
+										</div>
 									</div>
 								</div>
 							</div>
-						</div>
 						);
 					})}
 				</div>
@@ -156,7 +154,8 @@ export const PollsListMetadata = {
 		role: "master",
 		writes: ["selections.pollId"],
 		reads: ["selections.pollId"],
-		behavior: "Clicking a poll updates selections.pollId. Clicking again clears it.",
+		behavior:
+			"Clicking a poll updates selections.pollId. Clicking again clears it.",
 	},
 	props: {
 		eventId: {

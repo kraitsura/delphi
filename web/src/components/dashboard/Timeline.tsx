@@ -27,7 +27,11 @@ type TimelineItem = {
 };
 
 export function Timeline(props: TimelineProps) {
-	const { orientation = "vertical", showTasks = true, showMilestones = true, showEvents = true } = props;
+	const {
+		orientation = "vertical",
+		showTasks = true,
+		showEvents = true,
+	} = props;
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
@@ -125,7 +129,7 @@ export function Timeline(props: TimelineProps) {
 
 						{/* Timeline items */}
 						<div className="space-y-6">
-							{timelineItems.map((item, index) => (
+							{timelineItems.map((item) => (
 								<div
 									key={item.id}
 									className="relative pl-12 hover:bg-accent/30 -ml-2 p-2 rounded-md transition-colors cursor-pointer"
@@ -159,17 +163,17 @@ export function Timeline(props: TimelineProps) {
 														</Badge>
 													)}
 												</div>
-										</div>
+											</div>
 
-										<div className="text-sm text-muted-foreground text-right shrink-0">
-											{formatDate(item.date)}
+											<div className="text-sm text-muted-foreground text-right shrink-0">
+												{formatDate(item.date)}
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
-				</div>
 				) : (
 					<div className="relative">
 						{/* Horizontal timeline line */}
@@ -177,7 +181,7 @@ export function Timeline(props: TimelineProps) {
 
 						{/* Horizontal timeline items */}
 						<div className="flex overflow-x-auto gap-8 pb-4">
-							{timelineItems.map((item, index) => (
+							{timelineItems.map((item) => (
 								<div
 									key={item.id}
 									className="relative pt-12 min-w-[200px] hover:bg-accent/30 -mt-2 p-2 rounded-md transition-colors cursor-pointer"
@@ -191,7 +195,9 @@ export function Timeline(props: TimelineProps) {
 
 									{/* Content */}
 									<div className="text-center">
-										<h4 className="font-normal text-sm line-clamp-2">{item.title}</h4>
+										<h4 className="font-normal text-sm line-clamp-2">
+											{item.title}
+										</h4>
 										<div className="flex flex-col items-center gap-1 mt-2">
 											<div className="text-xs text-muted-foreground">
 												{formatDate(item.date)}

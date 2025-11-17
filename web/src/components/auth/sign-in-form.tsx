@@ -36,7 +36,7 @@ export function SignInForm({ verified = false }: SignInFormProps) {
 			await authClient.signIn.email({
 				email,
 				password,
-				callbackURL: "/dashboard",
+				callbackURL: "/events",
 			});
 			// Navigation handled by Better Auth
 		} catch (err) {
@@ -64,7 +64,7 @@ export function SignInForm({ verified = false }: SignInFormProps) {
 		try {
 			await authClient.signIn.social({
 				provider: "google",
-				callbackURL: "/dashboard",
+				callbackURL: "/events",
 			});
 		} catch (err) {
 			setError(err instanceof Error ? err.message : "Google sign in failed");

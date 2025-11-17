@@ -12,21 +12,36 @@
  */
 
 import { ConvexHttpClient } from 'convex/browser';
-import { ChatOrchestratorDO } from './durable-objects/ChatOrchestratorDO';
+// Track 7 v3.1: Unified DO for all room types (ChatOrchestratorDO and EventCoordinatorDO removed)
+import { RoomOrchestratorDO } from './durable-objects/RoomOrchestratorDO';
+import { FirecrawlQueueDO } from './durable-objects/FirecrawlQueueDO';
 import { api } from '../../web/convex/_generated/api';
 
-// Export DO class
-export { ChatOrchestratorDO };
+// Export DO classes
+export { RoomOrchestratorDO, FirecrawlQueueDO };
 
 // Define environment interface
 interface Env {
-  CHAT_ORCHESTRATOR: DurableObjectNamespace;
+  ROOM_ORCHESTRATOR: DurableObjectNamespace;
+  FIRECRAWL_QUEUE: DurableObjectNamespace;
   CONVEX_DEPLOY_URL?: string;
   CLAUDE_API_KEY?: string;
   KIMI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
   OPENAI_API_KEY?: string;
+  FIRECRAWL_API_KEY?: string;
   ENVIRONMENT?: string;
+}
+
+// Define DO response interface
+interface DOInvokeResponse {
+  response: string;
+  messagesFetched?: number;
+  conversationTurns?: number;
+  intent?: string;
+  confidence?: number;
+  toolsUsed?: string[];
+  metadata?: any;
 }
 
 // CORS headers for browser requests
@@ -52,19 +67,24 @@ export default {
       return new Response(JSON.stringify({
         status: 'healthy',
         service: 'delphi-agent-worker',
-        phase: 'Phase 1 - Direct Access Architecture',
-        architecture: 'Browser → Worker → DO → AI → Convex',
+        phase: 'v3.1 - Single RoomOrchestrator Architecture',
+        architecture: 'Browser → Worker → RoomOrchestratorDO → AI → Convex',
         environment: env.ENVIRONMENT || 'unknown',
         timestamp: Date.now(),
-        version: '0.2.0'
+        version: '3.1.0'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // Agent invocation endpoint - Direct access with Convex auth
-    if (path === '/api/agent/invoke' && request.method === 'POST') {
+    // PRIMARY: RoomOrchestratorDO invoke endpoint (Track 3 v3.1)
+    // Single DO type for all room types with room-type-aware context
+    if (path.match(/^\/api\/room\/[^/]+\/invoke$/) && request.method === 'POST') {
       try {
+        // Extract roomId from path
+        const pathParts = path.split('/');
+        const roomId = pathParts[3];
+
         // Extract and validate auth token
         const authHeader = request.headers.get('Authorization');
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -77,7 +97,7 @@ export default {
           );
         }
 
-        const token = authHeader.substring(7); // Remove "Bearer "
+        const token = authHeader.substring(7);
         const convexUrl = env.CONVEX_DEPLOY_URL || 'http://localhost:8000';
 
         // Create Convex client with user's auth token
@@ -87,29 +107,20 @@ export default {
         const body = await request.json() as any;
 
         // Validate required fields
-        if (!body.roomId || !body.message) {
+        if (!body.message) {
           return new Response(
             JSON.stringify({
-              error: 'Missing required fields',
-              required: ['roomId', 'message'],
+              error: 'Missing required field: message',
               received: Object.keys(body)
             }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
-        // Fetch authenticated user profile from Convex
-        // This validates authentication only (NOT room access)
-        // Room membership is enforced downstream in the Durable Object
-        // This step will fail if:
-        // - Token is invalid or expired
-        // - User is not authenticated
+        // Fetch authenticated user profile
         let user: any;
-
         try {
-          // Get authenticated user profile
           user = await convex.query(api.users.getMyProfile, {});
-
           if (!user) {
             return new Response(
               JSON.stringify({
@@ -119,46 +130,40 @@ export default {
               { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
-
         } catch (convexError) {
           console.error('Convex authentication error:', convexError);
           return new Response(
             JSON.stringify({
-              error: 'Authentication or authorization failed',
+              error: 'Authentication failed',
               details: convexError instanceof Error ? convexError.message : 'Unknown error',
-              hint: 'Ensure you have a valid Convex auth token and access to this room'
             }),
             { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
 
         // Get or create DO instance for this room
-        const doId = env.CHAT_ORCHESTRATOR.idFromName(`room-${body.roomId}`);
-        const stub = env.CHAT_ORCHESTRATOR.get(doId);
+        const doId = env.ROOM_ORCHESTRATOR.idFromName(`room-${roomId}`);
+        const stub = env.ROOM_ORCHESTRATOR.get(doId);
 
-        // Forward full context to DO
+        // Forward to RoomOrchestratorDO
         const doResponse = await stub.fetch(
           new Request('http://internal/invoke', {
             method: 'POST',
             body: JSON.stringify({
-              roomId: body.roomId,
+              roomId: roomId,
               eventId: body.eventId,
               userId: user._id,
               userName: user.name,
               message: body.message,
+              parentMessageId: body.parentMessageId,
+              roomType: body.roomType || 'main',
               convexUrl,
               authToken: token,
-              // Pass API keys for AI integration (priority: Claude > Kimi > OpenAI)
-              claudeApiKey: env.CLAUDE_API_KEY,
-              kimiApiKey: env.KIMI_API_KEY,
-              anthropicApiKey: env.ANTHROPIC_API_KEY,
-              openaiApiKey: env.OPENAI_API_KEY,
             }),
             headers: { 'Content-Type': 'application/json' }
           })
         );
 
-        // Propagate DO response status to client
         if (!doResponse.ok) {
           const errorBody = await doResponse.json();
           return new Response(
@@ -170,44 +175,18 @@ export default {
           );
         }
 
-        const result = await doResponse.json();
-
-        // Save response to Convex using authenticated client
-        // This ensures the response is saved with proper user context
-        try {
-          if (!body.eventId) {
-            console.warn('[Worker] No eventId provided, skipping save to Convex');
-          } else {
-            await convex.mutation(api.agent.saveResponse, {
-              roomId: body.roomId,
-              eventId: body.eventId,
-              text: result.response,
-              metadata: {
-                invokedBy: user._id,
-                userMessage: body.message,
-                timestamp: Date.now(),
-                messagesFetched: result.messagesFetched,
-                conversationTurns: result.conversationTurns,
-              },
-            });
-
-            console.log('[Worker] Response saved to Convex successfully');
-          }
-        } catch (saveError) {
-          console.error('[Worker] Failed to save response to Convex:', saveError);
-          // Don't fail the request if save fails - user still gets response
-        }
+        const result = await doResponse.json() as Record<string, any>;
 
         return new Response(JSON.stringify({
           ...result,
-          architecture: 'direct-access',
+          architecture: 'room-orchestrator-v3',
           userId: user._id,
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
 
       } catch (error) {
-        console.error('Worker error:', error);
+        console.error('RoomOrchestrator error:', error);
         return new Response(
           JSON.stringify({
             error: 'Internal server error',
@@ -218,39 +197,28 @@ export default {
       }
     }
 
-    // Status check endpoint
-    if (path.startsWith('/api/agent/status/') && request.method === 'GET') {
+    // PRIMARY: RoomOrchestratorDO status endpoint (Track 3 v3.1)
+    if (path.match(/^\/api\/room\/[^/]+\/status$/) && request.method === 'GET') {
       try {
-        const roomId = path.split('/').pop();
+        const pathParts = path.split('/');
+        const roomId = pathParts[3];
 
-        const doId = env.CHAT_ORCHESTRATOR.idFromName(`room-${roomId}`);
-        const stub = env.CHAT_ORCHESTRATOR.get(doId);
+        const doId = env.ROOM_ORCHESTRATOR.idFromName(`room-${roomId}`);
+        const stub = env.ROOM_ORCHESTRATOR.get(doId);
 
         const doResponse = await stub.fetch(
           new Request('http://internal/status')
         );
 
-        // Propagate DO response status to client
-        if (!doResponse.ok) {
-          const errorBody = await doResponse.json();
-          return new Response(
-            JSON.stringify(errorBody),
-            {
-              status: doResponse.status,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-
         const result = await doResponse.json();
-
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
+
       } catch (error) {
-        console.error('Status check error:', error);
+        console.error('RoomOrchestrator status error:', error);
         return new Response(
-          JSON.stringify({ error: 'Failed to get status' }),
+          JSON.stringify({ error: 'Failed to get room status' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
@@ -262,8 +230,8 @@ export default {
         error: 'Not found',
         availableEndpoints: [
           'GET /health',
-          'POST /api/agent/invoke',
-          'GET /api/agent/status/:roomId'
+          'POST /api/room/:roomId/invoke',
+          'GET /api/room/:roomId/status'
         ]
       }),
       { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

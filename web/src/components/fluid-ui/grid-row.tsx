@@ -15,7 +15,7 @@ export function GridRow({ section, eventId }: GridRowProps) {
 	);
 
 	return (
-		<div className="fluid-grid-row" style={{ gridTemplateColumns }}>
+		<div className="fluid-grid-row w-full" style={{ gridTemplateColumns }}>
 			{section.components.map((component, index) => (
 				<ComponentRenderer
 					key={component.id || `comp-${index}`}

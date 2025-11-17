@@ -21,10 +21,10 @@ export const Route = createFileRoute("/verify-email")({
 			});
 		}
 
-		// If email is already verified, redirect to dashboard
+		// If email is already verified, redirect to events
 		if (context.user?.emailVerified) {
 			throw redirect({
-				to: "/dashboard",
+				to: "/events",
 			});
 		}
 	},
@@ -100,8 +100,8 @@ function VerifyEmailPage() {
 							<p className="font-medium mt-1">{session?.user?.email}</p>
 						</div>
 						<p className="text-sm text-muted-foreground">
-							Click the link in the email to verify your account and access the
-							dashboard.
+							Click the link in the email to verify your account and access your
+							events.
 						</p>
 					</div>
 

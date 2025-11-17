@@ -1,21 +1,31 @@
-import "@testing-library/jest-dom";
-import { cleanup } from "@testing-library/react";
-import { afterEach } from "vitest";
+/**
+ * Vitest Setup File
+ *
+ * Global test configuration and mocks
+ */
 
-// Cleanup after each test
-afterEach(() => {
-	cleanup();
-});
+import { vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
-// Mock crypto.randomUUID if not available
-if (!global.crypto) {
-	global.crypto = {
-		randomUUID: () => {
-			return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-				const r = (Math.random() * 16) | 0;
-				const v = c === "x" ? r : (r & 0x3) | 0x8;
-				return v.toString(16);
-			});
+// Mock Convex generated API
+vi.mock("@convex/_generated/api", () => ({
+	api: new Proxy(
+		{},
+		{
+			get: () =>
+				new Proxy(
+					{},
+					{
+						get: () => vi.fn(),
+					},
+				),
 		},
-	} as Crypto;
-}
+	),
+}));
+
+// Mock Convex generated dataModel
+vi.mock("@convex/_generated/dataModel", () => ({
+	Id: vi.fn(),
+}));
+
+// Global test utilities can be added here

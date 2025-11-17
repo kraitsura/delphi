@@ -15,6 +15,7 @@ export default defineSchema({
     // Better Auth will create _id matching their user table
     email: v.string(),
     name: v.string(),
+    username: v.optional(v.string()),
     avatar: v.optional(v.string()),
     bio: v.optional(v.string()),
     location: v.optional(v.string()),
@@ -56,6 +57,12 @@ export default defineSchema({
       timezone: v.string(),
     })),
 
+    // Subscription Plan
+    plan: v.optional(v.union(
+      v.literal("free"),
+      v.literal("unlimited")
+    )),
+
     // Metadata
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -63,6 +70,7 @@ export default defineSchema({
     isActive: v.boolean(), // Soft delete flag
   })
     .index("by_email", ["email"])
+    .index("by_username", ["username"])
     .index("by_role", ["role"])
     .index("by_active", ["isActive"])
     .searchIndex("search_name", {
@@ -390,12 +398,69 @@ export default defineSchema({
       v.literal("none")
     )),
 
+    // Threading support (Phase 2)
+    parentMessageId: v.optional(v.id("messages")), // Reference to message being replied to
+    threadId: v.optional(v.string()), // Root message ID of thread
+    replyCount: v.optional(v.number()), // How many replies this message has
+
+    // Enhanced AI metadata (Phase 2)
+    aiMetadata: v.optional(v.object({
+      intent: v.string(), // task_creation, vendor_search, budget_analysis, etc.
+      confidence: v.number(),
+      agentType: v.string(), // TaskAgent, VendorAgent, etc.
+      toolsUsed: v.array(v.string()), // ["convex_crud", "firecrawl"]
+      structuredData: v.optional(v.any()), // Task objects, vendor cards, budget breakdowns
+
+      // Track 4: Enhanced Rendering Support
+      renderType: v.optional(v.union(
+        v.literal("text"),
+        v.literal("component_grid"),
+        v.literal("interactive_prompt"),
+        v.literal("mixed"),
+        v.literal("multi_block") // For multi-intent responses
+      )),
+
+      componentConfig: v.optional(v.object({
+        sections: v.array(v.union(
+          v.object({
+            type: v.literal("text"),
+            content: v.string()
+          }),
+          v.object({
+            type: v.literal("grid"),
+            components: v.array(v.any())
+          })
+        ))
+      })),
+
+      interactivePrompt: v.optional(v.object({
+        promptType: v.union(
+          v.literal("poll"),
+          v.literal("confirmation"),
+          v.literal("quickActions"),
+          v.literal("multiChoice")
+        ),
+        data: v.any(),
+        responses: v.optional(v.array(v.any()))
+      })),
+
+      // Multi-block responses (for multi-intent messages)
+      responseBlocks: v.optional(v.array(v.any())),
+
+      // Budget/error tracking (for graceful degradation)
+      wasSuccessful: v.optional(v.boolean()), // Whether agent completed successfully
+      abortReason: v.optional(v.string()), // Reason for abort (e.g., "Exceeded action budget")
+      partialSuccess: v.optional(v.boolean()), // Whether partial results were found before abort
+    })),
+
     // Metadata
     createdAt: v.number(),
   })
     .index("by_room", ["roomId"])
     .index("by_author", ["authorId"])
     .index("by_room_and_created", ["roomId", "createdAt"])
+    .index("by_thread", ["threadId", "createdAt"]) // For efficient thread queries
+    .index("by_parent", ["parentMessageId", "createdAt"]) // For querying direct replies
     // For real-time queries, order by creation time
     .searchIndex("search_text", {
       searchField: "text",
@@ -422,7 +487,18 @@ export default defineSchema({
 
     // Assignment
     assignedTo: v.optional(v.id("users")),
+    assignee: v.optional(v.id("users")), // Alias for assignedTo for compatibility
     createdBy: v.id("users"),
+    vendor: v.optional(v.id("users")), // Vendor assigned to this task
+
+    // Task Attributes
+    estimatedDuration: v.optional(v.number()), // Duration in minutes
+    dayOfSequence: v.optional(v.number()), // Sequence number for day-of tasks
+    phase: v.optional(v.union(
+      v.literal("planning"),
+      v.literal("day_of"),
+      v.literal("post_event")
+    )),
 
     // Categorization
     category: v.union(
@@ -434,6 +510,7 @@ export default defineSchema({
       v.literal("invitations"),
       v.literal("transportation"),
       v.literal("accommodation"),
+      v.literal("planning"),
       v.literal("other")
     ),
 
@@ -485,6 +562,7 @@ export default defineSchema({
 
     // Source tracking
     sourceMessageId: v.optional(v.id("messages")), // Which message created this
+    sourceProposalId: v.optional(v.id("proposals")), // Which proposal created this
 
     // Soft delete
     deletedAt: v.optional(v.number()),
@@ -531,7 +609,7 @@ export default defineSchema({
 
     // Payment Info
     paidBy: v.id("users"),
-    paidAt: v.number(), // When payment was made
+    paidAt: v.optional(v.number()), // When payment was made (optional for pending expenses)
     dueDate: v.optional(v.number()), // When payment is due
     status: v.optional(v.union(
       v.literal("pending"),
@@ -576,6 +654,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     sourceMessageId: v.optional(v.id("messages")),
+    sourceProposalId: v.optional(v.id("proposals")),
 
     // Soft delete
     deletedAt: v.optional(v.number()),
@@ -610,13 +689,25 @@ export default defineSchema({
     state: v.optional(v.string()),
     country: v.optional(v.string()),
 
-    // Pricing
-    pricing: v.optional(v.object({
-      min: v.optional(v.number()),
-      max: v.optional(v.number()),
-      currency: v.string(),
-      notes: v.optional(v.string()),
-    })),
+    // Venue-specific fields (for category: "venue")
+    capacity: v.optional(v.number()), // Guest capacity
+    venueType: v.optional(v.union(
+      v.literal("indoor"),
+      v.literal("outdoor"),
+      v.literal("both")
+    )),
+    amenities: v.optional(v.array(v.string())), // ["parking", "catering", "AV equipment", etc.]
+
+    // Pricing (can be a string from scraped data or structured object)
+    pricing: v.optional(v.union(
+      v.string(),
+      v.object({
+        min: v.optional(v.number()),
+        max: v.optional(v.number()),
+        currency: v.string(),
+        notes: v.optional(v.string()),
+      })
+    )),
 
     // Ratings & Reviews
     rating: v.optional(v.number()), // 0-5
@@ -659,6 +750,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     sourceMessageId: v.optional(v.id("messages")),
+    sourceProposalId: v.optional(v.id("proposals")),
 
     // Soft delete
     deletedAt: v.optional(v.number()),
@@ -760,6 +852,75 @@ export default defineSchema({
     .index("by_event", ["eventId", "status"])
     .index("by_room", ["roomId", "createdAt"])
     .index("by_status", ["status", "createdAt"]),
+
+  // ==========================================
+  // PROPOSALS (AI Suggestions)
+  // ==========================================
+
+  /**
+   * Proposals - AI-generated proposals for batch operations
+   * When agent detects multi-create scenarios, it returns a proposal
+   * for user review before execution (accept/edit/reject)
+   */
+  proposals: defineTable({
+    // Association
+    eventId: v.id("events"),
+    roomId: v.id("rooms"),
+
+    // Proposal Type
+    proposalType: v.union(
+      v.literal("tasks"),
+      v.literal("budget_entries"),
+      v.literal("vendor_suggestions"),
+      v.literal("venue_suggestions")
+    ),
+
+    // Proposal Content
+    items: v.array(v.object({
+      type: v.string(), // "task", "expense", "vendor"
+      data: v.any(), // The actual entity data
+      reasoning: v.optional(v.string()), // Why AI suggests this
+    })),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("accepted"),
+      v.literal("rejected"),
+      v.literal("expired")
+    ),
+
+    // Source tracking
+    messageId: v.optional(v.id("messages")), // Which message created this proposal
+
+    // Expiration (5 minutes)
+    expiresAt: v.number(),
+
+    // AI Context
+    aiMetadata: v.optional(v.object({
+      intent: v.string(),
+      confidence: v.number(),
+      agentType: v.string(),
+      reasoning: v.optional(v.string()),
+    })),
+
+    // Review tracking
+    reviewedBy: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
+    acceptanceNotes: v.optional(v.string()),
+
+    // Metadata
+    createdBy: v.id("users"),
+    createdAt: v.number(),
+
+    // Soft delete
+    deletedAt: v.optional(v.number()),
+  })
+    .index("by_room", ["roomId", "createdAt"])
+    .index("by_message", ["messageId"])
+    .index("by_event", ["eventId", "createdAt"])
+    .index("by_status", ["eventId", "status"])
+    .index("by_room_and_status", ["roomId", "status"]),
 
   // ==========================================
   // CHECKPOINTS (DO State Recovery)
@@ -1294,6 +1455,29 @@ export default defineSchema({
     .index("by_event_and_deleted", ["eventId", "isDeleted"]),
 
   // ==========================================
+  // PRESENCE & TYPING STATUS
+  // ==========================================
+
+  /**
+   * Typing Status - Real-time typing indicators for rooms
+   * Tracks user presence and activity status within rooms
+   */
+  typingStatus: defineTable({
+    roomId: v.string(), // Context-aware: "room:xxx", "event:xxx", or "global"
+    userId: v.id("users"),
+    userName: v.string(),
+    userAvatar: v.optional(v.string()),
+    status: v.union(
+      v.literal("active"),
+      v.literal("idle"),
+      v.literal("typing")
+    ),
+    updatedAt: v.number(),
+  })
+    .index("by_room", ["roomId"])
+    .index("by_room_and_user", ["roomId", "userId"]),
+
+  // ==========================================
   // AGENT SYSTEM (Phase 1 - Foundation)
   // ==========================================
 
@@ -1325,4 +1509,22 @@ export default defineSchema({
     invocationCount: v.number(),
   })
     .index("by_room", ["roomId"]),
+
+  // ==========================================
+  // USAGE TRACKING (Subscription Plans)
+  // ==========================================
+
+  /**
+   * Usage Tracking - Tracks weekly agent invocation usage per user
+   * Used to enforce free plan limits (10 invocations per week)
+   */
+  usageTracking: defineTable({
+    userId: v.id("users"),
+    weekStart: v.number(), // Monday 00:00 UTC timestamp
+    agentInvocations: v.number(), // Count of agent invocations this week
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_and_week", ["userId", "weekStart"]),
 });

@@ -1,11 +1,11 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface PollResultsProps {
 	pollId?: Id<"polls">;
@@ -14,21 +14,24 @@ export interface PollResultsProps {
 }
 
 export function PollResults(props: PollResultsProps) {
-	const { showVoters = false, showPercentages = true } = props;
+	const { showPercentages = true } = props;
 
 	// Zustand state - read selected poll from store
 	const selectedPollId = useDashboardStore((state) => state.selections.pollId);
 
 	// Use prop pollId if provided, otherwise use Zustand-based pollId
-	const activePollId = props.pollId || selectedPollId;
+	const activePollId = (props.pollId || selectedPollId) as
+		| Id<"polls">
+		| null
+		| undefined;
 
 	const poll = useQuery(
 		api.polls.getById,
-		activePollId ? { pollId: activePollId } : "skip"
+		activePollId ? { pollId: activePollId } : ("skip" as const),
 	);
 	const votes = useQuery(
 		api.pollVotes.listByPoll,
-		activePollId ? { pollId: activePollId } : "skip"
+		activePollId ? { pollId: activePollId } : ("skip" as const),
 	);
 
 	const results = useMemo(() => {
@@ -173,7 +176,8 @@ function PollResultsEmpty() {
 
 export const PollResultsMetadata = {
 	name: "PollResults",
-	description: "Visualize poll results with percentages (Detail component using Zustand)",
+	description:
+		"Visualize poll results with percentages (Detail component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
@@ -184,13 +188,15 @@ export const PollResultsMetadata = {
 		role: "detail",
 		reads: ["selections.pollId"],
 		writes: [],
-		behavior: "Displays results for the selected poll from Zustand store. Shows 'Select a poll' message when no poll is selected.",
+		behavior:
+			"Displays results for the selected poll from Zustand store. Shows 'Select a poll' message when no poll is selected.",
 	},
 	props: {
 		pollId: {
 			type: "string",
 			required: false,
-			description: "Poll identifier (optional if listening to pollSelected events)",
+			description:
+				"Poll identifier (optional if listening to pollSelected events)",
 		},
 		showVoters: {
 			type: "boolean",

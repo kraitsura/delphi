@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TasksListProps {
 	eventId: Id<"events">;
@@ -35,7 +35,9 @@ export function TasksList(props: TasksListProps) {
 
 	// Zustand state - read selections from store
 	const selectedPhase = useDashboardStore((state) => state.selections.phase);
-	const selectedVendor = useDashboardStore((state) => state.selections.vendorId);
+	const selectedVendor = useDashboardStore(
+		(state) => state.selections.vendorId,
+	);
 
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 	const [showFiltersPanel, setShowFiltersPanel] = useState(showFilters);
@@ -52,7 +54,7 @@ export function TasksList(props: TasksListProps) {
 
 		// Filter by vendor (from Zustand)
 		if (selectedVendor) {
-			filtered = filtered.filter((t) => t.vendorId === selectedVendor);
+			filtered = filtered.filter((t) => t.vendor === selectedVendor);
 		}
 
 		// Filter by status
@@ -102,7 +104,17 @@ export function TasksList(props: TasksListProps) {
 
 		// Limit
 		return limit ? sorted.slice(0, limit) : sorted;
-	}, [tasks, selectedPhase, selectedVendor, status, priority, props.assignee, props.category, sortBy, limit]);
+	}, [
+		tasks,
+		selectedPhase,
+		selectedVendor,
+		status,
+		priority,
+		props.assignee,
+		props.category,
+		sortBy,
+		limit,
+	]);
 
 	if (tasks === undefined) {
 		return <TasksListSkeleton />;
@@ -314,7 +326,8 @@ function TasksListEmpty() {
 
 export const TasksListMetadata = {
 	name: "TasksList",
-	description: "Filterable task list with inline actions (Detail component using Zustand)",
+	description:
+		"Filterable task list with inline actions (Detail component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
@@ -325,7 +338,8 @@ export const TasksListMetadata = {
 		role: "detail",
 		reads: ["selections.phase", "selections.vendorId"],
 		writes: [],
-		behavior: "Filters tasks based on selected phase and vendor from Zustand store. Shows active filters in header.",
+		behavior:
+			"Filters tasks based on selected phase and vendor from Zustand store. Shows active filters in header.",
 	},
 	props: {
 		eventId: {

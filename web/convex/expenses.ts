@@ -77,7 +77,7 @@ export async function createExpense(
     amount: number;
     category?: "venue" | "catering" | "photography" | "music" | "decor" | "supplies" | "transportation" | "accommodation" | "other";
     paidBy: Id<"users">;
-    paidAt: number;
+    paidAt?: number;
     paymentMethod?: "cash" | "card" | "transfer" | "check" | "other";
     receiptUrl?: string;
     split?: Array<{
@@ -88,6 +88,7 @@ export async function createExpense(
     }>;
     vendorId?: Id<"vendors">;
     sourceMessageId?: Id<"messages">;
+    status?: "pending" | "paid" | "overdue";
   }
 ): Promise<Id<"expenses">> {
   const { userProfile } = await getAuthenticatedUser(ctx);
@@ -117,7 +118,8 @@ export async function createExpense(
     currency: "USD", // Default currency
     category: args.category || "other",
     paidBy: args.paidBy,
-    paidAt: args.paidAt,
+    paidAt: args.paidAt, // Optional - undefined for pending expenses
+    status: args.status, // Optional - defaults to pending if not specified
     paymentMethod: args.paymentMethod,
     receiptUrl: args.receiptUrl,
     split: args.split ? {
@@ -172,7 +174,12 @@ export const create = mutation({
       v.literal("other")
     )),
     paidBy: v.id("users"),
-    paidAt: v.number(),
+    paidAt: v.optional(v.number()),
+    status: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("paid"),
+      v.literal("overdue")
+    )),
     paymentMethod: v.optional(v.union(
       v.literal("cash"),
       v.literal("card"),

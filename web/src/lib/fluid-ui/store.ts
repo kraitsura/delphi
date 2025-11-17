@@ -5,10 +5,9 @@
  * Replaces EventBus with reactive state subscriptions.
  */
 
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import type { DashboardConfig, ComponentInstance } from './types';
-import type { Id } from '../../convex/_generated/dataModel';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import type { ComponentInstance, DashboardConfig } from "./types";
 
 // ============================================================================
 // TYPES
@@ -40,7 +39,13 @@ export interface SelectionState {
  */
 export interface ActivePrompt {
 	id: string;
-	type: 'poll' | 'confirmation' | 'permission' | 'quickActions' | 'input' | 'multiChoice';
+	type:
+		| "poll"
+		| "confirmation"
+		| "permission"
+		| "quickActions"
+		| "input"
+		| "multiChoice";
 	component: string; // Component type to render
 	props: Record<string, any>;
 	createdAt: number;
@@ -53,7 +58,7 @@ export interface ActivePrompt {
 export interface Toast {
 	id: string;
 	message: string;
-	type: 'info' | 'success' | 'warning' | 'error';
+	type: "info" | "success" | "warning" | "error";
 }
 
 /**
@@ -89,7 +94,7 @@ export interface DashboardStore {
 	selections: SelectionState;
 	select: <K extends keyof SelectionState>(
 		key: K,
-		value: SelectionState[K]
+		value: SelectionState[K],
 	) => void;
 	clearSelection: (key: keyof SelectionState) => void;
 	clearAllSelections: () => void;
@@ -99,10 +104,10 @@ export interface DashboardStore {
 	highlightComponent: (componentId: string, duration?: number) => void;
 	clearHighlights: () => void;
 
-	animatingComponents: Map<string, 'pulse' | 'shake' | 'glow'>;
+	animatingComponents: Map<string, "pulse" | "shake" | "glow">;
 	animateComponent: (
 		componentId: string,
-		type: 'pulse' | 'shake' | 'glow'
+		type: "pulse" | "shake" | "glow",
 	) => void;
 	stopAnimation: (componentId: string) => void;
 
@@ -129,12 +134,16 @@ export interface DashboardStore {
 	toasts: Toast[];
 	showToast: (
 		message: string,
-		type?: 'info' | 'success' | 'warning' | 'error'
+		type?: "info" | "success" | "warning" | "error",
 	) => void;
 	hideToast: (id: string) => void;
 
 	modals: Map<string, Modal>;
-	openModal: (id: string, component: string, props: Record<string, any>) => void;
+	openModal: (
+		id: string,
+		component: string,
+		props: Record<string, any>,
+	) => void;
 	closeModal: (id: string) => void;
 	closeAllModals: () => void;
 
@@ -171,7 +180,9 @@ const initialSelections: SelectionState = {
  * Creates a new dashboard store instance
  * Used by DashboardStoreProvider to create scoped stores
  */
-export const createDashboardStore = () => {
+export const createDashboardStore = (
+	_initialState?: Partial<DashboardStore>,
+) => {
 	return create<DashboardStore>()(
 		devtools(
 			(set, get) => ({
@@ -179,7 +190,7 @@ export const createDashboardStore = () => {
 				config: null,
 
 				setConfig: (config) => {
-					set({ config }, false, 'setConfig');
+					set({ config }, false, "setConfig");
 				},
 
 				updateComponentProps: (componentId, newProps) => {
@@ -188,20 +199,20 @@ export const createDashboardStore = () => {
 
 					const updatedConfig = { ...config };
 					updatedConfig.sections = config.sections.map((section) => {
-						if (section.type === 'row') {
+						if (section.type === "row") {
 							return {
 								...section,
 								components: section.components.map((comp) =>
 									comp.id === componentId
 										? { ...comp, props: { ...comp.props, ...newProps } }
-										: comp
+										: comp,
 								),
 							};
 						}
 						return section;
 					});
 
-					set({ config: updatedConfig }, false, 'updateComponentProps');
+					set({ config: updatedConfig }, false, "updateComponentProps");
 				},
 
 				removeComponent: (componentId) => {
@@ -211,11 +222,11 @@ export const createDashboardStore = () => {
 					const updatedConfig = { ...config };
 					updatedConfig.sections = config.sections
 						.map((section) => {
-							if (section.type === 'row') {
+							if (section.type === "row") {
 								return {
 									...section,
 									components: section.components.filter(
-										(comp) => comp.id !== componentId
+										(comp) => comp.id !== componentId,
 									),
 								};
 							}
@@ -223,10 +234,10 @@ export const createDashboardStore = () => {
 						})
 						.filter(
 							(section) =>
-								section.type !== 'row' || section.components.length > 0
+								section.type !== "row" || section.components.length > 0,
 						);
 
-					set({ config: updatedConfig }, false, 'removeComponent');
+					set({ config: updatedConfig }, false, "removeComponent");
 				},
 
 				addComponent: (component, rowIndex) => {
@@ -237,13 +248,13 @@ export const createDashboardStore = () => {
 					if (
 						rowIndex >= 0 &&
 						rowIndex < updatedConfig.sections.length &&
-						updatedConfig.sections[rowIndex].type === 'row'
+						updatedConfig.sections[rowIndex].type === "row"
 					) {
 						const section = updatedConfig.sections[rowIndex] as any;
 						section.components.push(component);
 					}
 
-					set({ config: updatedConfig }, false, 'addComponent');
+					set({ config: updatedConfig }, false, "addComponent");
 				},
 
 				// ===== Selections =====
@@ -258,7 +269,7 @@ export const createDashboardStore = () => {
 							},
 						}),
 						false,
-						`select:${key}`
+						`select:${key}`,
 					);
 				},
 
@@ -271,7 +282,7 @@ export const createDashboardStore = () => {
 							},
 						}),
 						false,
-						`clearSelection:${key}`
+						`clearSelection:${key}`,
 					);
 				},
 
@@ -279,7 +290,7 @@ export const createDashboardStore = () => {
 					set(
 						{ selections: { ...initialSelections } },
 						false,
-						'clearAllSelections'
+						"clearAllSelections",
 					);
 				},
 
@@ -290,11 +301,11 @@ export const createDashboardStore = () => {
 					set(
 						(state) => ({
 							highlightedComponents: new Set(state.highlightedComponents).add(
-								componentId
+								componentId,
 							),
 						}),
 						false,
-						'highlightComponent'
+						"highlightComponent",
 					);
 
 					// Auto-clear after duration
@@ -307,14 +318,14 @@ export const createDashboardStore = () => {
 									return { highlightedComponents: newSet };
 								},
 								false,
-								'clearHighlight'
+								"clearHighlight",
 							);
 						}, duration);
 					}
 				},
 
 				clearHighlights: () => {
-					set({ highlightedComponents: new Set() }, false, 'clearHighlights');
+					set({ highlightedComponents: new Set() }, false, "clearHighlights");
 				},
 
 				animatingComponents: new Map(),
@@ -327,7 +338,7 @@ export const createDashboardStore = () => {
 							return { animatingComponents: newMap };
 						},
 						false,
-						'animateComponent'
+						"animateComponent",
 					);
 				},
 
@@ -339,7 +350,7 @@ export const createDashboardStore = () => {
 							return { animatingComponents: newMap };
 						},
 						false,
-						'stopAnimation'
+						"stopAnimation",
 					);
 				},
 
@@ -357,7 +368,7 @@ export const createDashboardStore = () => {
 							return { expandedPanels: newSet };
 						},
 						false,
-						'togglePanel'
+						"togglePanel",
 					);
 				},
 
@@ -367,7 +378,7 @@ export const createDashboardStore = () => {
 							expandedPanels: new Set(state.expandedPanels).add(panelId),
 						}),
 						false,
-						'expandPanel'
+						"expandPanel",
 					);
 				},
 
@@ -379,7 +390,7 @@ export const createDashboardStore = () => {
 							return { expandedPanels: newSet };
 						},
 						false,
-						'collapsePanel'
+						"collapsePanel",
 					);
 				},
 
@@ -394,7 +405,7 @@ export const createDashboardStore = () => {
 							return { activePrompts: newMap };
 						},
 						false,
-						'addPrompt'
+						"addPrompt",
 					);
 				},
 
@@ -406,11 +417,11 @@ export const createDashboardStore = () => {
 							return { activePrompts: newMap };
 						},
 						false,
-						'removePrompt'
+						"removePrompt",
 					);
 				},
 
-				respondToPrompt: (promptId, response) => {
+				respondToPrompt: (promptId, _response) => {
 					// This could be extended to store responses
 					// For now, just remove the prompt after response
 					get().removePrompt(promptId);
@@ -420,7 +431,7 @@ export const createDashboardStore = () => {
 				isLoading: false,
 
 				setLoading: (loading) => {
-					set({ isLoading: loading }, false, 'setLoading');
+					set({ isLoading: loading }, false, "setLoading");
 				},
 
 				errors: [],
@@ -436,7 +447,7 @@ export const createDashboardStore = () => {
 							errors: [...state.errors, error],
 						}),
 						false,
-						'addError'
+						"addError",
 					);
 				},
 
@@ -446,17 +457,17 @@ export const createDashboardStore = () => {
 							errors: state.errors.filter((e) => e.id !== id),
 						}),
 						false,
-						'clearError'
+						"clearError",
 					);
 				},
 
 				clearAllErrors: () => {
-					set({ errors: [] }, false, 'clearAllErrors');
+					set({ errors: [] }, false, "clearAllErrors");
 				},
 
 				toasts: [],
 
-				showToast: (message, type = 'info') => {
+				showToast: (message, type = "info") => {
 					const toast: Toast = {
 						id: `toast-${Date.now()}-${Math.random()}`,
 						message,
@@ -467,7 +478,7 @@ export const createDashboardStore = () => {
 							toasts: [...state.toasts, toast],
 						}),
 						false,
-						'showToast'
+						"showToast",
 					);
 
 					// Auto-hide after 5 seconds
@@ -482,7 +493,7 @@ export const createDashboardStore = () => {
 							toasts: state.toasts.filter((t) => t.id !== id),
 						}),
 						false,
-						'hideToast'
+						"hideToast",
 					);
 				},
 
@@ -496,7 +507,7 @@ export const createDashboardStore = () => {
 							return { modals: newMap };
 						},
 						false,
-						'openModal'
+						"openModal",
 					);
 				},
 
@@ -508,12 +519,12 @@ export const createDashboardStore = () => {
 							return { modals: newMap };
 						},
 						false,
-						'closeModal'
+						"closeModal",
 					);
 				},
 
 				closeAllModals: () => {
-					set({ modals: new Map() }, false, 'closeAllModals');
+					set({ modals: new Map() }, false, "closeAllModals");
 				},
 
 				// ===== Utility =====
@@ -532,15 +543,15 @@ export const createDashboardStore = () => {
 							modals: new Map(),
 						},
 						false,
-						'reset'
+						"reset",
 					);
 				},
 			}),
 			{
-				name: 'DashboardStore',
-				enabled: process.env.NODE_ENV === 'development',
-			}
-		)
+				name: "DashboardStore",
+				enabled: process.env.NODE_ENV === "development",
+			},
+		),
 	);
 };
 
@@ -574,7 +585,7 @@ export const useHighlights = (store: ReturnType<typeof createDashboardStore>) =>
  * Usage: const prompts = useActivePrompts(store);
  */
 export const useActivePrompts = (
-	store: ReturnType<typeof createDashboardStore>
+	store: ReturnType<typeof createDashboardStore>,
 ) => store((state) => state.activePrompts);
 
 /**
@@ -583,5 +594,5 @@ export const useActivePrompts = (
  */
 export const useIsHighlighted = (
 	store: ReturnType<typeof createDashboardStore>,
-	componentId: string
+	componentId: string,
 ) => store((state) => state.highlightedComponents.has(componentId));

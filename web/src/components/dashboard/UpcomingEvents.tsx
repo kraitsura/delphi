@@ -204,7 +204,8 @@ export const UpcomingEventsMetadata = {
 		eventId: {
 			type: "string",
 			required: false,
-			description: "Event identifier (optional, component queries all user events)",
+			description:
+				"Event identifier (optional, component queries all user events)",
 		},
 		status: {
 			type: "enum",

@@ -1,12 +1,12 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TaskGanttChartProps {
 	eventId: Id<"events">;
@@ -19,12 +19,14 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 
 	// Zustand state - read selected phase from store
 	const selectedPhase = useDashboardStore((state) => state.selections.phase);
+	const select = useDashboardStore((state) => state.select);
 
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
 
 	const { timelineData, dateRange } = useMemo(() => {
-		if (!tasks || !event) return { timelineData: [], dateRange: { start: 0, end: 0, days: 0 } };
+		if (!tasks || !event)
+			return { timelineData: [], dateRange: { start: 0, end: 0, days: 0 } };
 
 		// Filter by selected phase if any
 		const filteredTasks = selectedPhase
@@ -33,7 +35,7 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 
 		// Calculate date range
 		const now = Date.now();
-		const eventDate = event.date;
+		const eventDate = event.eventDate || now;
 
 		let start: number, end: number;
 
@@ -74,7 +76,14 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 			})
 			.sort((a, b) => {
 				// Sort by phase first, then by start date
-				const phaseOrder = ["planning", "vendor_selection", "design", "logistics", "day_of", "post_event"];
+				const phaseOrder = [
+					"planning",
+					"vendor_selection",
+					"design",
+					"logistics",
+					"day_of",
+					"post_event",
+				];
 				const aPhase = phaseOrder.indexOf(a.task.phase || "planning");
 				const bPhase = phaseOrder.indexOf(b.task.phase || "planning");
 				if (aPhase !== bPhase) return aPhase - bPhase;
@@ -87,11 +96,8 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 		};
 	}, [tasks, event, selectedPhase, viewRange]);
 
-	const handleTaskClick = (taskId: string, taskData: any) => {
-		emit({
-			type: "taskSelected",
-			payload: { taskId, taskData },
-		});
+	const handleTaskClick = (taskId: string) => {
+		select("taskId", taskId);
 	};
 
 	if (tasks === undefined || event === undefined) {
@@ -103,7 +109,8 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 	}
 
 	const today = Date.now();
-	const todayPercent = ((today - dateRange.start) / (dateRange.end - dateRange.start)) * 100;
+	const todayPercent =
+		((today - dateRange.start) / (dateRange.end - dateRange.start)) * 100;
 
 	return (
 		<Card className="fluid-component-card">
@@ -153,7 +160,7 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 
 					{/* Timeline bars */}
 					<div className="space-y-1.5 py-8">
-						{timelineData.map((item, index) => {
+						{timelineData.map((item) => {
 							const task = item.task;
 							const isOverdue =
 								task.dueDate < today && task.status !== "completed";
@@ -165,7 +172,9 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 										<div className="truncate text-sm">
 											<span className="font-normal">{task.title}</span>
 											{task.criticalPath && (
-												<span className="ml-1 text-red-600">{SYMBOLS.STAR}</span>
+												<span className="ml-1 text-red-600">
+													{SYMBOLS.THUNDERBOLT}
+												</span>
 											)}
 										</div>
 									</div>
@@ -186,7 +195,7 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 												marginLeft: `${item.leftPercent}%`,
 												width: `${item.widthPercent}%`,
 											}}
-											onClick={() => handleTaskClick(task._id, task)}
+											onClick={() => handleTaskClick(task._id)}
 										>
 											{/* Tooltip on hover */}
 											<div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 left-0 bg-popover text-popover-foreground text-xs p-2 rounded shadow-lg border z-20 whitespace-nowrap">
@@ -231,7 +240,7 @@ export function TaskGanttChart(props: TaskGanttChartProps) {
 						</div>
 						{showDependencies && (
 							<div className="flex items-center gap-1">
-								<span>{SYMBOLS.STAR}</span>
+								<span>{SYMBOLS.THUNDERBOLT}</span>
 								<span>Critical Path</span>
 							</div>
 						)}
@@ -276,7 +285,8 @@ function TaskGanttChartEmpty() {
 
 export const TaskGanttChartMetadata = {
 	name: "TaskGanttChart",
-	description: "Gantt-style timeline showing task schedules (Detail component using Zustand)",
+	description:
+		"Gantt-style timeline showing task schedules (Detail component using Zustand)",
 	layoutRules: {
 		canShare: false,
 		mustSpanFull: true,
@@ -287,8 +297,9 @@ export const TaskGanttChartMetadata = {
 	zustand: {
 		role: "detail",
 		reads: ["selections.phase"],
-		writes: [],
-		behavior: "Filters timeline by selected phase from Zustand store. Shows all tasks when no phase is selected.",
+		writes: ["selections.taskId"],
+		behavior:
+			"Filters timeline by selected phase from Zustand store. Clicking a task updates taskId selection.",
 	},
 	props: {
 		eventId: {

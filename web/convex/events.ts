@@ -92,6 +92,15 @@ export const create = mutation({
       isDeleted: false,
     });
 
+    // Add coordinator to eventMembers table
+    await ctx.db.insert("eventMembers", {
+      eventId,
+      userId: userProfile._id,
+      role: "coordinator",
+      joinedAt: Date.now(),
+      addedBy: userProfile._id,
+    });
+
     return { eventId, roomId };
   },
 });
@@ -548,5 +557,52 @@ export const getStats = query({
       participants: participantIds.size,
       participantCountIsPartial: hitParticipantLimit, // Flag if count may be incomplete
     };
+  },
+});
+
+/**
+ * Get event members (collaborators)
+ * Returns all members of the event with their user details
+ */
+export const getEventMembers = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    // Verify user has access to this event
+    await requireEventMember(ctx, args.eventId, userProfile._id);
+
+    // Get all event members
+    const eventMembers = await ctx.db
+      .query("eventMembers")
+      .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
+      .filter((q) => q.eq(q.field("isDeleted"), false))
+      .collect();
+
+    // Enrich with user data
+    const members = await Promise.all(
+      eventMembers.map(async (member) => {
+        const user = await ctx.db.get(member.userId);
+        if (!user || !user.isActive) return null;
+
+        return {
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+          bio: user.bio,
+          location: user.location,
+          role: member.role,
+          joinedAt: member.joinedAt,
+        };
+      })
+    );
+
+    // Filter out nulls (inactive users) and sort by join date
+    return members
+      .filter((m) => m !== null)
+      .sort((a, b) => a!.joinedAt - b!.joinedAt);
   },
 });

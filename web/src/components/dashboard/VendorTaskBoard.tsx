@@ -1,42 +1,46 @@
 import { api } from "convex/_generated/api";
 import type { Id } from "convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
+import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface VendorTaskBoardProps {
 	eventId: Id<"events">;
-	vendor?: string;
+	vendorId?: Id<"vendors">;
 	showCounts?: boolean;
 }
 
 export function VendorTaskBoard(props: VendorTaskBoardProps) {
-	const { showCounts = true, vendor: initialVendor } = props;
+	const { showCounts = true, vendorId: propVendorId } = props;
 
 	// Zustand state - read selected vendor from store
-	const selectedVendorId = useDashboardStore((state) => state.selections.vendorId);
+	const zustandVendorId = useDashboardStore(
+		(state) => state.selections.vendorId,
+	);
 	const select = useDashboardStore((state) => state.select);
+	const openModal = useDashboardStore((state) => state.openModal);
 
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 
-	// Use prop vendor if provided, otherwise use Zustand-based vendorId
-	const selectedVendor = initialVendor || selectedVendorId;
+	// Use prop vendorId if provided, otherwise use Zustand-based vendorId
+	const selectedVendorId = propVendorId || zustandVendorId;
 
 	const columns = useMemo(() => {
 		return [
 			{
 				id: "not_started",
 				label: "Not Started",
-				icon: SYMBOLS.CIRCLE,
+				icon: SYMBOLS.BLACK_CIRCLE,
 			},
 			{
 				id: "in_progress",
 				label: "In Progress",
-				icon: SYMBOLS.PENCIL,
+				icon: SYMBOLS.ARROW_RIGHT,
 			},
 			{
 				id: "blocked",
@@ -54,9 +58,9 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 	const { vendorTasks, groupedTasks } = useMemo(() => {
 		if (!tasks) return { vendorTasks: [], groupedTasks: new Map() };
 
-		// Filter tasks by selected vendor (using vendorId now)
-		const filtered = selectedVendor
-			? tasks.filter((t: any) => t.vendorId === selectedVendor)
+		// Filter tasks by selected vendorId
+		const filtered = selectedVendorId
+			? tasks.filter((t: any) => t.vendorId === selectedVendorId)
 			: tasks.filter((t: any) => t.vendorId); // Show all tasks with vendors if none selected
 
 		// Group by status
@@ -73,9 +77,9 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 		});
 
 		return { vendorTasks: filtered, groupedTasks: groups };
-	}, [tasks, selectedVendor, columns]);
+	}, [tasks, selectedVendorId, columns]);
 
-	const handleTaskClick = (taskId: string, taskData: any) => {
+	const handleTaskClick = (taskId: string) => {
 		// Update Zustand store with selected task
 		select("taskId", taskId);
 	};
@@ -88,17 +92,32 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 		return <VendorTaskBoardEmpty />;
 	}
 
-	if (!selectedVendor) {
+	if (!selectedVendorId) {
 		return (
 			<Card className="fluid-component-card">
 				<CardHeader className="fluid-component-header">
-					<CardTitle className="fluid-component-title">
-						{SYMBOLS.BLACK_SQUARE} Vendor Task Board
-					</CardTitle>
+					<div className="flex items-center justify-between">
+						<CardTitle className="fluid-component-title">
+							{SYMBOLS.BLACK_SQUARE} Vendor Task Board
+						</CardTitle>
+						<Button
+							size="sm"
+							onClick={() =>
+								openModal("add-vendor", "AddVendorModal", {
+									eventId: props.eventId,
+									modalId: "add-vendor",
+								})
+							}
+						>
+							{SYMBOLS.PLUS} Add Vendor
+						</Button>
+					</div>
 				</CardHeader>
 				<CardContent className="py-12 text-center text-muted-foreground">
 					<p className="text-sm">Select a vendor to view their tasks</p>
-					<p className="text-xs mt-2">Click on a vendor from another component</p>
+					<p className="text-xs mt-2">
+						Click on a vendor from another component
+					</p>
 				</CardContent>
 			</Card>
 		);
@@ -108,7 +127,7 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 		<Card className="fluid-component-card">
 			<CardHeader className="fluid-component-header">
 				<CardTitle className="fluid-component-title">
-					{SYMBOLS.BLACK_SQUARE} {selectedVendor}
+					{SYMBOLS.BLACK_SQUARE} Vendor Tasks
 				</CardTitle>
 				<Badge variant="outline">{vendorTasks.length} tasks</Badge>
 			</CardHeader>
@@ -130,7 +149,8 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 									</div>
 									{showCounts && (
 										<span className="text-xs text-muted-foreground">
-											{columnTasks.length} task{columnTasks.length !== 1 ? "s" : ""}
+											{columnTasks.length} task
+											{columnTasks.length !== 1 ? "s" : ""}
 										</span>
 									)}
 								</div>
@@ -149,7 +169,7 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 															? "border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-900 hover:bg-blue-100 dark:hover:bg-blue-900"
 															: "border-border bg-card hover:bg-accent/50"
 											}`}
-											onClick={() => handleTaskClick(task._id, task)}
+											onClick={() => handleTaskClick(task._id)}
 										>
 											<h4 className="font-normal text-sm line-clamp-2 mb-2">
 												{task.title}
@@ -168,7 +188,7 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 												)}
 												{task.criticalPath && (
 													<span className="text-xs text-red-600 font-semibold">
-														{SYMBOLS.STAR}
+														{SYMBOLS.THUNDERBOLT}
 													</span>
 												)}
 											</div>
@@ -183,16 +203,19 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 												</div>
 											)}
 
-											{task.completionPercentage !== undefined && column.id === "in_progress" && (
-												<div className="mt-2">
-													<div className="w-full bg-secondary h-1 rounded-full overflow-hidden">
-														<div
-															className="h-full bg-blue-600 transition-all"
-															style={{ width: `${task.completionPercentage}%` }}
-														/>
+											{task.completionPercentage !== undefined &&
+												column.id === "in_progress" && (
+													<div className="mt-2">
+														<div className="w-full bg-secondary h-1 rounded-full overflow-hidden">
+															<div
+																className="h-full bg-blue-600 transition-all"
+																style={{
+																	width: `${task.completionPercentage}%`,
+																}}
+															/>
+														</div>
 													</div>
-												</div>
-											)}
+												)}
 										</div>
 									))}
 
@@ -249,7 +272,8 @@ function VendorTaskBoardEmpty() {
 
 export const VendorTaskBoardMetadata = {
 	name: "VendorTaskBoard",
-	description: "Kanban board for vendor-specific tasks (Detail component using Zustand)",
+	description:
+		"Kanban board for vendor-specific tasks (Detail component using Zustand)",
 	layoutRules: {
 		canShare: false,
 		mustSpanFull: true,
@@ -261,7 +285,8 @@ export const VendorTaskBoardMetadata = {
 		role: "detail",
 		reads: ["selections.vendorId"],
 		writes: ["selections.taskId"],
-		behavior: "Filters tasks by selected vendorId from Zustand. Clicking a task updates selections.taskId.",
+		behavior:
+			"Filters tasks by selected vendorId from Zustand. Clicking a task updates selections.taskId.",
 	},
 	props: {
 		eventId: {
@@ -269,10 +294,11 @@ export const VendorTaskBoardMetadata = {
 			required: true,
 			description: "Event identifier",
 		},
-		vendor: {
+		vendorId: {
 			type: "string",
 			required: false,
-			description: "Specific vendor to display (optional)",
+			description:
+				"Specific vendor ID to display (optional, overrides Zustand selection)",
 		},
 		showCounts: {
 			type: "boolean",

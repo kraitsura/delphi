@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, LogOut, Settings, User } from "lucide-react";
+import { Calendar, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
 	DropdownMenu,
@@ -73,9 +73,9 @@ export function UserMenu() {
 					</div>
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem onClick={() => navigate({ to: "/dashboard" })}>
-					<LayoutDashboard className="mr-2 h-4 w-4" />
-					Dashboard
+				<DropdownMenuItem onClick={() => navigate({ to: "/events" })}>
+					<Calendar className="mr-2 h-4 w-4" />
+					Events
 				</DropdownMenuItem>
 				<DropdownMenuItem onClick={() => navigate({ to: "/profile" })}>
 					<Settings className="mr-2 h-4 w-4" />
