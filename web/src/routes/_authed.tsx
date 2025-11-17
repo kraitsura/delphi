@@ -3,7 +3,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { Suspense, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
-import { PresenceDisplay } from "@/components/presence";
+import { LoadingFallback } from "@/components/loading-fallback";
 import { ThemeConvexSync } from "@/components/theme-convex-sync";
 import {
 	SidebarInset,
@@ -12,6 +12,7 @@ import {
 	useSidebar,
 } from "@/components/ui/sidebar";
 import { EventProvider } from "@/contexts/EventContext";
+import { HeaderProvider, useHeader } from "@/contexts/HeaderContext";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
 import { useSession } from "@/lib/auth";
@@ -132,9 +133,11 @@ function ProfileCreator() {
 /**
  * SidebarAwareHeader Component
  * Header that adjusts styling based on sidebar expansion state
+ * Renders dynamic content from HeaderContext when available
  */
 function SidebarAwareHeader() {
 	const { state } = useSidebar();
+	const { headerContent } = useHeader();
 	const isInsetExpanded = state === "expanded";
 
 	return (
@@ -143,9 +146,8 @@ function SidebarAwareHeader() {
 				isInsetExpanded ? "md:-mt-2" : ""
 			}`}
 		>
-			<SidebarTrigger className="-ml-1.5 mt-1" />
-			<div className="flex-1" />
-			<PresenceDisplay />
+			<SidebarTrigger className="-ml-1.5" />
+			{headerContent || <div className="flex-1" />}
 		</header>
 	);
 }
@@ -168,27 +170,31 @@ function AuthenticatedLayout() {
 			</Suspense>
 			<Suspense
 				fallback={
-					<SidebarProvider>
-						<AppSidebar />
-						<SidebarInset className="flex flex-col">
-							<SidebarAwareHeader />
-							<div className="flex-1 min-h-0 overflow-auto">
-								<div>Loading...</div>
-							</div>
-						</SidebarInset>
-					</SidebarProvider>
+					<HeaderProvider>
+						<SidebarProvider>
+							<AppSidebar />
+							<SidebarInset className="flex flex-col">
+								<SidebarAwareHeader />
+								<div className="flex-1 min-h-0 overflow-auto">
+									<LoadingFallback />
+								</div>
+							</SidebarInset>
+						</SidebarProvider>
+					</HeaderProvider>
 				}
 			>
 				<EventProvider userId={userId}>
-					<SidebarProvider>
-						<AppSidebar />
-						<SidebarInset className="flex flex-col md:mb-2">
-							<SidebarAwareHeader />
-							<div className="flex-1 min-h-0 overflow-auto">
-								<Outlet />
-							</div>
-						</SidebarInset>
-					</SidebarProvider>
+					<HeaderProvider>
+						<SidebarProvider>
+							<AppSidebar />
+							<SidebarInset className="flex flex-col md:mb-2">
+								<SidebarAwareHeader />
+								<div className="flex-1 min-h-0 overflow-auto">
+									<Outlet />
+								</div>
+							</SidebarInset>
+						</SidebarProvider>
+					</HeaderProvider>
 				</EventProvider>
 			</Suspense>
 		</ConvexProvider>

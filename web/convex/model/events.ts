@@ -10,10 +10,9 @@ import { Doc, Id } from "../_generated/dataModel";
 
 type EventStatus =
   | "planning"
-  | "in_progress"
+  | "active"
   | "completed"
-  | "cancelled"
-  | "archived";
+  | "cancelled";
 
 /**
  * Get all events that a user has access to.
@@ -69,7 +68,7 @@ async function getCoordinatorEvents(
       )
       .collect();
     // Filter out soft-deleted events
-    return events.filter((e) => !e.isDeleted);
+    return events.filter((e) => e.deletedAt === undefined);
   } else {
     // Use single field index when status is not specified
     const events = await ctx.db
@@ -77,7 +76,7 @@ async function getCoordinatorEvents(
       .withIndex("by_coordinator", (q) => q.eq("coordinatorId", userId))
       .collect();
     // Filter out soft-deleted events
-    return events.filter((e) => !e.isDeleted);
+    return events.filter((e) => e.deletedAt === undefined);
   }
 }
 
@@ -99,7 +98,7 @@ async function getCoCoordinatorEvents(
 
   return recentEvents.filter(
     (event) =>
-      !event.isDeleted &&
+      event.deletedAt === undefined &&
       event.coCoordinatorIds?.includes(userId) &&
       (!status || event.status === status)
   );
@@ -141,7 +140,7 @@ async function getCollaboratorEvents(
   return events.filter(
     (event): event is Doc<"events"> =>
       event !== null &&
-      !event.isDeleted &&
+      event.deletedAt === undefined &&
       event.coordinatorId !== userId &&
       !event.coCoordinatorIds?.includes(userId) &&
       (!status || event.status === status)

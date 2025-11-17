@@ -308,20 +308,20 @@ export const removeMember = mutation({
       .withIndex("by_event", (q) => q.eq("eventId", args.eventId))
       .collect();
 
-    const userTasks = tasks.filter((t) => t.assigneeId === args.userId);
+    const userTasks = tasks.filter((t) => t.assignedTo === args.userId);
 
     for (const task of userTasks) {
-      if (!task.isDeleted) {
+      if (!task.deletedAt) {
         // Unassign incomplete tasks, soft delete completed ones
         if (task.status === "completed") {
           await ctx.db.patch(task._id, {
-            isDeleted: true,
             deletedAt: now,
+            updatedAt: now,
           });
         } else {
           // Unassign the task
           await ctx.db.patch(task._id, {
-            assigneeId: undefined,
+            assignedTo: undefined,
             updatedAt: now,
           });
         }

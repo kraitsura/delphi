@@ -49,6 +49,50 @@ export const getById = query({
 });
 
 /**
+ * Get poll with all votes and user's vote in a single query
+ * This prevents cascading re-renders from multiple separate queries
+ */
+export const getFullPollWithVotes = query({
+  args: {
+    pollId: v.id("polls"),
+  },
+  handler: async (ctx, args) => {
+    const { userProfile } = await getAuthenticatedUser(ctx);
+
+    // Get poll data
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll || poll.isDeleted) {
+      throw new Error("Poll not found");
+    }
+
+    await requireEventMember(ctx, poll.eventId, userProfile._id);
+
+    // Get all votes for this poll
+    const votes = await ctx.db
+      .query("pollVotes")
+      .withIndex("by_poll_and_deleted", (q) =>
+        q.eq("pollId", args.pollId).eq("isDeleted", false)
+      )
+      .collect();
+
+    // Get current user's vote
+    const userVote = await ctx.db
+      .query("pollVotes")
+      .withIndex("by_poll_and_user", (q) =>
+        q.eq("pollId", args.pollId).eq("userId", userProfile._id)
+      )
+      .filter((q) => q.eq(q.field("isDeleted"), false))
+      .first();
+
+    return {
+      poll,
+      votes,
+      userVote: userVote ?? null,
+    };
+  },
+});
+
+/**
  * Create a new poll
  */
 export const create = mutation({

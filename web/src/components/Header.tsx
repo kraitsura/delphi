@@ -26,13 +26,6 @@ export default function Header() {
 					>
 						Features
 					</Link>
-					<Link
-						to="/plans"
-						preload="intent"
-						className="font-mono text-sm uppercase tracking-wider text-black dark:text-white hover:opacity-60 transition-opacity"
-					>
-						Plans
-					</Link>
 				</nav>
 
 				<UserMenu />

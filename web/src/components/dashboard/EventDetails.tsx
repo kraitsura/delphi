@@ -74,7 +74,7 @@ export function EventDetails(props: EventDetailsProps) {
 								Date
 							</span>
 							<span className="text-base">
-								{event.date ? formatDate(event.date) : "TBD"}
+								{event.eventDate ? formatDate(event.eventDate) : "TBD"}
 							</span>
 						</div>
 
@@ -240,12 +240,6 @@ export const EventDetailsMetadata = {
 		mustSpanFull: true,
 		preferredRatio: "1fr",
 		minHeight: "250px",
-	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: false,
-		emits: [],
-		listensTo: [],
 	},
 	props: {
 		eventId: {

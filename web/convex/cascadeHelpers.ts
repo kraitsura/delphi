@@ -136,10 +136,10 @@ export async function softDeleteEventCascade(
     .collect();
 
   for (const task of tasks) {
-    if (!task.isDeleted) {
+    if (!task.deletedAt) {
       await ctx.db.patch(task._id, {
-        isDeleted: true,
         deletedAt: timestamp,
+        updatedAt: timestamp,
       });
     }
   }
@@ -151,10 +151,10 @@ export async function softDeleteEventCascade(
     .collect();
 
   for (const expense of expenses) {
-    if (!expense.isDeleted) {
+    if (!expense.deletedAt) {
       await ctx.db.patch(expense._id, {
-        isDeleted: true,
         deletedAt: timestamp,
+        updatedAt: timestamp,
       });
     }
   }

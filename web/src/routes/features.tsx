@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import Header from "@/components/Header";
 import { FeaturesSection } from "@/components/landing/FeaturesSection";
 
 export const Route = createFileRoute("/features")({
@@ -8,8 +9,11 @@ export const Route = createFileRoute("/features")({
 
 function FeaturesPage() {
 	return (
-		<div className="min-h-screen bg-white dark:bg-black">
-			<FeaturesSection />
-		</div>
+		<>
+			<Header />
+			<div className="min-h-screen bg-white dark:bg-black overflow-y-auto">
+				<FeaturesSection />
+			</div>
+		</>
 	);
 }

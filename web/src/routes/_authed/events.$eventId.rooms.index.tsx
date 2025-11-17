@@ -1,29 +1,16 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { RoomCreateDialog } from "@/components/rooms/room-create-dialog";
 import { RoomList } from "@/components/rooms/room-list";
-import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { convexQuery } from "@/lib/convex-query";
 
 export const Route = createFileRoute("/_authed/events/$eventId/rooms/")({
 	ssr: false, // Disable SSR - auth token not available during server rendering
 	loader: async ({ params, context }) => {
 		const eventId = params.eventId as Id<"events">;
-
-		// Prefetch event data (also used by EventContext)
-		await context.queryClient.ensureQueryData(
-			convexQuery(api.events.getById, { eventId }),
-		);
 
 		// Prefetch rooms list
 		await context.queryClient.ensureQueryData(
@@ -35,10 +22,10 @@ export const Route = createFileRoute("/_authed/events/$eventId/rooms/")({
 			convexQuery(api.users.getMyProfile, {}),
 		);
 	},
-	component: RoomsIndexPage,
+	component: RoomsPage,
 });
 
-function RoomsIndexPage() {
+function RoomsPage() {
 	const { eventId } = Route.useParams();
 
 	// Use useSuspenseQuery to read prefetched data
@@ -60,27 +47,11 @@ function RoomsIndexPage() {
 
 	// Event not found check
 	if (!event) {
-		return (
-			<div className="container max-w-6xl mx-auto p-6">
-				<Card>
-					<CardContent className="pt-6">
-						<p className="text-muted-foreground">Event not found</p>
-					</CardContent>
-				</Card>
-			</div>
-		);
+		return <div className="text-muted-foreground">Event not found</div>;
 	}
 
 	if (!userProfile) {
-		return (
-			<div className="container max-w-6xl mx-auto p-6">
-				<Card>
-					<CardContent className="pt-6">
-						<p className="text-muted-foreground">User profile not found</p>
-					</CardContent>
-				</Card>
-			</div>
-		);
+		return <div className="text-muted-foreground">User profile not found</div>;
 	}
 
 	// Check if user is coordinator or co-coordinator
@@ -89,29 +60,11 @@ function RoomsIndexPage() {
 		event.coCoordinatorIds?.includes(userProfile._id) ||
 		false;
 
-	// Determine user's role for display
-	const userRole =
-		event.coordinatorId === userProfile._id
-			? "coordinator"
-			: event.coCoordinatorIds?.includes(userProfile._id)
-				? "co-coordinator"
-				: "collaborator";
-
 	return (
-		<div className="container max-w-6xl mx-auto p-6">
-			{/* Header */}
+		<div>
+			{/* Header with Create Button */}
 			<div className="flex items-center justify-between mb-6">
-				<div className="flex items-center gap-4">
-					<Link to="/events/$eventId" params={{ eventId }}>
-						<Button variant="outline" size="icon">
-							<ArrowLeft className="h-4 w-4" />
-						</Button>
-					</Link>
-					<div>
-						<h1 className="text-3xl font-bold">Rooms</h1>
-						<p className="text-gray-500">{event.name}</p>
-					</div>
-				</div>
+				<h2 className="text-2xl font-semibold">Chat Rooms</h2>
 				{canManage && (
 					<RoomCreateDialog
 						eventId={eventId as Id<"events">}
@@ -122,52 +75,8 @@ function RoomsIndexPage() {
 				)}
 			</div>
 
-			{/* Stats */}
-			<div className="grid gap-4 md:grid-cols-3 mb-8">
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Total Rooms</CardTitle>
-						<MessageSquare className="h-4 w-4 text-muted-foreground" />
-					</CardHeader>
-					<CardContent>
-						<div className="text-2xl font-bold">{rooms.length}</div>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Your Role</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="text-lg font-medium capitalize">{userRole}</div>
-					</CardContent>
-				</Card>
-
-				<Card>
-					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-						<CardTitle className="text-sm font-medium">Event Status</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<div className="text-lg font-medium capitalize">
-							{event.status.replace(/_/g, " ")}
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-
 			{/* Rooms List */}
-			<Card>
-				<CardHeader>
-					<CardTitle>All Rooms</CardTitle>
-					<CardDescription>
-						Chat rooms for coordinating different aspects of your event
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<RoomList eventId={eventId as Id<"events">} />
-				</CardContent>
-			</Card>
-
+			<RoomList eventId={eventId as Id<"events">} />
 			{/* Help Text */}
 			{canManage && rooms && rooms.length === 0 && (
 				<Card className="mt-6 bg-blue-50 border-blue-200">

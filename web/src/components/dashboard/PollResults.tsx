@@ -4,19 +4,35 @@ import { useQuery } from "convex/react";
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface PollResultsProps {
-	pollId: Id<"polls">;
+	pollId?: Id<"polls">;
 	showVoters?: boolean;
 	showPercentages?: boolean;
 }
 
 export function PollResults(props: PollResultsProps) {
-	const { showVoters: _showVoters = false, showPercentages = true } = props;
+	const { showPercentages = true } = props;
 
-	const poll = useQuery(api.polls.getById, { pollId: props.pollId });
-	const votes = useQuery(api.pollVotes.listByPoll, { pollId: props.pollId });
+	// Zustand state - read selected poll from store
+	const selectedPollId = useDashboardStore((state) => state.selections.pollId);
+
+	// Use prop pollId if provided, otherwise use Zustand-based pollId
+	const activePollId = (props.pollId || selectedPollId) as
+		| Id<"polls">
+		| null
+		| undefined;
+
+	const poll = useQuery(
+		api.polls.getById,
+		activePollId ? { pollId: activePollId } : ("skip" as const),
+	);
+	const votes = useQuery(
+		api.pollVotes.listByPoll,
+		activePollId ? { pollId: activePollId } : ("skip" as const),
+	);
 
 	const results = useMemo(() => {
 		if (!poll || !votes) return null;
@@ -55,6 +71,20 @@ export function PollResults(props: PollResultsProps) {
 			}),
 		};
 	}, [poll, votes]);
+
+	// Show placeholder if no poll selected
+	if (!activePollId) {
+		return (
+			<Card className="fluid-component-card">
+				<CardHeader className="fluid-component-header">
+					<CardTitle className="fluid-component-title">Poll Results</CardTitle>
+				</CardHeader>
+				<CardContent className="py-12 text-center text-muted-foreground">
+					<p>Select a poll to view results</p>
+				</CardContent>
+			</Card>
+		);
+	}
 
 	if (poll === undefined || votes === undefined) {
 		return <PollResultsSkeleton />;
@@ -146,24 +176,27 @@ function PollResultsEmpty() {
 
 export const PollResultsMetadata = {
 	name: "PollResults",
-	description: "Visualize poll results with percentages",
+	description:
+		"Visualize poll results with percentages (Detail component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
 		preferredRatio: "1fr",
 		minWidth: "350px",
 	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: true,
-		emits: [],
-		listensTo: ["pollSelected"],
+	zustand: {
+		role: "detail",
+		reads: ["selections.pollId"],
+		writes: [],
+		behavior:
+			"Displays results for the selected poll from Zustand store. Shows 'Select a poll' message when no poll is selected.",
 	},
 	props: {
 		pollId: {
 			type: "string",
-			required: true,
-			description: "Poll identifier",
+			required: false,
+			description:
+				"Poll identifier (optional if listening to pollSelected events)",
 		},
 		showVoters: {
 			type: "boolean",

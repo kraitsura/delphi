@@ -35,12 +35,6 @@ export const RSVPStatusMetadata = {
 		preferredRatio: "1fr",
 		minWidth: "300px",
 	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: false,
-		emits: [],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",

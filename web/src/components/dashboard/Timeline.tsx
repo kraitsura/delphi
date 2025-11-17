@@ -9,6 +9,7 @@ import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TimelineProps {
 	eventId: Id<"events">;
+	orientation?: "vertical" | "horizontal";
 	startDate?: number;
 	endDate?: number;
 	showTasks?: boolean;
@@ -26,7 +27,11 @@ type TimelineItem = {
 };
 
 export function Timeline(props: TimelineProps) {
-	const { showTasks = true, showEvents = true } = props;
+	const {
+		orientation = "vertical",
+		showTasks = true,
+		showEvents = true,
+	} = props;
 
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
@@ -37,24 +42,24 @@ export function Timeline(props: TimelineProps) {
 		const items: TimelineItem[] = [];
 
 		// Add event date
-		if (showEvents && event.date) {
+		if (showEvents && event.eventDate) {
 			items.push({
 				id: event._id,
 				type: "event",
 				title: event.name,
-				date: event.date,
+				date: event.eventDate,
 			});
 		}
 
 		// Add tasks with due dates
 		if (showTasks) {
 			tasks.forEach((task) => {
-				if (task.dueDate) {
+				if (task.deadline) {
 					items.push({
 						id: task._id,
 						type: "task",
 						title: task.title,
-						date: task.dueDate,
+						date: task.deadline,
 						status: task.status,
 						category: task.category,
 					});
@@ -117,57 +122,103 @@ export function Timeline(props: TimelineProps) {
 			</CardHeader>
 
 			<CardContent className="fluid-component-content">
-				<div className="relative">
-					{/* Timeline line */}
-					<div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
+				{orientation === "vertical" ? (
+					<div className="relative">
+						{/* Timeline line */}
+						<div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
 
-					{/* Timeline items */}
-					<div className="space-y-6">
-						{timelineItems.map((item, _index) => (
-							<div
-								key={item.id}
-								className="relative pl-12 hover:bg-accent/30 -ml-2 p-2 rounded-md transition-colors cursor-pointer"
-							>
-								{/* Marker */}
+						{/* Timeline items */}
+						<div className="space-y-6">
+							{timelineItems.map((item) => (
 								<div
-									className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center text-lg ${getItemColor(item)}`}
+									key={item.id}
+									className="relative pl-12 hover:bg-accent/30 -ml-2 p-2 rounded-md transition-colors cursor-pointer"
 								>
-									{getItemIcon(item.type)}
-								</div>
+									{/* Marker */}
+									<div
+										className={`absolute left-0 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center text-lg ${getItemColor(item)}`}
+									>
+										{getItemIcon(item.type)}
+									</div>
 
-								{/* Content */}
-								<div>
-									<div className="flex items-start justify-between gap-4">
-										<div className="flex-1">
-											<h4 className="font-normal text-base">{item.title}</h4>
-											<div className="flex items-center gap-2 mt-1">
-												<Badge variant="outline" className="text-xs">
-													{item.type}
-												</Badge>
-												{item.status && (
-													<Badge
-														className={`status-badge status-badge--${item.status.replace("_", "-")} text-xs`}
-													>
-														{item.status.replace("_", " ")}
-													</Badge>
-												)}
-												{item.category && (
+									{/* Content */}
+									<div>
+										<div className="flex items-start justify-between gap-4">
+											<div className="flex-1">
+												<h4 className="font-normal text-base">{item.title}</h4>
+												<div className="flex items-center gap-2 mt-1">
 													<Badge variant="outline" className="text-xs">
-														{item.category}
+														{item.type}
 													</Badge>
-												)}
+													{item.status && (
+														<Badge
+															className={`status-badge status-badge--${item.status.replace("_", "-")} text-xs`}
+														>
+															{item.status.replace("_", " ")}
+														</Badge>
+													)}
+													{item.category && (
+														<Badge variant="outline" className="text-xs">
+															{item.category}
+														</Badge>
+													)}
+												</div>
 											</div>
-										</div>
 
-										<div className="text-sm text-muted-foreground text-right shrink-0">
-											{formatDate(item.date)}
+											<div className="text-sm text-muted-foreground text-right shrink-0">
+												{formatDate(item.date)}
+											</div>
 										</div>
 									</div>
 								</div>
-							</div>
-						))}
+							))}
+						</div>
 					</div>
-				</div>
+				) : (
+					<div className="relative">
+						{/* Horizontal timeline line */}
+						<div className="absolute top-4 left-0 right-0 h-px bg-border" />
+
+						{/* Horizontal timeline items */}
+						<div className="flex overflow-x-auto gap-8 pb-4">
+							{timelineItems.map((item) => (
+								<div
+									key={item.id}
+									className="relative pt-12 min-w-[200px] hover:bg-accent/30 -mt-2 p-2 rounded-md transition-colors cursor-pointer"
+								>
+									{/* Marker */}
+									<div
+										className={`absolute top-0 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center text-lg ${getItemColor(item)}`}
+									>
+										{getItemIcon(item.type)}
+									</div>
+
+									{/* Content */}
+									<div className="text-center">
+										<h4 className="font-normal text-sm line-clamp-2">
+											{item.title}
+										</h4>
+										<div className="flex flex-col items-center gap-1 mt-2">
+											<div className="text-xs text-muted-foreground">
+												{formatDate(item.date)}
+											</div>
+											<Badge variant="outline" className="text-xs">
+												{item.type}
+											</Badge>
+											{item.status && (
+												<Badge
+													className={`status-badge status-badge--${item.status.replace("_", "-")} text-xs`}
+												>
+													{item.status.replace("_", " ")}
+												</Badge>
+											)}
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				)}
 			</CardContent>
 		</Card>
 	);
@@ -218,17 +269,17 @@ export const TimelineMetadata = {
 		preferredRatio: "1fr",
 		minHeight: "300px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: false,
-		emits: ["taskSelected", "dateSelected"],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",
 			required: true,
 			description: "Event identifier",
+		},
+		orientation: {
+			type: "enum",
+			required: false,
+			values: ["vertical", "horizontal"],
+			description: "Timeline orientation (vertical or horizontal)",
 		},
 		showTasks: {
 			type: "boolean",

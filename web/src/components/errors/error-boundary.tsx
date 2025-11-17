@@ -51,9 +51,9 @@ export function ErrorBoundary({ error, reset }: ErrorComponentProps) {
 							Try Again
 						</Button>
 						<Button asChild variant="outline" className="w-full">
-							<Link to="/dashboard">
+							<Link to="/events">
 								<Home className="mr-2 h-4 w-4" />
-								Go to Dashboard
+								Go to Events
 							</Link>
 						</Button>
 					</div>

@@ -9,7 +9,7 @@ import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface CalendarViewProps {
 	eventId: Id<"events">;
-	view?: "month" | "week";
+	view?: "month" | "week" | "agenda";
 	currentDate?: number;
 	showTasks?: boolean;
 	showMilestones?: boolean;
@@ -40,9 +40,9 @@ export function CalendarView(props: CalendarViewProps) {
 		const events: CalendarEvent[] = [];
 
 		// Add event date
-		if (event?.date) {
+		if (event?.eventDate) {
 			events.push({
-				date: event.date,
+				date: event.eventDate,
 				type: "event",
 				title: event.name,
 				color: "bg-yellow-500",
@@ -53,9 +53,9 @@ export function CalendarView(props: CalendarViewProps) {
 		// TODO: Re-enable when tasks API is implemented
 		// if (_showTasks) {
 		// 	tasks.forEach((task) => {
-		// 		if (task.dueDate) {
+		// 		if (task.deadline) {
 		// 			events.push({
-		// 				date: task.dueDate,
+		// 				date: task.deadline,
 		// 				type: "task",
 		// 				title: task.title,
 		// 				color:
@@ -247,12 +247,6 @@ export const CalendarViewMetadata = {
 		preferredRatio: "1fr",
 		minHeight: "400px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: false,
-		emits: ["dateSelected"],
-		listensTo: [],
-	},
 	props: {
 		eventId: {
 			type: "string",
@@ -262,8 +256,8 @@ export const CalendarViewMetadata = {
 		view: {
 			type: "enum",
 			required: false,
-			values: ["month", "week"],
-			description: "Calendar view mode",
+			values: ["month", "week", "agenda"],
+			description: "Calendar view mode (agenda is compact list view)",
 		},
 		showTasks: {
 			type: "boolean",

@@ -1,7 +1,7 @@
 import { api } from "@convex/_generated/api";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
-import { Calendar, Home, LogOut } from "lucide-react";
+import { Calendar, LogOut, Users } from "lucide-react";
 import { AppSidebarProfileSkeleton } from "@/components/AppSidebarProfileSkeleton";
 import { EventSidebarToolbar } from "@/components/EventSidebarToolbar";
 import { EventSidebarToolbarSkeleton } from "@/components/events/EventSidebarToolbarSkeleton";
@@ -25,18 +25,19 @@ import {
 } from "@/components/ui/sidebar";
 import { useEvent } from "@/contexts/EventContext";
 import { signOut, useSession } from "@/lib/auth";
+import { convexQuery } from "@/lib/convex-query";
 
 const navigationItems = [
-	{
-		title: "Dashboard",
-		href: "/dashboard",
-		icon: Home,
-	},
 	{
 		title: "Events",
 		href: "/events",
 		icon: Calendar,
 		showBadge: true, // Show invitation count badge on Events
+	},
+	{
+		title: "Contacts",
+		href: "/contacts",
+		icon: Users,
 	},
 ];
 
@@ -49,9 +50,15 @@ export function AppSidebar() {
 	const isOnEventRoute = "eventId" in params && params.eventId !== null;
 
 	// Get pending invitations count for badge
-	const pendingInvitations = useQuery(api.eventInvitations.listByEmail);
-	const pendingCount =
-		pendingInvitations?.filter((inv) => !inv.isExpired).length || 0;
+	// Uses TanStack Query to leverage cache from events/invitations loaders
+	const { data: pendingInvitations = [] } = useQuery({
+		...convexQuery(api.eventInvitations.listByEmail, {}),
+		// Set placeholder data to avoid badge flash when data is loading
+		placeholderData: [],
+	});
+	const pendingCount = pendingInvitations.filter(
+		(inv) => !inv.isExpired,
+	).length;
 
 	const handleSignOut = async () => {
 		await signOut();
@@ -74,7 +81,7 @@ export function AppSidebar() {
 				<SidebarHeader className="p-0">
 					{/* Logo */}
 					<Link
-						to="/"
+						to="/events"
 						className="flex items-center gap-3 px-2 py-2 h-12 overflow-hidden group-data-[collapsible=icon]:gap-0"
 					>
 						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -155,7 +162,7 @@ export function AppSidebar() {
 									<SidebarMenuButton asChild tooltip={item.title}>
 										<Link
 											to={item.href}
-											activeOptions={{ exact: item.href === "/dashboard" }}
+											activeOptions={{ exact: item.href === "/events" }}
 											className="flex items-center justify-between w-full"
 										>
 											<div className="flex items-center gap-2">

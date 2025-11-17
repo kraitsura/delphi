@@ -7,11 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface TasksListProps {
 	eventId: Id<"events">;
-	status?: "not_started" | "in_progress" | "blocked" | "completed" | "all";
+	status?: "todo" | "in_progress" | "blocked" | "completed" | "all";
 	assignee?: Id<"users">;
 	category?: string;
 	priority?: "low" | "medium" | "high" | "urgent" | "all";
@@ -32,6 +33,12 @@ export function TasksList(props: TasksListProps) {
 		onTaskSelect,
 	} = props;
 
+	// Zustand state - read selections from store
+	const selectedPhase = useDashboardStore((state) => state.selections.phase);
+	const selectedVendor = useDashboardStore(
+		(state) => state.selections.vendorId,
+	);
+
 	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 	const [showFiltersPanel, setShowFiltersPanel] = useState(showFilters);
 
@@ -39,6 +46,16 @@ export function TasksList(props: TasksListProps) {
 		if (!tasks) return [];
 
 		let filtered = tasks;
+
+		// Filter by phase (from Zustand)
+		if (selectedPhase) {
+			filtered = filtered.filter((t) => t.phase === selectedPhase);
+		}
+
+		// Filter by vendor (from Zustand)
+		if (selectedVendor) {
+			filtered = filtered.filter((t) => t.vendor === selectedVendor);
+		}
 
 		// Filter by status
 		if (status !== "all") {
@@ -52,7 +69,7 @@ export function TasksList(props: TasksListProps) {
 
 		// Filter by assignee
 		if (props.assignee) {
-			filtered = filtered.filter((t) => t.assigneeId === props.assignee);
+			filtered = filtered.filter((t) => t.assignedTo === props.assignee);
 		}
 
 		// Filter by category
@@ -64,9 +81,9 @@ export function TasksList(props: TasksListProps) {
 		const sorted = [...filtered].sort((a, b) => {
 			switch (sortBy) {
 				case "dueDate":
-					if (!a.dueDate) return 1;
-					if (!b.dueDate) return -1;
-					return a.dueDate - b.dueDate;
+					if (!a.deadline) return 1;
+					if (!b.deadline) return -1;
+					return a.deadline - b.deadline;
 				case "priority": {
 					const priorityOrder = {
 						urgent: 0,
@@ -87,7 +104,17 @@ export function TasksList(props: TasksListProps) {
 
 		// Limit
 		return limit ? sorted.slice(0, limit) : sorted;
-	}, [tasks, status, priority, props.assignee, props.category, sortBy, limit]);
+	}, [
+		tasks,
+		selectedPhase,
+		selectedVendor,
+		status,
+		priority,
+		props.assignee,
+		props.category,
+		sortBy,
+		limit,
+	]);
 
 	if (tasks === undefined) {
 		return <TasksListSkeleton />;
@@ -148,11 +175,21 @@ export function TasksList(props: TasksListProps) {
 				<CardTitle className="fluid-component-title">
 					{SYMBOLS.BLACK_SQUARE} Tasks
 				</CardTitle>
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-2 flex-wrap">
 					<span className="text-sm text-muted-foreground">
 						{filteredAndSorted.length} task
 						{filteredAndSorted.length !== 1 ? "s" : ""}
 					</span>
+					{selectedPhase && (
+						<Badge variant="outline" className="text-xs">
+							Phase: {selectedPhase}
+						</Badge>
+					)}
+					{selectedVendor && (
+						<Badge variant="outline" className="text-xs">
+							Vendor: {selectedVendor}
+						</Badge>
+					)}
 					{showFilters && (
 						<Button
 							variant="ghost"
@@ -168,7 +205,7 @@ export function TasksList(props: TasksListProps) {
 			<CardContent className="fluid-component-content">
 				<div className="space-y-2">
 					{filteredAndSorted.map((task) => {
-						const dueInfo = formatDate(task.dueDate);
+						const dueInfo = formatDate(task.deadline);
 						return (
 							<button
 								type="button"
@@ -201,7 +238,7 @@ export function TasksList(props: TasksListProps) {
 												</Badge>
 											)}
 
-											{task.dueDate && (
+											{task.deadline && (
 												<span
 													className={`text-xs ${
 														dueInfo.isOverdue
@@ -222,10 +259,10 @@ export function TasksList(props: TasksListProps) {
 									</div>
 
 									{/* Assignee */}
-									{task.assigneeId && (
+									{task.assignedTo && (
 										<Avatar className="h-8 w-8">
 											<AvatarFallback className="text-xs">
-												{task.assigneeId.substring(0, 2).toUpperCase()}
+												{task.assignedTo.substring(0, 2).toUpperCase()}
 											</AvatarFallback>
 										</Avatar>
 									)}
@@ -289,18 +326,20 @@ function TasksListEmpty() {
 
 export const TasksListMetadata = {
 	name: "TasksList",
-	description: "Filterable task list with inline actions",
+	description:
+		"Filterable task list with inline actions (Detail component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
 		preferredRatio: "1fr",
 		minWidth: "350px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: true,
-		emits: ["taskSelected", "statusChanged"],
-		listensTo: ["categorySelected", "assigneeSelected"],
+	zustand: {
+		role: "detail",
+		reads: ["selections.phase", "selections.vendorId"],
+		writes: [],
+		behavior:
+			"Filters tasks based on selected phase and vendor from Zustand store. Shows active filters in header.",
 	},
 	props: {
 		eventId: {
@@ -311,7 +350,7 @@ export const TasksListMetadata = {
 		status: {
 			type: "enum",
 			required: false,
-			values: ["not_started", "in_progress", "blocked", "completed", "all"],
+			values: ["todo", "in_progress", "blocked", "completed", "all"],
 			description: "Filter by status",
 		},
 		priority: {

@@ -50,7 +50,6 @@ export function ProfileEditDialog({
 		try {
 			await updateProfile({
 				name,
-				username,
 				bio,
 				location,
 				preferences: {

@@ -50,9 +50,19 @@ export const dashboardConfigSchema = z.object({
 });
 
 /**
+ * Validation options
+ */
+export interface ValidationOptions {
+	disableRowLimit?: boolean;
+}
+
+/**
  * Validate dashboard configuration
  */
-export function validateDashboardConfig(config: any): ValidationResult {
+export function validateDashboardConfig(
+	config: any,
+	options: ValidationOptions = {},
+): ValidationResult {
 	try {
 		// Basic schema validation
 		dashboardConfigSchema.parse(config);
@@ -61,13 +71,15 @@ export function validateDashboardConfig(config: any): ValidationResult {
 		const errors: ValidationError[] = [];
 
 		// Check component count constraint (max 2 rows)
-		const rowSections = config.sections.filter((s: any) => s.type === "row");
-		if (rowSections.length > 2) {
-			errors.push({
-				code: "MAX_ROWS_EXCEEDED",
-				message: "Maximum 2 component rows allowed per dashboard",
-				details: { found: rowSections.length, max: 2 },
-			});
+		if (!options.disableRowLimit) {
+			const rowSections = config.sections.filter((s: any) => s.type === "row");
+			if (rowSections.length > 2) {
+				errors.push({
+					code: "MAX_ROWS_EXCEEDED",
+					message: "Maximum 2 component rows allowed per dashboard",
+					details: { found: rowSections.length, max: 2 },
+				});
+			}
 		}
 
 		// Validate each component
@@ -178,13 +190,46 @@ function validateComponentProps(
 			return;
 		}
 
-		// Type validation
+		// Skip validation for null/undefined
+		if (propValue === null || propValue === undefined) {
+			return;
+		}
+
+		// Special handling for enum type
+		if (propDef.type === "enum") {
+			if (typeof propValue !== "string") {
+				errors.push({
+					code: "INVALID_PROP_TYPE",
+					message: `Prop "${propName}" on component "${componentType}" expected enum (string) but got ${typeof propValue}`,
+					details: {
+						componentType,
+						propName,
+						expected: "enum",
+						actual: typeof propValue,
+					},
+				});
+				return;
+			}
+
+			// Check if value is in allowed enum values
+			if (propDef.values && !propDef.values.includes(propValue)) {
+				errors.push({
+					code: "INVALID_ENUM_VALUE",
+					message: `Prop "${propName}" on component "${componentType}" has invalid value "${propValue}". Allowed: ${propDef.values.join(", ")}`,
+					details: {
+						componentType,
+						propName,
+						value: propValue,
+						allowedValues: propDef.values,
+					},
+				});
+			}
+			return;
+		}
+
+		// Type validation for non-enum types
 		const actualType = Array.isArray(propValue) ? "array" : typeof propValue;
-		if (
-			propDef.type !== actualType &&
-			propValue !== null &&
-			propValue !== undefined
-		) {
+		if (propDef.type !== actualType) {
 			errors.push({
 				code: "INVALID_PROP_TYPE",
 				message: `Prop "${propName}" on component "${componentType}" expected ${propDef.type} but got ${actualType}`,

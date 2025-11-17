@@ -18,24 +18,27 @@ import { useEvent } from "@/contexts/EventContext";
  * EventSidebarToolbar Component
  *
  * Horizontal toolbar with icon buttons for navigation when in event context.
- * Displays: Dashboard, Events, Profile, Dark/Light Mode Toggle, Create Room
+ * Displays: Event Dashboard, Calendar, Profile, Dark/Light Mode Toggle, Create Room
  *
- * Clicking Dashboard or Events exits the event context and navigates away.
+ * Navigation stays within the event context.
  */
 export function EventSidebarToolbar() {
 	const navigate = useNavigate();
-	const { exitEventContext, eventId } = useEvent();
+	const { eventId } = useEvent();
 	const { mode, setMode } = useThemeSet();
 	const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-	const handleNavigateToDashboard = () => {
-		exitEventContext();
-		navigate({ to: "/dashboard" });
+	const handleNavigateToEventDashboard = () => {
+		if (!eventId) return;
+		navigate({ to: "/events/$eventId", params: { eventId } });
 	};
 
-	const handleNavigateToEvents = () => {
-		exitEventContext();
-		navigate({ to: "/events" });
+	const handleNavigateToCalendar = () => {
+		if (!eventId) return;
+		navigate({
+			to: "/events/$eventId/calendar",
+			params: { eventId },
+		});
 	};
 
 	const handleToggleMode = () => {
@@ -51,16 +54,16 @@ export function EventSidebarToolbar() {
 		<div className="flex items-center justify-between gap-1 px-2 pt-0.5 pb-2">
 			<TooltipProvider delayDuration={0}>
 				<div className="flex items-center gap-1">
-					{/* Dashboard, Events, Profile - hidden when collapsed */}
+					{/* Dashboard, Calendar, Profile - hidden when collapsed */}
 					<div className="flex items-center gap-1 group-data-[collapsible=icon]:hidden">
-						{/* Dashboard */}
+						{/* Event Dashboard */}
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon"
 									className="h-8 w-8"
-									onClick={handleNavigateToDashboard}
+									onClick={handleNavigateToEventDashboard}
 								>
 									<Home className="h-4 w-4" />
 								</Button>
@@ -70,20 +73,20 @@ export function EventSidebarToolbar() {
 							</TooltipContent>
 						</Tooltip>
 
-						{/* Events */}
+						{/* Calendar */}
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon"
 									className="h-8 w-8"
-									onClick={handleNavigateToEvents}
+									onClick={handleNavigateToCalendar}
 								>
 									<Calendar className="h-4 w-4" />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								<p>Events</p>
+								<p>Calendar</p>
 							</TooltipContent>
 						</Tooltip>
 

@@ -12,12 +12,7 @@ import { EventDeleteDialog } from "../event-delete-dialog";
 import { EventEditDialog } from "../event-edit-dialog";
 import { StatusBadge } from "../StatusBadge";
 
-type EventStatus =
-	| "planning"
-	| "in_progress"
-	| "completed"
-	| "cancelled"
-	| "archived";
+type EventStatus = "planning" | "active" | "completed" | "cancelled";
 
 interface EventHeaderProps {
 	eventId: Id<"events">;

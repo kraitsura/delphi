@@ -4,6 +4,7 @@ import { useQuery } from "convex/react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface PollsListProps {
@@ -15,12 +16,26 @@ export interface PollsListProps {
 }
 
 export function PollsList(props: PollsListProps) {
-	const {
-		status = "active",
-		sortBy: _sortBy = "deadline",
-		limit,
-		onPollSelect,
-	} = props;
+	const { status = "active", limit, onPollSelect } = props;
+
+	// Zustand state - read selected poll from store
+	const selectedPollId = useDashboardStore((state) => state.selections.pollId);
+	const select = useDashboardStore((state) => state.select);
+	const openModal = useDashboardStore((state) => state.openModal);
+
+	const handlePollClick = (pollId: Id<"polls">) => {
+		// Update Zustand store with selected poll
+		select("pollId", pollId);
+
+		// Also call the callback if provided (backwards compatibility)
+		onPollSelect?.(pollId);
+
+		// Open poll details modal
+		openModal("poll-details", "PollDetailsModal", {
+			pollId,
+			modalId: "poll-details",
+		});
+	};
 
 	const polls = useQuery(api.polls.listByEvent, { eventId: props.eventId });
 
@@ -54,30 +69,36 @@ export function PollsList(props: PollsListProps) {
 
 			<CardContent className="fluid-component-content">
 				<div className="space-y-3">
-					{limitedPolls.map((poll) => (
-						<button
-							type="button"
-							key={poll._id}
-							className="w-full text-left p-3 rounded-md border border-border hover:bg-accent/50 transition-colors cursor-pointer"
-							onClick={() => onPollSelect?.(poll._id)}
-						>
-							<div className="flex items-start justify-between gap-4">
-								<div className="flex-1">
-									<h4 className="font-normal text-base">{poll.question}</h4>
-									<div className="flex items-center gap-2 mt-1">
-										<span className="text-xs text-muted-foreground">
-											{poll.options.length} options
-										</span>
-										<Badge
-											className={`status-badge status-badge--${poll.isClosed ? "closed" : "active"} text-xs`}
-										>
-											{poll.isClosed ? "Closed" : "Active"}
-										</Badge>
+					{limitedPolls.map((poll) => {
+						const isSelected = selectedPollId === poll._id;
+						return (
+							<div
+								key={poll._id}
+								className={`p-3 rounded-md border transition-colors cursor-pointer ${
+									isSelected
+										? "border-primary bg-primary/5"
+										: "border-border hover:bg-accent/50"
+								}`}
+								onClick={() => handlePollClick(poll._id)}
+							>
+								<div className="flex items-start justify-between gap-4">
+									<div className="flex-1">
+										<h4 className="font-normal text-base">{poll.question}</h4>
+										<div className="flex items-center gap-2 mt-1">
+											<span className="text-xs text-muted-foreground">
+												{poll.options.length} options
+											</span>
+											<Badge
+												className={`status-badge status-badge--${poll.isClosed ? "closed" : "active"} text-xs`}
+											>
+												{poll.isClosed ? "Closed" : "Active"}
+											</Badge>
+										</div>
 									</div>
 								</div>
 							</div>
-						</button>
-					))}
+						);
+					})}
 				</div>
 
 				{limitedPolls.length === 0 && (
@@ -122,18 +143,19 @@ function PollsListEmpty() {
 
 export const PollsListMetadata = {
 	name: "PollsList",
-	description: "Active polls requiring votes",
+	description: "Active polls requiring votes (Master component using Zustand)",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
 		preferredRatio: "1fr",
 		minWidth: "300px",
 	},
-	connections: {
-		canBeMaster: true,
-		canBeDetail: false,
-		emits: ["pollSelected"],
-		listensTo: [],
+	zustand: {
+		role: "master",
+		writes: ["selections.pollId"],
+		reads: ["selections.pollId"],
+		behavior:
+			"Clicking a poll updates selections.pollId. Clicking again clears it.",
 	},
 	props: {
 		eventId: {

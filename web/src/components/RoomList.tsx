@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { RoomListItem } from "@/components/RoomListItem";
+import { Input } from "@/components/ui/input";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -8,8 +10,8 @@ import {
 	SidebarMenu,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { useEvent } from "@/contexts/EventContext";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useEventRooms } from "@/hooks/useEventRooms";
 
 /**
@@ -17,6 +19,7 @@ import { useEventRooms } from "@/hooks/useEventRooms";
  *
  * Displays a scrollable list of rooms for the current event.
  * Shows:
+ * - Search bar to filter rooms by name and type
  * - Loading skeletons while fetching
  * - Empty state when no rooms exist
  * - List of RoomListItem components
@@ -24,6 +27,22 @@ import { useEventRooms } from "@/hooks/useEventRooms";
 export function RoomList() {
 	const { eventId } = useEvent();
 	const rooms = useEventRooms();
+	const [searchTerm, setSearchTerm] = useState("");
+	const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+	// Filter rooms based on search term (name and type)
+	const filteredRooms = useMemo(() => {
+		if (!rooms || !debouncedSearchTerm.trim()) {
+			return rooms;
+		}
+
+		const search = debouncedSearchTerm.toLowerCase();
+		return rooms.filter(
+			(room) =>
+				room.name.toLowerCase().includes(search) ||
+				room.type.toLowerCase().includes(search),
+		);
+	}, [rooms, debouncedSearchTerm]);
 
 	// Don't render if no eventId (shouldn't happen in event context routes)
 	if (!eventId) {
@@ -93,25 +112,50 @@ export function RoomList() {
 
 	// Render room list
 	return (
-		<TooltipProvider delayDuration={0}>
-			<SidebarGroup className="group-data-[collapsible=icon]:p-0">
-				<SidebarGroupLabel>
-					<Link
-						to="/events/$eventId/rooms"
-						params={{ eventId }}
-						className="hover:text-foreground transition-colors"
-					>
-						Rooms
-					</Link>
-				</SidebarGroupLabel>
-				<SidebarGroupContent>
-					<SidebarMenu>
-						{rooms.map((room) => (
+		<SidebarGroup className="group-data-[collapsible=icon]:p-0 -mt-2">
+			<SidebarGroupLabel>
+				<Link
+					to="/events/$eventId/rooms"
+					params={{ eventId }}
+					className="hover:text-foreground transition-colors"
+				>
+					Rooms
+				</Link>
+			</SidebarGroupLabel>
+
+			{/* Search Bar - Compact Pill Style */}
+			<div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+				<div className="relative">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+					<Input
+						type="text"
+						placeholder="Search rooms..."
+						value={searchTerm}
+						onChange={(e) => setSearchTerm(e.target.value)}
+						className="rounded-full pl-9 pr-3 h-8 text-sm"
+					/>
+				</div>
+			</div>
+
+			<SidebarGroupContent>
+				<SidebarMenu>
+					{filteredRooms && filteredRooms.length > 0 ? (
+						filteredRooms.map((room) => (
 							<RoomListItem key={room._id} room={room} eventId={eventId} />
-						))}
-					</SidebarMenu>
-				</SidebarGroupContent>
-			</SidebarGroup>
-		</TooltipProvider>
+						))
+					) : (
+						<div className="flex flex-col items-center justify-center py-6 px-4 text-center">
+							<Search className="h-10 w-10 text-muted-foreground/50 mb-2" />
+							<p className="text-sm font-medium text-muted-foreground">
+								No rooms found
+							</p>
+							<p className="text-xs text-muted-foreground mt-1">
+								Try a different search term
+							</p>
+						</div>
+					)}
+				</SidebarMenu>
+			</SidebarGroupContent>
+		</SidebarGroup>
 	);
 }

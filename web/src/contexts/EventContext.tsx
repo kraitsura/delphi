@@ -69,7 +69,7 @@ export function EventProvider({ children, userId }: EventProviderProps) {
 		eventId && session?.user
 			? convexQuery(api.events.getById, { eventId: eventId as Id<"events"> })
 			: ({
-					queryKey: ["no-event"] as const,
+					queryKey: ["no-event"],
 					queryFn: () => Promise.resolve(null),
 				} as any),
 	);

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
 
 export interface ExpensesListProps {
@@ -27,6 +28,15 @@ export function ExpensesList(props: ExpensesListProps) {
 		showFilters: _showFilters = false,
 	} = props;
 
+	// Zustand: Read selections from store (detail component)
+	const selectedCategory = useDashboardStore(
+		(state) => state.selections.category,
+	);
+	const selectedVendor = useDashboardStore(
+		(state) => state.selections.vendorId,
+	);
+	const openModal = useDashboardStore((state) => state.openModal);
+
 	const expenses = useQuery(api.expenses.listByEvent, {
 		eventId: props.eventId,
 	});
@@ -41,14 +51,16 @@ export function ExpensesList(props: ExpensesListProps) {
 			filtered = filtered.filter((e) => e.status === paymentStatus);
 		}
 
-		// Filter by category
-		if (props.category) {
-			filtered = filtered.filter((e) => e.category === props.category);
+		// Filter by category (prop takes precedence, then Zustand selection)
+		const activeCategory = props.category || selectedCategory;
+		if (activeCategory) {
+			filtered = filtered.filter((e) => e.category === activeCategory);
 		}
 
-		// Filter by vendor
-		if (props.vendor) {
-			filtered = filtered.filter((e) => e.paidBy === props.vendor);
+		// Filter by vendor (prop takes precedence, then Zustand selection)
+		const activeVendor = props.vendor || selectedVendor;
+		if (activeVendor) {
+			filtered = filtered.filter((e) => e.paidBy === activeVendor);
 		}
 
 		// Filter by date range
@@ -82,7 +94,9 @@ export function ExpensesList(props: ExpensesListProps) {
 		expenses,
 		paymentStatus,
 		props.category,
+		selectedCategory,
 		props.vendor,
+		selectedVendor,
 		props.dateRange,
 		sortBy,
 		limit,
@@ -111,16 +125,34 @@ export function ExpensesList(props: ExpensesListProps) {
 		});
 	};
 
+	// Active filters for display
+	const activeCategory = props.category || selectedCategory;
+	const activeVendor = props.vendor || selectedVendor;
+
 	return (
 		<Card className="fluid-component-card">
 			<CardHeader className="fluid-component-header">
-				<CardTitle className="fluid-component-title">
-					{SYMBOLS.BLACK_SQUARE} Expenses
-				</CardTitle>
-				<span className="text-sm text-muted-foreground">
-					{filteredAndSorted.length} expense
-					{filteredAndSorted.length !== 1 ? "s" : ""}
-				</span>
+				<div className="flex flex-col gap-2">
+					<CardTitle className="fluid-component-title">
+						{SYMBOLS.BLACK_SQUARE} Expenses
+					</CardTitle>
+					<div className="flex items-center gap-2">
+						<span className="text-sm text-muted-foreground">
+							{filteredAndSorted.length} expense
+							{filteredAndSorted.length !== 1 ? "s" : ""}
+						</span>
+						{activeCategory && (
+							<Badge variant="secondary" className="text-xs">
+								{SYMBOLS.ARROW_RIGHT} {activeCategory}
+							</Badge>
+						)}
+						{activeVendor && (
+							<Badge variant="secondary" className="text-xs">
+								{SYMBOLS.HANDSHAKE} {activeVendor}
+							</Badge>
+						)}
+					</div>
+				</div>
 			</CardHeader>
 
 			<CardContent className="fluid-component-content">
@@ -140,6 +172,12 @@ export function ExpensesList(props: ExpensesListProps) {
 						<div
 							key={expense._id}
 							className="grid grid-cols-12 gap-2 py-3 border-b border-border/50 hover:bg-accent/50 transition-colors cursor-pointer text-sm"
+							onClick={() =>
+								openModal("expense-details", "ExpenseDetailsModal", {
+									expenseId: expense._id,
+									modalId: "expense-details",
+								})
+							}
 						>
 							<div className="col-span-2 text-muted-foreground">
 								{formatDate(expense._creationTime)}
@@ -183,7 +221,16 @@ export function ExpensesList(props: ExpensesListProps) {
 							${totalAmount.toLocaleString()}
 						</span>
 					</div>
-					<Button variant="outline" size="sm">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() =>
+							openModal("add-expense", "AddExpenseModal", {
+								eventId: props.eventId,
+								modalId: "add-expense",
+							})
+						}
+					>
 						Add Expense
 					</Button>
 				</div>
@@ -225,18 +272,18 @@ function ExpensesListEmpty() {
 
 export const ExpensesListMetadata = {
 	name: "ExpensesList",
-	description: "Detailed expense table with filtering and sorting",
+	description:
+		"Detailed expense table with filtering and sorting. Detail component - reads category and vendorId from Zustand store.",
 	layoutRules: {
 		canShare: true,
 		mustSpanFull: false,
 		preferredRatio: "2fr",
 		minWidth: "400px",
 	},
-	connections: {
-		canBeMaster: false,
-		canBeDetail: true,
-		emits: [],
-		listensTo: ["vendorSelected", "categorySelected"],
+	// Zustand integration - this is a detail component
+	zustand: {
+		writes: [], // This component doesn't write selections
+		reads: ["category", "vendorId"], // Selection keys this component reads
 	},
 	props: {
 		eventId: {
@@ -247,7 +294,7 @@ export const ExpensesListMetadata = {
 		category: {
 			type: "string",
 			required: false,
-			description: "Filter by category",
+			description: "Filter by category (overrides Zustand selection)",
 		},
 		paymentStatus: {
 			type: "enum",

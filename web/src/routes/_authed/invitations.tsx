@@ -1,30 +1,31 @@
 import { api } from "@convex/_generated/api";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
 import { formatDistanceToNow } from "date-fns";
 import { Calendar, CheckCircle, Clock, Mail, Shield, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { usePageHeader } from "@/hooks/usePageHeader";
+import { convexQuery } from "@/lib/convex-query";
 
 export const Route = createFileRoute("/_authed/invitations")({
+	loader: async ({ context }) => {
+		// Prefetch invitations
+		await context.queryClient.ensureQueryData(
+			convexQuery(api.eventInvitations.listByEmail, {}),
+		);
+	},
 	component: InvitationsPage,
 });
 
 function InvitationsPage() {
-	const invitations = useQuery(api.eventInvitations.listByEmail);
+	usePageHeader({ title: "Your Invitations" });
 
-	if (!invitations) {
-		return (
-			<div className="container max-w-4xl mx-auto p-6">
-				<div className="text-center py-8">
-					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-					<p className="text-gray-500">Loading invitations...</p>
-				</div>
-			</div>
-		);
-	}
+	const { data: invitations } = useSuspenseQuery(
+		convexQuery(api.eventInvitations.listByEmail, {}),
+	);
 
 	const pendingInvitations = invitations.filter((inv) => !inv.isExpired);
 	const expiredInvitations = invitations.filter((inv) => inv.isExpired);
@@ -53,13 +54,6 @@ function InvitationsPage() {
 
 	return (
 		<div className="container max-w-4xl mx-auto p-6">
-			<div className="mb-8">
-				<h1 className="text-3xl font-bold mb-2">Your Invitations</h1>
-				<p className="text-gray-600">
-					View and manage invitations to collaborate on events
-				</p>
-			</div>
-
 			{/* Pending Invitations */}
 			{pendingInvitations.length > 0 && (
 				<div className="mb-8">

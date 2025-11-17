@@ -12,9 +12,8 @@ function App() {
 	const router = useRouter();
 
 	useEffect(() => {
-		// Eagerly prefetch features and plans routes when landing page loads
+		// Eagerly prefetch features route when landing page loads
 		router.preloadRoute({ to: "/features" });
-		router.preloadRoute({ to: "/plans" });
 	}, [router]);
 
 	return (

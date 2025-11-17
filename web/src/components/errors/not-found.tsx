@@ -26,9 +26,9 @@ export function NotFound() {
 				</CardHeader>
 				<CardContent className="flex flex-col gap-3">
 					<Button asChild className="w-full">
-						<Link to="/dashboard">
+						<Link to="/events">
 							<Home className="mr-2 h-4 w-4" />
-							Go to Dashboard
+							Go to Events
 						</Link>
 					</Button>
 					<Button asChild variant="outline" className="w-full">

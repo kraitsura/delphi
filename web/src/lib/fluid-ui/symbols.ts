@@ -9,6 +9,10 @@ export const SYMBOLS = {
 
 	// Bullets and status markers
 	BLACK_CIRCLE: "●",
+	CIRCLE: "○",
+
+	// Ratings and highlights
+	STAR: "★",
 
 	// Trends and priorities
 	TRIANGLE_UP: "▲",
@@ -17,6 +21,16 @@ export const SYMBOLS = {
 	// Actions and flow
 	ARROW_RIGHT: "→",
 	ARROW_LEFT: "←",
+	HANDSHAKE: "🤝",
+	PLUS: "+",
+
+	// Editing and modification
+	PENCIL: "✎",
+
+	// Scheduling and logistics
+	CALENDAR: "📅",
+	TRUCK: "🚚",
+	PALETTE: "🎨",
 
 	// Urgency and importance
 	THUNDERBOLT: "⚡",

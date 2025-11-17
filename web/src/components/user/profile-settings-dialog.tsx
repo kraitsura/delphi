@@ -38,7 +38,27 @@ const themeSetOptions = [
 	{
 		value: "redwood" as ThemeSet,
 		label: "Redwood",
+		colors: ["#F5F0D9", "#C9A875", "#5D8855", "#4A6443"],
+	},
+	{
+		value: "flare" as ThemeSet,
+		label: "Flare",
 		colors: ["#F5EDD1", "#D9B88F", "#A31D1D", "#6D2323"],
+	},
+	{
+		value: "ocean" as ThemeSet,
+		label: "Ocean",
+		colors: ["#F5F3EE", "#5B92D1", "#33577A", "#8CC4C4"],
+	},
+	{
+		value: "twilight" as ThemeSet,
+		label: "Twilight",
+		colors: ["#F5ECF6", "#7D55A8", "#5A4181", "#E08564"],
+	},
+	{
+		value: "moss" as ThemeSet,
+		label: "Moss",
+		colors: ["#F5F5ED", "#5A8257", "#3D5F3A", "#92A070"],
 	},
 ];
 
@@ -187,9 +207,9 @@ export function ProfileSettingsDialog() {
 									}}
 								>
 									<div className="flex gap-1 items-center">
-										{option.colors.map((color) => (
+										{option.colors.map((color, i) => (
 											<div
-												key={color}
+												key={i}
 												className="w-3 h-3 rounded-full border border-border"
 												style={{ backgroundColor: color }}
 											/>

@@ -53,9 +53,11 @@ export function EventEditDialog({
 			setName(event.name);
 			setDescription(event.description || "");
 			setBudget(event.budget.total.toString());
-			setExpectedGuests(event.guestCount.expected.toString());
+			setExpectedGuests(event.guestCount?.expected.toString() || "");
 			setDate(
-				event.date ? new Date(event.date).toISOString().split("T")[0] : "",
+				event.eventDate
+					? new Date(event.eventDate).toISOString().split("T")[0]
+					: "",
 			);
 			setAddress(event.location?.address || "");
 			setCity(event.location?.city || "");
@@ -81,9 +83,12 @@ export function EventEditDialog({
 				description: description.trim() || undefined,
 				budget: budget ? { total: parseFloat(budget) } : undefined,
 				guestCount: expectedGuests
-					? { expected: parseInt(expectedGuests, 10) }
+					? {
+							confirmed: event?.guestCount?.confirmed || 0,
+							expected: parseInt(expectedGuests, 10),
+						}
 					: undefined,
-				date: date ? new Date(date).getTime() : undefined,
+				eventDate: date ? new Date(date).getTime() : undefined,
 				location:
 					address && city && state && country
 						? {
