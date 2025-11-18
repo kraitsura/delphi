@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouter } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ interface SignInFormProps {
 
 export function SignInForm({ verified = false }: SignInFormProps) {
 	const navigate = useNavigate();
+	const router = useRouter();
 	const emailId = useId();
 	const passwordId = useId();
 	const [email, setEmail] = useState("");
@@ -33,12 +34,21 @@ export function SignInForm({ verified = false }: SignInFormProps) {
 		setError(null);
 
 		try {
-			await authClient.signIn.email({
+			const result = await authClient.signIn.email({
 				email,
 				password,
 			});
-			// Manually navigate after successful sign-in
-			window.location.href = "/events";
+
+			// Ensure session is loaded before navigating
+			if (result?.data) {
+				// Give Better Auth time to set the session
+				await new Promise(resolve => setTimeout(resolve, 500));
+				// Hard reload to ensure clean SSR auth state
+				window.location.href = "/events";
+			} else {
+				setError("Sign in failed - please try again");
+				setLoading(false);
+			}
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Sign in failed";
