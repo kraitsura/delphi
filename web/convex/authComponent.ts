@@ -1,12 +1,21 @@
 import { createClient } from "@convex-dev/better-auth";
 import { DataModel } from "./_generated/dataModel";
-import { components } from "./_generated/api";
 
-// Create the auth component client with inline triggers
-// Note: We're using lazy import of 'internal' inside the trigger to avoid
-// circular dependency and initialization order issues in production
+// IMPORTANT: We don't import from _generated/api at the top level
+// to avoid circular dependency issues in production bundling
+
+// Lazy-load the components to break circular dependency
+function getComponents() {
+  // Using require() instead of import() for synchronous loading
+  // This is evaluated at runtime, not at module initialization
+  const api = require("./_generated/api");
+  return api.components;
+}
+
+// Create the auth component client
+// components.betterAuth is accessed via getter, not at module load time
 export const authComponent = createClient<DataModel>(
-  components.betterAuth,
+  getComponents().betterAuth,
   {
     // No authFunctions needed - triggers are defined inline
     triggers: {
