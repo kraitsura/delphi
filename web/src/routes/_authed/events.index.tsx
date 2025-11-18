@@ -40,16 +40,6 @@ function EventsPage() {
 
 	return (
 		<div className="container max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
-			{/* Action Button */}
-			<div className="flex items-center justify-end mb-6">
-				<Link to="/events/new">
-					<Button className="border-2 border-black dark:border-white font-bold uppercase text-xs tracking-wide">
-						<PlusCircle className="h-4 w-4 mr-2" />
-						New Event
-					</Button>
-				</Link>
-			</div>
-
 			{/* Pending Invitations Banner */}
 			{!invitationsLoading && pendingInvitations.length > 0 && (
 				<div className="mb-6">
@@ -143,49 +133,57 @@ function EventsPage() {
 				</div>
 			)}
 
-			{/* Status Filter */}
+			{/* Status Filter and Create Button */}
 			<div className="mb-6">
-				<div className="flex flex-wrap gap-2">
-					<button
-						onClick={() => setStatusFilter(undefined)}
-						className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
-							statusFilter === undefined
-								? "bg-black dark:bg-white text-white dark:text-black"
-								: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
-						}`}
-					>
-						All
-					</button>
-					<button
-						onClick={() => setStatusFilter("planning")}
-						className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
-							statusFilter === "planning"
-								? "bg-black dark:bg-white text-white dark:text-black"
-								: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
-						}`}
-					>
-						Planning
-					</button>
-					<button
-						onClick={() => setStatusFilter("active")}
-						className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
-							statusFilter === "active"
-								? "bg-black dark:bg-white text-white dark:text-black"
-								: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
-						}`}
-					>
-						Active
-					</button>
-					<button
-						onClick={() => setStatusFilter("completed")}
-						className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
-							statusFilter === "completed"
-								? "bg-black dark:bg-white text-white dark:text-black"
-								: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
-						}`}
-					>
-						Completed
-					</button>
+				<div className="flex items-center justify-between gap-4 flex-wrap">
+					<div className="flex flex-wrap gap-2">
+						<button
+							onClick={() => setStatusFilter(undefined)}
+							className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
+								statusFilter === undefined
+									? "bg-black dark:bg-white text-white dark:text-black"
+									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
+							}`}
+						>
+							All
+						</button>
+						<button
+							onClick={() => setStatusFilter("planning")}
+							className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
+								statusFilter === "planning"
+									? "bg-black dark:bg-white text-white dark:text-black"
+									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
+							}`}
+						>
+							Planning
+						</button>
+						<button
+							onClick={() => setStatusFilter("active")}
+							className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
+								statusFilter === "active"
+									? "bg-black dark:bg-white text-white dark:text-black"
+									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
+							}`}
+						>
+							Active
+						</button>
+						<button
+							onClick={() => setStatusFilter("completed")}
+							className={`px-4 py-2 border-2 border-black dark:border-white text-xs font-bold uppercase tracking-wide transition-colors ${
+								statusFilter === "completed"
+									? "bg-black dark:bg-white text-white dark:text-black"
+									: "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-900"
+							}`}
+						>
+							Completed
+						</button>
+					</div>
+					<Link to="/events/new">
+						<Button className="border-2 border-black dark:border-white font-bold uppercase text-xs tracking-wide">
+							<PlusCircle className="h-4 w-4 mr-2" />
+							New Event
+						</Button>
+					</Link>
 				</div>
 			</div>
 

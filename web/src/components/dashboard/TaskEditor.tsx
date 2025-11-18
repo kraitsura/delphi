@@ -45,11 +45,7 @@ export function TaskEditor(props: TaskEditorProps) {
 		"low" | "medium" | "high" | "urgent"
 	>("medium");
 	const [dueDate, setDueDate] = useState("");
-	const [estimatedTime, setEstimatedTime] = useState("");
-	const [estimatedCostMin, setEstimatedCostMin] = useState("");
-	const [estimatedCostMax, setEstimatedCostMax] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [hasChanges, setHasChanges] = useState(false);
 
 	// Load task data into form
 	useEffect(() => {
@@ -64,51 +60,20 @@ export function TaskEditor(props: TaskEditorProps) {
 					? new Date(task.deadline).toISOString().split("T")[0]
 					: "",
 			);
-			setEstimatedTime(task.estimatedDuration?.toString() || "");
-			setEstimatedCostMin(task.estimatedCost?.min?.toString() || "");
-			setEstimatedCostMax(task.estimatedCost?.max?.toString() || "");
-			setHasChanges(false);
 		}
 	}, [task]);
 
-	// Track changes
-	useEffect(() => {
-		if (!task) return;
-
-		const changed =
-			title !== task.title ||
-			description !== (task.description || "") ||
-			category !== (task.category || "") ||
-			status !== task.status ||
-			priority !== task.priority ||
-			dueDate !==
-				(task.deadline
-					? new Date(task.deadline).toISOString().split("T")[0]
-					: "") ||
-			estimatedTime !== (task.estimatedDuration?.toString() || "") ||
-			estimatedCostMin !== (task.estimatedCost?.min?.toString() || "") ||
-			estimatedCostMax !== (task.estimatedCost?.max?.toString() || "");
-
-		setHasChanges(changed);
-	}, [
-		task,
-		title,
-		description,
-		category,
-		status,
-		priority,
-		dueDate,
-		estimatedTime,
-		estimatedCostMin,
-		estimatedCostMax,
-	]);
-
 	// Form validation
-	const isValid = title.trim().length > 0;
+	const validStatuses = ["todo", "in_progress", "blocked", "completed", "cancelled"];
+	const validPriorities = ["low", "medium", "high", "urgent"];
+	const isValid =
+		title.trim().length > 0 &&
+		validStatuses.includes(status) &&
+		validPriorities.includes(priority);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!isValid || isSubmitting || !hasChanges) return;
+		if (!isValid || isSubmitting || !task) return;
 
 		setIsSubmitting(true);
 
@@ -118,27 +83,16 @@ export function TaskEditor(props: TaskEditorProps) {
 				taskId,
 				title: title.trim(),
 				description: description.trim() || undefined,
-				category: category as any,
-				status,
-				priority,
+				category: category.trim() || undefined,
+				status: status || task.status,
+				priority: priority || task.priority,
 				deadline: dueDate ? new Date(dueDate).getTime() : undefined,
-				estimatedDuration: estimatedTime.trim()
-					? parseInt(estimatedTime.trim(), 10)
-					: undefined,
 			};
-
-			// Handle estimated cost
-			const minCost = parseFloat(estimatedCostMin);
-			const maxCost = parseFloat(estimatedCostMax);
-			if (!Number.isNaN(minCost) && !Number.isNaN(maxCost)) {
-				updates.estimatedCost = { min: minCost, max: maxCost };
-			}
 
 			await updateTask(updates);
 
 			// Success
 			showToast("Task updated successfully", "success");
-			setHasChanges(false);
 
 			// Callback
 			onSave?.();
@@ -163,10 +117,6 @@ export function TaskEditor(props: TaskEditorProps) {
 					? new Date(task.deadline).toISOString().split("T")[0]
 					: "",
 			);
-			setEstimatedTime(task.estimatedDuration?.toString() || "");
-			setEstimatedCostMin(task.estimatedCost?.min?.toString() || "");
-			setEstimatedCostMax(task.estimatedCost?.max?.toString() || "");
-			setHasChanges(false);
 		}
 		onCancel?.();
 	};
@@ -218,12 +168,19 @@ export function TaskEditor(props: TaskEditorProps) {
 			</div>
 
 			{/* Status and Priority */}
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div className="space-y-2">
 					<Label htmlFor="edit-status" className="text-sm font-normal">
 						Status
 					</Label>
-					<Select value={status} onValueChange={(v: any) => setStatus(v)}>
+					<Select
+					value={status}
+					onValueChange={(v: any) => {
+						if (v && validStatuses.includes(v)) {
+							setStatus(v);
+						}
+					}}
+				>
 						<SelectTrigger id="edit-status" className="fluid-input">
 							<SelectValue />
 						</SelectTrigger>
@@ -241,7 +198,14 @@ export function TaskEditor(props: TaskEditorProps) {
 					<Label htmlFor="edit-priority" className="text-sm font-normal">
 						Priority
 					</Label>
-					<Select value={priority} onValueChange={(v: any) => setPriority(v)}>
+					<Select
+					value={priority}
+					onValueChange={(v: any) => {
+						if (v && validPriorities.includes(v)) {
+							setPriority(v);
+						}
+					}}
+				>
 						<SelectTrigger id="edit-priority" className="fluid-input">
 							<SelectValue />
 						</SelectTrigger>
@@ -282,83 +246,25 @@ export function TaskEditor(props: TaskEditorProps) {
 				</Select>
 			</div>
 
-			{/* Due Date and Estimated Time */}
-			<div className="grid grid-cols-2 gap-4">
-				<div className="space-y-2">
-					<Label htmlFor="edit-dueDate" className="text-sm font-normal">
-						Due Date
-					</Label>
-					<Input
-						id="edit-dueDate"
-						type="date"
-						value={dueDate}
-						onChange={(e) => setDueDate(e.target.value)}
-						className="fluid-input"
-					/>
-				</div>
-
-				<div className="space-y-2">
-					<Label htmlFor="edit-estimatedTime" className="text-sm font-normal">
-						Estimated Time
-					</Label>
-					<Input
-						id="edit-estimatedTime"
-						value={estimatedTime}
-						onChange={(e) => setEstimatedTime(e.target.value)}
-						placeholder="e.g., 2 hours"
-						className="fluid-input"
-					/>
-				</div>
-			</div>
-
-			{/* Estimated Cost Range */}
+			{/* Due Date */}
 			<div className="space-y-2">
-				<Label className="text-sm font-normal">Estimated Cost Range</Label>
-				<div className="grid grid-cols-2 gap-4">
-					<div className="space-y-1">
-						<Label
-							htmlFor="edit-cost-min"
-							className="text-xs text-muted-foreground"
-						>
-							Min
-						</Label>
-						<Input
-							id="edit-cost-min"
-							type="number"
-							value={estimatedCostMin}
-							onChange={(e) => setEstimatedCostMin(e.target.value)}
-							placeholder="Min cost"
-							className="fluid-input"
-							min="0"
-							step="0.01"
-						/>
-					</div>
-					<div className="space-y-1">
-						<Label
-							htmlFor="edit-cost-max"
-							className="text-xs text-muted-foreground"
-						>
-							Max
-						</Label>
-						<Input
-							id="edit-cost-max"
-							type="number"
-							value={estimatedCostMax}
-							onChange={(e) => setEstimatedCostMax(e.target.value)}
-							placeholder="Max cost"
-							className="fluid-input"
-							min="0"
-							step="0.01"
-						/>
-					</div>
-				</div>
+				<Label htmlFor="edit-dueDate" className="text-sm font-normal">
+					Due Date
+				</Label>
+				<Input
+					id="edit-dueDate"
+					type="date"
+					value={dueDate}
+					onChange={(e) => setDueDate(e.target.value)}
+					className="fluid-input"
+				/>
 			</div>
 
 			{/* Actions */}
 			<div className="flex gap-2 pt-4 border-t">
 				<Button
 					type="submit"
-					disabled={!isValid || !hasChanges || isSubmitting}
+					disabled={!isValid || isSubmitting}
 					className="fluid-button fluid-button--primary flex-1"
 				>
 					{isSubmitting ? "Saving..." : "Save Changes"}
@@ -388,7 +294,7 @@ function TaskEditorSkeleton() {
 				<Skeleton className="h-4 w-20" />
 				<Skeleton className="h-24 w-full" />
 			</div>
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<div className="space-y-2">
 					<Skeleton className="h-4 w-12" />
 					<Skeleton className="h-10 w-full" />

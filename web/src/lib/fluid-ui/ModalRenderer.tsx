@@ -25,7 +25,6 @@ import { getComponent } from "./registry";
 export function ModalRenderer() {
 	// Subscribe to modals Map from store
 	const modals = useDashboardStore((state) => state.modals);
-	const closeModal = useDashboardStore((state) => state.closeModal);
 
 	// Convert Map to array for iteration
 	const modalEntries = Array.from(modals.entries());
@@ -48,15 +47,9 @@ export function ModalRenderer() {
 					return null;
 				}
 
-				// Render the modal with its props and onClose handler
-				return (
-					<Component
-						key={id}
-						{...modal.props}
-						onClose={() => closeModal(id)}
-						open={true}
-					/>
-				);
+				// Render the modal with its props
+				// Modal components manage their own open state and closeModal handler
+				return <Component key={id} {...modal.props} />;
 			})}
 		</>
 	);

@@ -1,19 +1,10 @@
 import { api } from "@convex/_generated/api";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Calendar, DollarSign, MapPin, Users } from "lucide-react";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { convexQuery } from "@/lib/convex-query";
-import { EventDeleteDialog } from "./event-delete-dialog";
-import { EventEditDialog } from "./event-edit-dialog";
 import { StatusBadge } from "./StatusBadge";
 
 interface EventListProps {
@@ -22,19 +13,16 @@ interface EventListProps {
 
 function EventListSkeleton() {
 	return (
-		<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 			{[1, 2, 3].map((i) => (
 				<Card
 					key={i}
 					className="border-2 border-black dark:border-white animate-pulse"
 				>
 					<CardContent className="p-0">
-						<div className="border-b-2 border-black dark:border-white p-4">
-							<div className="h-5 bg-gray-300 dark:bg-gray-700 w-3/4" />
-						</div>
-						<div className="p-4 space-y-3">
-							<div className="h-3 bg-gray-300 dark:bg-gray-700 w-full" />
-							<div className="h-3 bg-gray-300 dark:bg-gray-700 w-full" />
+						<div className="p-3">
+							<div className="h-5 bg-gray-300 dark:bg-gray-700 w-3/4 mb-3" />
+							<div className="h-3 bg-gray-300 dark:bg-gray-700 w-full mb-2" />
 							<div className="h-3 bg-gray-300 dark:bg-gray-700 w-2/3" />
 						</div>
 					</CardContent>
@@ -64,124 +52,86 @@ function EventListContent({ status }: EventListProps) {
 	}
 
 	return (
-		<div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-			{events.map((event) => (
-				<Card
-					key={event._id}
-					className="border-2 border-black dark:border-white hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors h-full relative group"
-				>
-					<CardContent className="p-0">
-						{/* Header with title and status */}
-						<div className="border-b-2 border-black dark:border-white p-4 flex items-center justify-between">
+		<>
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+				{events.map((event) => (
+					<Card
+						key={event._id}
+						className="border-2 border-black dark:border-white hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] dark:hover:shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] transition-all h-full relative group"
+					>
+						<CardContent className="p-0 relative">
+							{/* Main clickable content */}
 							<Link
 								to="/events/$eventId"
 								params={{ eventId: event._id }}
-								className="flex-1 min-w-0 hover:underline"
+								className="block p-3"
 							>
-								<h3 className="font-bold text-base uppercase tracking-tight line-clamp-1">
-									{event.name}
-								</h3>
+								{/* Header with title and status */}
+								<div className="mb-2">
+									<h3 className="font-bold text-base uppercase tracking-tight break-words leading-tight mb-1">
+										{event.name}
+									</h3>
+									<div className="flex items-center gap-2">
+										<StatusBadge status={event.status} size="sm" />
+										<span className="text-[10px] uppercase font-bold opacity-50">
+											{event.type}
+										</span>
+									</div>
+								</div>
+
+								{/* Description */}
+								{event.description && (
+									<p className="text-xs leading-relaxed mb-3 opacity-70 line-clamp-2">
+										{event.description}
+									</p>
+								)}
+
+								{/* Compact info grid */}
+								<div className="grid grid-cols-2 gap-2 text-xs">
+									{event.eventDate && (
+										<div className="flex items-center gap-1.5">
+											<Calendar className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
+											<span className="truncate">
+												{new Date(event.eventDate).toLocaleDateString("en-US", {
+													month: "short",
+													day: "numeric",
+													year: "numeric",
+												})}
+											</span>
+										</div>
+									)}
+
+									{event.location && (
+										<div className="flex items-center gap-1.5">
+											<MapPin className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
+											<span className="truncate">
+												{event.location.city}, {event.location.state}
+											</span>
+										</div>
+									)}
+
+									<div className="flex items-center gap-1.5">
+										<Users className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
+										<span>
+											{event.guestCount?.confirmed || 0} /{" "}
+											{event.guestCount?.expected || 0}
+										</span>
+									</div>
+
+									<div className="flex items-center gap-1.5">
+										<DollarSign className="h-3.5 w-3.5 opacity-50 flex-shrink-0" />
+										<span className="truncate">
+											{event.budget.spent.toLocaleString()} /{" "}
+											{event.budget.total.toLocaleString()}
+										</span>
+									</div>
+								</div>
 							</Link>
-							<div className="flex items-center gap-2 ml-2 flex-shrink-0">
-								<StatusBadge status={event.status} size="sm" />
-								{/* Actions Dropdown Menu */}
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-											onClick={(e) => e.stopPropagation()}
-										>
-											<MoreVertical className="h-4 w-4" />
-											<span className="sr-only">Open menu</span>
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<EventEditDialog
-											eventId={event._id}
-											trigger={
-												<DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-													<Pencil className="mr-2 h-4 w-4" />
-													Edit
-												</DropdownMenuItem>
-											}
-										/>
-										<EventDeleteDialog
-											eventId={event._id}
-											redirectAfterDelete={false}
-											trigger={
-												<DropdownMenuItem
-													onSelect={(e) => e.preventDefault()}
-													className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
-												>
-													<Trash2 className="mr-2 h-4 w-4" />
-													Delete
-												</DropdownMenuItem>
-											}
-										/>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</div>
-						</div>
-
-						{/* Rest of card content - wrapped in Link */}
-						<Link
-							to="/events/$eventId"
-							params={{ eventId: event._id }}
-							className="block p-4"
-						>
-							{event.description && (
-								<p className="text-xs leading-relaxed mb-4 opacity-80 line-clamp-2">
-									{event.description}
-								</p>
-							)}
-
-							<div className="space-y-2 text-xs">
-								{event.eventDate && (
-									<div className="flex items-start gap-2">
-										<span className="opacity-50 min-w-[60px]">DATE:</span>
-										<span className="flex-1">
-											{new Date(event.eventDate).toLocaleDateString()}
-										</span>
-									</div>
-								)}
-
-								{event.location && (
-									<div className="flex items-start gap-2">
-										<span className="opacity-50 min-w-[60px]">LOC:</span>
-										<span className="flex-1 line-clamp-1">
-											{event.location.city}, {event.location.state}
-										</span>
-									</div>
-								)}
-
-								<div className="flex items-start gap-2">
-									<span className="opacity-50 min-w-[60px]">GUESTS:</span>
-									<span className="flex-1">
-										{event.guestCount?.confirmed || 0} /{" "}
-										{event.guestCount?.expected || 0}
-									</span>
-								</div>
-
-								<div className="flex items-start gap-2">
-									<span className="opacity-50 min-w-[60px]">BUDGET:</span>
-									<span className="flex-1">
-										${event.budget.spent.toLocaleString()} / $
-										{event.budget.total.toLocaleString()}
-									</span>
-								</div>
-
-								<div className="flex items-start gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-									<span className="opacity-50 min-w-[60px]">TYPE:</span>
-									<span className="flex-1 uppercase">{event.type}</span>
-								</div>
-							</div>
-						</Link>
-					</CardContent>
-				</Card>
-			))}
-		</div>
+						</CardContent>
+					</Card>
+				))}
+			</div>
+		</>
 	);
 }
 

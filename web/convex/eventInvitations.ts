@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthenticatedUser, requireEventCoordinator } from "./authHelpers";
+import { getAuthenticatedUser, canInviteMembers, getUserEventRole } from "./authHelpers";
 import { internal } from "./_generated/api";
 
 /**
@@ -12,7 +12,8 @@ function generateInvitationToken(): string {
 
 /**
  * Send invitation to collaborate on an event
- * Only event coordinators can send invitations
+ * Coordinators and collaborators can send invitations
+ * Collaborators can only invite collaborators and guests (not coordinators)
  */
 export const sendInvitation = mutation({
   args: {
@@ -28,8 +29,19 @@ export const sendInvitation = mutation({
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Verify user is event coordinator
-    await requireEventCoordinator(ctx, args.eventId, userProfile._id);
+    // Verify user can invite members (coordinator or collaborator)
+    const canInvite = await canInviteMembers(ctx, args.eventId, userProfile._id);
+    if (!canInvite) {
+      throw new Error("Forbidden: Only coordinators and collaborators can send invitations");
+    }
+
+    // Get user's role in the event
+    const senderRole = await getUserEventRole(ctx, args.eventId, userProfile._id);
+
+    // Collaborators cannot invite coordinators
+    if (senderRole === "collaborator" && args.role === "coordinator") {
+      throw new Error("Forbidden: Collaborators cannot invite coordinators");
+    }
 
     // Get event details for validation
     const event = await ctx.db.get(args.eventId);
@@ -294,7 +306,8 @@ export const declineInvitation = mutation({
 });
 
 /**
- * Cancel a pending invitation (coordinator only)
+ * Cancel a pending invitation
+ * Can be done by coordinators and collaborators
  */
 export const cancelInvitation = mutation({
   args: {
@@ -309,8 +322,11 @@ export const cancelInvitation = mutation({
       throw new Error("Invitation not found");
     }
 
-    // Verify user is event coordinator
-    await requireEventCoordinator(ctx, invitation.eventId, userProfile._id);
+    // Verify user can invite members (coordinator or collaborator)
+    const canInvite = await canInviteMembers(ctx, invitation.eventId, userProfile._id);
+    if (!canInvite) {
+      throw new Error("Forbidden: Only coordinators and collaborators can cancel invitations");
+    }
 
     // Verify invitation is pending
     if (invitation.status !== "pending") {
@@ -329,6 +345,7 @@ export const cancelInvitation = mutation({
 
 /**
  * Resend an invitation (generates new token with new expiration)
+ * Can be done by coordinators and collaborators
  */
 export const resendInvitation = mutation({
   args: {
@@ -343,8 +360,11 @@ export const resendInvitation = mutation({
       throw new Error("Invitation not found");
     }
 
-    // Verify user is event coordinator
-    await requireEventCoordinator(ctx, invitation.eventId, userProfile._id);
+    // Verify user can invite members (coordinator or collaborator)
+    const canInvite = await canInviteMembers(ctx, invitation.eventId, userProfile._id);
+    if (!canInvite) {
+      throw new Error("Forbidden: Only coordinators and collaborators can resend invitations");
+    }
 
     // Only resend pending or expired invitations
     if (invitation.status !== "pending" && invitation.status !== "expired") {
@@ -400,6 +420,7 @@ export const resendInvitation = mutation({
 
 /**
  * List all pending invitations for an event
+ * Can be viewed by coordinators and collaborators
  */
 export const listPendingByEvent = query({
   args: {
@@ -408,8 +429,11 @@ export const listPendingByEvent = query({
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Verify user is event coordinator
-    await requireEventCoordinator(ctx, args.eventId, userProfile._id);
+    // Verify user can invite members (coordinator or collaborator)
+    const canInvite = await canInviteMembers(ctx, args.eventId, userProfile._id);
+    if (!canInvite) {
+      throw new Error("Forbidden: Only coordinators and collaborators can view invitations");
+    }
 
     // Get all pending invitations
     const invitations = await ctx.db
@@ -540,6 +564,7 @@ export const listByEmail = query({
 
 /**
  * Get all invitations for an event (all statuses) - for admin view
+ * Can be viewed by coordinators and collaborators
  */
 export const listAllByEvent = query({
   args: {
@@ -548,8 +573,11 @@ export const listAllByEvent = query({
   handler: async (ctx, args) => {
     const { userProfile } = await getAuthenticatedUser(ctx);
 
-    // Verify user is event coordinator
-    await requireEventCoordinator(ctx, args.eventId, userProfile._id);
+    // Verify user can invite members (coordinator or collaborator)
+    const canInvite = await canInviteMembers(ctx, args.eventId, userProfile._id);
+    if (!canInvite) {
+      throw new Error("Forbidden: Only coordinators and collaborators can view invitations");
+    }
 
     // Get all invitations for this event
     const invitations = await ctx.db

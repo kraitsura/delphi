@@ -114,13 +114,20 @@ export const createOrUpdateProfile = mutation({
 export const getMyProfile = query({
   args: {},
   handler: async (ctx) => {
-    const authUser = await authComponent.getAuthUser(ctx);
-    if (!authUser) return null;
+    try {
+      const authUser = await authComponent.getAuthUser(ctx);
+      if (!authUser) return null;
 
-    return await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", authUser.email))
-      .unique();
+      return await ctx.db
+        .query("users")
+        .withIndex("by_email", (q) => q.eq("email", authUser.email))
+        .unique();
+    } catch (error) {
+      // Handle errors gracefully during sign-out or session transitions
+      // Return null instead of throwing to prevent UI errors
+      console.warn("getMyProfile: Error fetching auth user", error);
+      return null;
+    }
   },
 });
 

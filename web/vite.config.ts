@@ -13,11 +13,72 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart(),
-    netlifyPlugin(),
+    // Only use Netlify plugin in production builds
+    ...(process.env.NODE_ENV === 'production' ? [netlifyPlugin()] : []),
     viteReact(),
   ],
   server: {
     port: 3001,
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // Skip node_modules that aren't actual dependencies
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+
+          // UI components library - split Radix UI into separate chunk
+          if (id.includes('@radix-ui')) {
+            return 'ui-radix';
+          }
+
+          // DnD kit for drag and drop
+          if (id.includes('@dnd-kit')) {
+            return 'dnd-kit';
+          }
+
+          // Convex and auth (excluding external modules)
+          if (
+            id.includes('convex') &&
+            !id.includes('@convex-dev/better-auth') &&
+            !id.includes('@convex-dev/react-query')
+          ) {
+            return 'convex-vendor';
+          }
+
+          if (id.includes('better-auth')) {
+            return 'auth-vendor';
+          }
+
+          // Utilities
+          if (
+            id.includes('date-fns') ||
+            id.includes('clsx') ||
+            id.includes('tailwind-merge') ||
+            id.includes('class-variance-authority') ||
+            id.includes('zod') ||
+            id.includes('zustand')
+          ) {
+            return 'utils';
+          }
+
+          // Lucide icons
+          if (id.includes('lucide-react')) {
+            return 'icons';
+          }
+
+          // Markdown and sanitization
+          if (id.includes('marked') || id.includes('dompurify')) {
+            return 'markdown';
+          }
+
+          return undefined;
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
   },
   test: {
     globals: true,

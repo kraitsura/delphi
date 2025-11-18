@@ -2,7 +2,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,23 +18,36 @@ import {
 
 interface EventDeleteDialogProps {
 	eventId: Id<"events">;
-	trigger?: React.ReactNode;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 	onSuccess?: () => void;
 	redirectAfterDelete?: boolean;
+	trigger?: React.ReactNode;
 }
 
 export function EventDeleteDialog({
 	eventId,
-	trigger,
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange,
 	onSuccess,
 	redirectAfterDelete = true,
+	trigger,
 }: EventDeleteDialogProps) {
-	const [open, setOpen] = useState(false);
 	const [confirmText, setConfirmText] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
+
+	// Determine if the dialog is controlled or uncontrolled
+	const isControlled = controlledOpen !== undefined;
+	const open = isControlled ? controlledOpen : internalOpen;
+	const onOpenChange = isControlled ? controlledOnOpenChange : setInternalOpen;
 
 	const navigate = useNavigate();
-	const event = useQuery(api.events.getById, { eventId });
+	// Only query if we have a valid eventId
+	const event = useQuery(
+		api.events.getById,
+		eventId ? { eventId } : "skip"
+	);
 	const deleteEvent = useMutation(api.events.softDelete);
 
 	const handleDelete = async () => {
@@ -52,7 +65,7 @@ export function EventDeleteDialog({
 				description: "All related data has been deleted",
 			});
 
-			setOpen(false);
+			onOpenChange?.(false);
 
 			if (redirectAfterDelete) {
 				navigate({ to: "/events" });
@@ -70,15 +83,8 @@ export function EventDeleteDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				{trigger || (
-					<Button variant="destructive" size="sm">
-						<Trash2 className="h-4 w-4 mr-2" />
-						Delete Event
-					</Button>
-				)}
-			</DialogTrigger>
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			{trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 			<DialogContent className="max-w-md">
 				<DialogHeader>
 					<div className="flex items-center gap-3 mb-2">
@@ -142,7 +148,7 @@ export function EventDeleteDialog({
 						type="button"
 						variant="outline"
 						onClick={() => {
-							setOpen(false);
+							onOpenChange?.(false);
 							setConfirmText("");
 						}}
 						disabled={isLoading}

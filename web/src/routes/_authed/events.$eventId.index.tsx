@@ -1,12 +1,11 @@
 import type { Id } from "@convex/_generated/dataModel";
 import { createFileRoute } from "@tanstack/react-router";
-import { Search, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { DashboardSearchBar } from "@/components/dashboard/DashboardSearchBar";
 import { LayoutController } from "@/components/fluid-ui/layout-controller";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { getMatchingComponents } from "@/lib/fluid-ui/componentMetadata";
 import { DashboardStoreProvider } from "@/lib/fluid-ui/DashboardStoreContext";
+import { ModalRenderer } from "@/lib/fluid-ui/ModalRenderer";
 import type { DashboardConfig } from "@/lib/fluid-ui/types";
 
 /**
@@ -45,9 +44,9 @@ function EventDashboardPage() {
 	// Comprehensive dashboard configuration using LayoutController
 	// 6 sections providing complete event visibility:
 	// Row 1: Key metrics overview
-	// Row 2: Timeline and phase-based tasks
-	// Row 3: Budget tracking and expense details
-	// Row 4: Kanban task board (full width)
+	// Row 2: Kanban task board (full width)
+	// Row 3: Timeline and phase-based tasks
+	// Row 4: Budget tracking and expense details
 	// Row 5: Vendor task management (full width)
 	// Row 6: Collaboration and activity
 	const baseDashboardConfig: DashboardConfig = {
@@ -67,7 +66,18 @@ function EventDashboardPage() {
 					},
 				],
 			},
-			// Row 2: Timeline & Phase Tasks (1:1 split)
+			// Row 2: Task Kanban (Full width)
+			{
+				type: "row",
+				layout: "auto",
+				components: [
+					{
+						type: "TasksKanban",
+						props: { eventId: typedEventId, columnCount: 4, showCounts: true },
+					},
+				],
+			},
+			// Row 3: Timeline & Phase Tasks (1:1 split)
 			{
 				type: "row",
 				layout: "1:1",
@@ -82,7 +92,7 @@ function EventDashboardPage() {
 					},
 				],
 			},
-			// Row 3: Budget Overview (1:1 split)
+			// Row 4: Budget Overview (1:1 split)
 			{
 				type: "row",
 				layout: "1:1",
@@ -94,17 +104,6 @@ function EventDashboardPage() {
 					{
 						type: "ExpensesList",
 						props: { eventId: typedEventId },
-					},
-				],
-			},
-			// Row 4: Task Kanban (Full width)
-			{
-				type: "row",
-				layout: "auto",
-				components: [
-					{
-						type: "TasksKanban",
-						props: { eventId: typedEventId, columnCount: 4, showCounts: true },
 					},
 				],
 			},
@@ -167,60 +166,26 @@ function EventDashboardPage() {
 	}, [baseDashboardConfig, visibleComponents]);
 
 	return (
-		<div className="relative">
+		<div className="relative flex flex-col min-h-screen">
 			{/* Dashboard Content */}
-			<div className="pb-24">
+			<div className="flex-1 mb-[60px]">
 				<DashboardStoreProvider>
 					<LayoutController
 						config={filteredDashboardConfig}
 						eventId={typedEventId}
 						validationOptions={{ disableRowLimit: true }}
 					/>
+					<ModalRenderer />
 				</DashboardStoreProvider>
 			</div>
 
-			{/* Sticky Search Input - Bottom Center (filters dashboard components) */}
-			<div className="sticky bottom-0 mt-6 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-				<div className="max-w-3xl mx-auto">
-					<div className="p-4">
-						<div className="flex gap-2 items-center">
-							<div className="relative flex-1">
-								<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-								<Input
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
-									placeholder="Search components... (e.g. 'task', 'budget', 'timeline', 'kanban')"
-									className="pl-9 pr-9 h-12 rounded-2xl"
-								/>
-								{searchQuery && (
-									<Button
-										onClick={handleClear}
-										variant="ghost"
-										size="icon"
-										className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-									>
-										<X className="h-4 w-4" />
-									</Button>
-								)}
-							</div>
-						</div>
-						{searchQuery && (
-							<div className="mt-2 text-xs text-muted-foreground text-center">
-								{visibleComponents.size === 0 ? (
-									<span className="text-destructive">
-										No components match your search
-									</span>
-								) : (
-									<span>
-										Showing {visibleComponents.size} component
-										{visibleComponents.size !== 1 ? "s" : ""}
-									</span>
-								)}
-							</div>
-						)}
-					</div>
-				</div>
-			</div>
+			{/* Sticky Search Bar - Bottom (filters dashboard components) */}
+			<DashboardSearchBar
+				searchQuery={searchQuery}
+				onSearchChange={setSearchQuery}
+				visibleComponents={visibleComponents}
+				onClear={handleClear}
+			/>
 		</div>
 	);
 }

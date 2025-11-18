@@ -1,9 +1,11 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useMutation } from "convex/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { convexQuery } from "@/lib/convex-query";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -44,7 +46,17 @@ export function InviteUserDialog({
 	const [message, setMessage] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 
+	// Get user's role in this event to determine available invitation roles
+	const { data: userRole } = useSuspenseQuery(
+		convexQuery(api.events.getUserRole, {
+			eventId,
+		}),
+	);
+
 	const sendInvitation = useMutation(api.eventInvitations.sendInvitation);
+
+	// Determine if user can invite coordinators (only coordinators can)
+	const canInviteCoordinators = userRole === "coordinator";
 
 	const isValidEmail = (email: string) => {
 		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -163,14 +175,16 @@ export function InviteUserDialog({
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
-								<SelectItem value="coordinator">
-									<div className="flex flex-col items-start py-1">
-										<span className="font-medium">Coordinator</span>
-										<span className="text-xs text-gray-500">
-											Full permissions
-										</span>
-									</div>
-								</SelectItem>
+								{canInviteCoordinators && (
+									<SelectItem value="coordinator">
+										<div className="flex flex-col items-start py-1">
+											<span className="font-medium">Coordinator</span>
+											<span className="text-xs text-gray-500">
+												Full permissions
+											</span>
+										</div>
+									</SelectItem>
+								)}
 								<SelectItem value="collaborator">
 									<div className="flex flex-col items-start py-1">
 										<span className="font-medium">Collaborator</span>

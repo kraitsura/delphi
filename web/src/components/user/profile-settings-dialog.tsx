@@ -38,7 +38,7 @@ const themeSetOptions = [
 	{
 		value: "redwood" as ThemeSet,
 		label: "Redwood",
-		colors: ["#F5F0D9", "#C9A875", "#5D8855", "#4A6443"],
+		colors: ["#F5F0D9", "#9A4945", "#6B4E38", "#98745D"],
 	},
 	{
 		value: "flare" as ThemeSet,
@@ -106,6 +106,8 @@ export function ProfileSettingsDialog() {
 
 	const handleSignOut = async () => {
 		await signOut();
+		// Use hard reload to cleanly unmount all components and cancel queries
+		window.location.href = "/auth/sign-in";
 	};
 
 	return (

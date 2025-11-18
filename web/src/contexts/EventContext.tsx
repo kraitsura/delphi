@@ -2,8 +2,8 @@ import { api } from "@convex/_generated/api";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { useConvexAuth } from "convex/react";
 import { createContext, type ReactNode, useContext } from "react";
-import { useSession } from "@/lib/auth";
 import { convexQuery } from "@/lib/convex-query";
 
 /**
@@ -57,16 +57,17 @@ interface EventProviderProps {
 export function EventProvider({ children, userId }: EventProviderProps) {
 	const params = useParams({ strict: false });
 	const navigate = useNavigate();
-	const { data: session } = useSession();
+	const { isAuthenticated } = useConvexAuth();
 
 	// Check if we're on an event route by looking for eventId param
 	const eventId = "eventId" in params ? (params.eventId as string) : null;
 	const isInEventContext = eventId !== null;
 
-	// Fetch event data when in event context AND session is ready
-	// This prevents unauthenticated queries during initialization
+	// Fetch event data when in event context AND Convex auth is ready
+	// With expectAuth: true on ConvexReactClient, queries automatically pause
+	// until authentication completes, preventing race conditions
 	const { data } = useSuspenseQuery(
-		eventId && session?.user
+		eventId && isAuthenticated
 			? convexQuery(api.events.getById, { eventId: eventId as Id<"events"> })
 			: ({
 					queryKey: ["no-event"],

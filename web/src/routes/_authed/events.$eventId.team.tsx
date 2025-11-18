@@ -33,8 +33,8 @@ function TeamPage() {
 		}),
 	);
 
-	// Only coordinators can access team management
-	if (userRole !== "coordinator") {
+	// Only coordinators and collaborators can access team management
+	if (userRole !== "coordinator" && userRole !== "collaborator") {
 		return (
 			<div className="flex items-center justify-center min-h-[400px]">
 				<p className="text-sm text-gray-400">

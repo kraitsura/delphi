@@ -65,6 +65,21 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 	const [isSaving, setIsSaving] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
+	// Validation arrays
+	const validStatuses = ["pending", "paid", "overdue"];
+	const validCategories = [
+		"venue",
+		"catering",
+		"photography",
+		"music",
+		"decor",
+		"supplies",
+		"transportation",
+		"accommodation",
+		"other",
+	];
+	const validPaymentMethods = ["cash", "card", "transfer", "check", "other"];
+
 	// Initialize form when expense loads
 	useEffect(() => {
 		if (expense && !isEditing) {
@@ -88,8 +103,8 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 				expenseId,
 				description,
 				amount: Number.parseFloat(amount),
-				category,
-				paymentMethod,
+				category: category || expense.category,
+				paymentMethod: paymentMethod || expense.paymentMethod,
 				receiptUrl: receiptUrl || undefined,
 			});
 			showToast("The expense has been updated successfully.", "success");
@@ -140,7 +155,7 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 
 	return (
 		<Dialog open={true} onOpenChange={() => closeModal(modalId)}>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] flex flex-col">
 				<DialogHeader>
 					<DialogTitle>Expense Details</DialogTitle>
 					<DialogDescription>
@@ -148,7 +163,7 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4">
+				<div className="overflow-y-auto flex-1 space-y-4 px-1">
 					{/* Description */}
 					<div className="space-y-2">
 						<Label htmlFor="description">Description</Label>
@@ -166,7 +181,7 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 					</div>
 
 					{/* Amount */}
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div className="space-y-2">
 							<Label htmlFor="amount">Amount</Label>
 							{isEditing ? (
@@ -190,7 +205,11 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 							{isEditing ? (
 								<Select
 									value={status}
-									onValueChange={(value) => setStatus(value as typeof status)}
+									onValueChange={(value) => {
+									if (value && validStatuses.includes(value)) {
+										setStatus(value as typeof status);
+									}
+								}}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -218,13 +237,17 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 					</div>
 
 					{/* Category and Payment Method */}
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div className="space-y-2">
 							<Label htmlFor="category">Category</Label>
 							{isEditing ? (
 								<Select
 									value={category}
-									onValueChange={(value) => setCategory(value as typeof category)}
+									onValueChange={(value) => {
+									if (value && validCategories.includes(value)) {
+										setCategory(value as typeof category);
+									}
+								}}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -253,9 +276,11 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 							{isEditing ? (
 								<Select
 									value={paymentMethod}
-									onValueChange={(value) =>
-										setPaymentMethod(value as typeof paymentMethod)
-									}
+									onValueChange={(value) => {
+										if (value && validPaymentMethods.includes(value)) {
+											setPaymentMethod(value as typeof paymentMethod);
+										}
+									}}
 								>
 									<SelectTrigger>
 										<SelectValue />
@@ -308,7 +333,7 @@ export function ExpenseDetailsModal(props: ExpenseDetailsModalProps) {
 					</div>
 				</div>
 
-				<DialogFooter className="gap-2">
+				<DialogFooter className="mt-4 flex-shrink-0 gap-2">
 					{isEditing ? (
 						<>
 							<Button

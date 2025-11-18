@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
 	Tooltip,
 	TooltipContent,
-	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ProfileSettingsDialog } from "@/components/user/profile-settings-dialog";
@@ -52,90 +51,88 @@ export function EventSidebarToolbar() {
 
 	return (
 		<div className="flex items-center justify-between gap-1 px-2 pt-0.5 pb-2">
-			<TooltipProvider delayDuration={0}>
-				<div className="flex items-center gap-1">
-					{/* Dashboard, Calendar, Profile - hidden when collapsed */}
-					<div className="flex items-center gap-1 group-data-[collapsible=icon]:hidden">
-						{/* Event Dashboard */}
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-									onClick={handleNavigateToEventDashboard}
-								>
-									<Home className="h-4 w-4" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								<p>Dashboard</p>
-							</TooltipContent>
-						</Tooltip>
-
-						{/* Calendar */}
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="h-8 w-8"
-									onClick={handleNavigateToCalendar}
-								>
-									<Calendar className="h-4 w-4" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								<p>Calendar</p>
-							</TooltipContent>
-						</Tooltip>
-
-						{/* Profile & Settings */}
-						<ProfileSettingsDialog />
-					</div>
-
-					{/* Dark/Light Mode Toggle - always visible */}
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="h-8 w-8"
-								onClick={handleToggleMode}
-							>
-								{mode === "light" ? (
-									<Moon className="h-4 w-4" />
-								) : (
-									<Sun className="h-4 w-4" />
-								)}
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							<p>{mode === "light" ? "Dark Mode" : "Light Mode"}</p>
-						</TooltipContent>
-					</Tooltip>
-				</div>
-
-				{/* Create Room - hidden when collapsed */}
+			<div className="flex items-center gap-1">
+				{/* Dashboard, Calendar, Profile - hidden when collapsed */}
 				<div className="flex items-center gap-1 group-data-[collapsible=icon]:hidden">
-					{/* Create Room */}
+					{/* Event Dashboard */}
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
 								variant="ghost"
 								size="icon"
 								className="h-8 w-8"
-								onClick={() => setCreateDialogOpen(true)}
+								onClick={handleNavigateToEventDashboard}
 							>
-								<Plus className="h-4 w-4" />
+								<Home className="h-4 w-4" />
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent side="bottom">
-							<p>Create Room</p>
+							<p>Dashboard</p>
 						</TooltipContent>
 					</Tooltip>
+
+					{/* Calendar */}
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="h-8 w-8"
+								onClick={handleNavigateToCalendar}
+							>
+								<Calendar className="h-4 w-4" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							<p>Calendar</p>
+						</TooltipContent>
+					</Tooltip>
+
+					{/* Profile & Settings */}
+					<ProfileSettingsDialog />
 				</div>
-			</TooltipProvider>
+
+				{/* Dark/Light Mode Toggle - always visible */}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8"
+							onClick={handleToggleMode}
+						>
+							{mode === "light" ? (
+								<Moon className="h-4 w-4" />
+							) : (
+								<Sun className="h-4 w-4" />
+							)}
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent side="bottom">
+						<p>{mode === "light" ? "Dark Mode" : "Light Mode"}</p>
+					</TooltipContent>
+				</Tooltip>
+			</div>
+
+			{/* Create Room - hidden when collapsed */}
+			<div className="flex items-center gap-1 group-data-[collapsible=icon]:hidden">
+				{/* Create Room */}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-8 w-8"
+							onClick={() => setCreateDialogOpen(true)}
+						>
+							<Plus className="h-4 w-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent side="bottom">
+						<p>Create Room</p>
+					</TooltipContent>
+				</Tooltip>
+			</div>
 
 			{/* Room Create Dialog */}
 			<RoomCreateDialog

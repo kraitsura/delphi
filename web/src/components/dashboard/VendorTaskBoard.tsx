@@ -96,7 +96,7 @@ export function VendorTaskBoard(props: VendorTaskBoardProps) {
 		return (
 			<Card className="fluid-component-card">
 				<CardHeader className="fluid-component-header">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-4">
 						<CardTitle className="fluid-component-title">
 							{SYMBOLS.BLACK_SQUARE} Vendor Task Board
 						</CardTitle>

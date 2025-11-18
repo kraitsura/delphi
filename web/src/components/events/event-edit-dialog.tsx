@@ -1,7 +1,6 @@
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -20,20 +19,32 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface EventEditDialogProps {
 	eventId: Id<"events">;
-	trigger?: React.ReactNode;
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 	onSuccess?: () => void;
+	trigger?: React.ReactNode;
 }
 
 export function EventEditDialog({
 	eventId,
-	trigger,
+	open: controlledOpen,
+	onOpenChange: controlledOnOpenChange,
 	onSuccess,
+	trigger,
 }: EventEditDialogProps) {
-	const [open, setOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [internalOpen, setInternalOpen] = useState(false);
 
-	// Fetch current event data
-	const event = useQuery(api.events.getById, { eventId });
+	// Determine if the dialog is controlled or uncontrolled
+	const isControlled = controlledOpen !== undefined;
+	const open = isControlled ? controlledOpen : internalOpen;
+	const onOpenChange = isControlled ? controlledOnOpenChange : setInternalOpen;
+
+	// Fetch current event data - only query if we have a valid eventId
+	const event = useQuery(
+		api.events.getById,
+		eventId ? { eventId } : "skip"
+	);
 	const updateEvent = useMutation(api.events.update);
 
 	// Form state
@@ -101,7 +112,7 @@ export function EventEditDialog({
 			});
 
 			toast.success("Event updated successfully!");
-			setOpen(false);
+			onOpenChange?.(false);
 			onSuccess?.();
 		} catch (error) {
 			console.error("Failed to update event:", error);
@@ -114,15 +125,8 @@ export function EventEditDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				{trigger || (
-					<Button variant="outline" size="sm">
-						<Pencil className="h-4 w-4 mr-2" />
-						Edit Event
-					</Button>
-				)}
-			</DialogTrigger>
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			{trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
 			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Edit Event</DialogTitle>
@@ -267,7 +271,7 @@ export function EventEditDialog({
 						<Button
 							type="button"
 							variant="outline"
-							onClick={() => setOpen(false)}
+							onClick={() => onOpenChange?.(false)}
 							disabled={isLoading}
 						>
 							Cancel

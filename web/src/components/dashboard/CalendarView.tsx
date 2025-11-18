@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SYMBOLS } from "@/lib/fluid-ui/symbols";
+import { useDashboardStore } from "@/lib/fluid-ui/DashboardStoreContext";
 
 export interface CalendarViewProps {
 	eventId: Id<"events">;
@@ -30,9 +31,10 @@ export function CalendarView(props: CalendarViewProps) {
 		props.currentDate || Date.now(),
 	);
 
+	const openModal = useDashboardStore((state) => state.openModal);
+
 	const event = useQuery(api.events.getById, { eventId: props.eventId });
-	// TODO: Implement tasks API
-	const tasks: unknown[] = [];
+	const tasks = useQuery(api.tasks.listByEvent, { eventId: props.eventId });
 
 	const calendarEvents = useMemo(() => {
 		if (!event) return [];
@@ -49,28 +51,30 @@ export function CalendarView(props: CalendarViewProps) {
 			});
 		}
 
-		// Add task due dates
-		// TODO: Re-enable when tasks API is implemented
-		// if (_showTasks) {
-		// 	tasks.forEach((task) => {
-		// 		if (task.deadline) {
-		// 			events.push({
-		// 				date: task.deadline,
-		// 				type: "task",
-		// 				title: task.title,
-		// 				color:
-		// 					task.status === "completed"
-		// 						? "bg-green-500"
-		// 						: task.status === "blocked"
-		// 							? "bg-red-500"
-		// 							: "bg-blue-500",
-		// 			});
-		// 		}
-		// 	});
-		// }
+		// Add task deadlines with priority-based colors
+		if (_showTasks && tasks) {
+			tasks.forEach((task) => {
+				if (task.deadline) {
+					// Priority-based color mapping
+					const priorityColors = {
+						low: "bg-slate-400",
+						medium: "bg-yellow-400",
+						high: "bg-orange-500",
+						urgent: "bg-red-500",
+					};
+
+					events.push({
+						date: task.deadline,
+						type: "task",
+						title: task.title,
+						color: priorityColors[task.priority],
+					});
+				}
+			});
+		}
 
 		return events;
-	}, [event]);
+	}, [event, tasks, _showTasks]);
 
 	const { daysInMonth, firstDayOfMonth, monthName, year } = useMemo(() => {
 		const date = new Date(currentDate);
@@ -186,7 +190,19 @@ export function CalendarView(props: CalendarViewProps) {
 								onClick={() => {
 									const date = new Date(currentDate);
 									date.setDate(day);
-									onDateSelect?.(date.getTime());
+									const dateTimestamp = date.getTime();
+
+									// Open modal if day has any events (task deadlines or event date)
+									if (dayEvents.length > 0) {
+										openModal("daily-deadlines", "DailyDeadlinesModal", {
+											eventId: props.eventId,
+											date: dateTimestamp,
+											modalId: "daily-deadlines",
+										});
+									}
+
+									// Call original callback
+									onDateSelect?.(dateTimestamp);
 								}}
 							>
 								<div className={`text-sm ${today ? "font-semibold" : ""}`}>

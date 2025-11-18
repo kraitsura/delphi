@@ -263,10 +263,13 @@ code {
 
 /* Redwood theme - Light Mode */
 .theme-redwood {
-    /* Main colors - earthy brown and forest green */
+    /* Main colors - rich burgundy and earthy tones with balanced forest green */
     --earth-cream: oklch(0.96 0.03 80);
     --pitch-black: oklch(0.24 0 0);
-    --bark-brown: oklch(0.78 0.08 65);
+    --rich-burgundy: oklch(0.50 0.12 20);
+    --deep-brown: oklch(0.42 0.06 55);
+    --red-orange: oklch(0.58 0.12 35);
+    --warm-terracotta: oklch(0.56 0.10 40);
     --forest-green: oklch(0.48 0.10 135);
     --moss-dark: oklch(0.38 0.08 125);
 
@@ -280,89 +283,89 @@ code {
     --popover: var(--earth-cream);
     --popover-foreground: var(--pitch-black);
 
-    --primary: var(--forest-green);
+    --primary: var(--rich-burgundy);
     --primary-foreground: var(--earth-cream);
 
-    --secondary: var(--bark-brown);
-    --secondary-foreground: var(--moss-dark);
+    --secondary: var(--warm-terracotta);
+    --secondary-foreground: var(--earth-cream);
 
     --muted: oklch(0.92 0.02 80);
-    --muted-foreground: oklch(0.46 0.03 125);
+    --muted-foreground: oklch(0.46 0.03 55);
 
-    --accent: var(--bark-brown);
-    --accent-foreground: var(--moss-dark);
+    --accent: var(--red-orange);
+    --accent-foreground: var(--earth-cream);
 
     --destructive: oklch(0.52 0.15 30);
     --destructive-foreground: var(--earth-cream);
 
     --border: oklch(0.88 0.02 75);
     --input: oklch(0.88 0.02 75);
-    --ring: var(--forest-green);
+    --ring: var(--rich-burgundy);
 
-    /* Chart colors */
-    --chart-1: var(--forest-green);
-    --chart-2: var(--bark-brown);
-    --chart-3: var(--moss-dark);
-    --chart-4: oklch(0.72 0.10 140);
-    --chart-5: oklch(0.60 0.09 70);
+    /* Chart colors - balanced burgundy and green palette */
+    --chart-1: var(--rich-burgundy);
+    --chart-2: var(--forest-green);
+    --chart-3: var(--red-orange);
+    --chart-4: var(--moss-dark);
+    --chart-5: var(--warm-terracotta);
 
-    /* Sidebar colors - earthy in light mode */
+    /* Sidebar colors - warm burgundy accents */
     --sidebar: oklch(0.95 0.03 75);
-    --sidebar-foreground: var(--forest-green);
+    --sidebar-foreground: var(--rich-burgundy);
     --sidebar-muted: oklch(0.92 0.04 75);
-    --sidebar-muted-foreground: var(--moss-dark);
+    --sidebar-muted-foreground: var(--warm-terracotta);
     --sidebar-accent: oklch(0.88 0.05 75);
-    --sidebar-accent-foreground: var(--forest-green);
+    --sidebar-accent-foreground: var(--rich-burgundy);
     --sidebar-border: oklch(0.84 0.05 75);
-    --sidebar-ring: var(--forest-green);
+    --sidebar-ring: var(--rich-burgundy);
 }
 
 /* Redwood theme - Dark Mode */
 .theme-redwood.dark {
-    --background: oklch(0.25 0.05 120);
-    --foreground: oklch(0.96 0.03 80);
+    --background: oklch(0.22 0.04 110);
+    --foreground: oklch(0.92 0.03 75);
 
-    --card: oklch(0.28 0.05 120);
-    --card-foreground: oklch(0.96 0.03 80);
+    --card: oklch(0.26 0.04 100);
+    --card-foreground: oklch(0.92 0.03 75);
 
-    --popover: oklch(0.28 0.05 120);
-    --popover-foreground: oklch(0.96 0.03 80);
+    --popover: oklch(0.26 0.04 100);
+    --popover-foreground: oklch(0.92 0.03 75);
 
-    --primary: oklch(0.62 0.12 135);
-    --primary-foreground: oklch(0.96 0.03 80);
+    --primary: oklch(0.65 0.12 25);
+    --primary-foreground: oklch(0.22 0.04 110);
 
-    --secondary: oklch(0.70 0.10 70);
-    --secondary-foreground: oklch(0.28 0.05 120);
+    --secondary: oklch(0.60 0.10 35);
+    --secondary-foreground: oklch(0.22 0.04 110);
 
-    --muted: oklch(0.32 0.04 120);
-    --muted-foreground: oklch(0.76 0.06 70);
+    --muted: oklch(0.30 0.04 105);
+    --muted-foreground: oklch(0.68 0.08 30);
 
-    --accent: oklch(0.70 0.10 70);
-    --accent-foreground: oklch(0.28 0.05 120);
+    --accent: oklch(0.70 0.11 30);
+    --accent-foreground: oklch(0.22 0.04 110);
 
-    --destructive: oklch(0.60 0.16 30);
-    --destructive-foreground: oklch(0.96 0.03 80);
+    --destructive: oklch(0.62 0.17 25);
+    --destructive-foreground: oklch(0.92 0.03 75);
 
-    --border: oklch(0.36 0.04 120);
-    --input: oklch(0.36 0.04 120);
-    --ring: oklch(0.62 0.12 135);
+    --border: oklch(0.35 0.04 100);
+    --input: oklch(0.35 0.04 100);
+    --ring: oklch(0.65 0.12 25);
 
-    /* Chart colors in dark mode */
-    --chart-1: oklch(0.65 0.13 135);
-    --chart-2: oklch(0.72 0.11 70);
-    --chart-3: oklch(0.55 0.10 125);
-    --chart-4: oklch(0.75 0.11 145);
-    --chart-5: oklch(0.68 0.10 75);
+    /* Chart colors in dark mode - vibrant balanced palette */
+    --chart-1: oklch(0.65 0.12 25);
+    --chart-2: oklch(0.62 0.12 140);
+    --chart-3: oklch(0.70 0.11 30);
+    --chart-4: oklch(0.58 0.10 150);
+    --chart-5: oklch(0.68 0.09 40);
 
-    /* Sidebar colors - darker earthy in dark mode */
-    --sidebar: oklch(0.30 0.06 120);
-    --sidebar-foreground: oklch(0.86 0.08 135);
-    --sidebar-muted: oklch(0.36 0.06 120);
-    --sidebar-muted-foreground: oklch(0.76 0.07 70);
-    --sidebar-accent: oklch(0.40 0.07 120);
-    --sidebar-accent-foreground: oklch(0.90 0.08 135);
-    --sidebar-border: oklch(0.44 0.07 120);
-    --sidebar-ring: oklch(0.62 0.12 135);
+    /* Sidebar colors - rich burgundy accents in dark mode */
+    --sidebar: oklch(0.28 0.04 105);
+    --sidebar-foreground: oklch(0.75 0.10 28);
+    --sidebar-muted: oklch(0.32 0.04 100);
+    --sidebar-muted-foreground: oklch(0.65 0.09 35);
+    --sidebar-accent: oklch(0.36 0.05 95);
+    --sidebar-accent-foreground: oklch(0.80 0.11 25);
+    --sidebar-border: oklch(0.40 0.05 100);
+    --sidebar-ring: oklch(0.65 0.12 25);
 }
 
 /* Flare theme - Light Mode */

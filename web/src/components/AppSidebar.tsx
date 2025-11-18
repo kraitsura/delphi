@@ -1,13 +1,14 @@
 import { api } from "@convex/_generated/api";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { Calendar, LogOut, Users } from "lucide-react";
+import { ArrowLeft, Calendar, LogOut, Moon, Sun, Users } from "lucide-react";
 import { AppSidebarProfileSkeleton } from "@/components/AppSidebarProfileSkeleton";
 import { EventSidebarToolbar } from "@/components/EventSidebarToolbar";
 import { EventSidebarToolbarSkeleton } from "@/components/events/EventSidebarToolbarSkeleton";
 import { RoomListSkeleton } from "@/components/events/RoomListSkeleton";
-import { RoomList } from "@/components/RoomList";
+import { RoomList } from "@/components/sidebar-room-list";
 import { ThemeSetToggle } from "@/components/theme-set-toggle";
+import { useThemeSet } from "@/components/theme-set-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,6 +24,11 @@ import {
 	SidebarMenuItem,
 	SidebarSeparator,
 } from "@/components/ui/sidebar";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useEvent } from "@/contexts/EventContext";
 import { signOut, useSession } from "@/lib/auth";
 import { convexQuery } from "@/lib/convex-query";
@@ -45,6 +51,7 @@ export function AppSidebar() {
 	const { data: session } = useSession();
 	const params = useParams({ strict: false });
 	const { event } = useEvent();
+	const { mode, setMode } = useThemeSet();
 
 	// Detect event context from URL immediately (no async wait)
 	const isOnEventRoute = "eventId" in params && params.eventId !== null;
@@ -62,6 +69,12 @@ export function AppSidebar() {
 
 	const handleSignOut = async () => {
 		await signOut();
+		// Use hard reload to cleanly unmount all components and cancel queries
+		window.location.href = "/auth/sign-in";
+	};
+
+	const handleToggleMode = () => {
+		setMode(mode === "light" ? "dark" : "light");
 	};
 
 	// Get user initials for avatar
@@ -80,17 +93,25 @@ export function AppSidebar() {
 			<Sidebar variant="inset" collapsible="icon">
 				<SidebarHeader className="p-0">
 					{/* Logo */}
-					<Link
-						to="/events"
-						className="flex items-center gap-3 px-2 py-2 h-12 overflow-hidden group-data-[collapsible=icon]:gap-0"
-					>
-						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-							<span className="text-lg font-bold">D</span>
-						</div>
-						<div className="flex flex-col group-data-[collapsible=icon]:hidden">
-							<span className="text-lg font-semibold">Delphi</span>
-						</div>
-					</Link>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Link
+								to="/events"
+								className="group flex items-center gap-3 px-2 py-2 h-12 overflow-hidden group-data-[collapsible=icon]:gap-0 hover:bg-sidebar-accent rounded-md transition-colors duration-200"
+							>
+								<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+									<span className="text-lg font-bold">D</span>
+								</div>
+								<div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+									<span className="text-lg font-semibold">Delphi</span>
+									<ArrowLeft className="h-4 w-4 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out" />
+								</div>
+							</Link>
+						</TooltipTrigger>
+						<TooltipContent side="right">
+							<p>Back to events</p>
+						</TooltipContent>
+					</Tooltip>
 					<SidebarSeparator className="mx-auto group-data-[collapsible=icon]:w-8 -mt-px" />
 
 					{/* Horizontal toolbar with icons */}
@@ -188,6 +209,19 @@ export function AppSidebar() {
 
 			<SidebarFooter>
 				<SidebarMenu>
+					<SidebarMenuItem>
+						<SidebarMenuButton
+							onClick={handleToggleMode}
+							tooltip={mode === "light" ? "Dark Mode" : "Light Mode"}
+						>
+							{mode === "light" ? (
+								<Moon className="h-4 w-4" />
+							) : (
+								<Sun className="h-4 w-4" />
+							)}
+							<span>{mode === "light" ? "Dark Mode" : "Light Mode"}</span>
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 					<SidebarMenuItem>
 						<ThemeSetToggle />
 					</SidebarMenuItem>

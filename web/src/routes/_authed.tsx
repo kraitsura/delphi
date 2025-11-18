@@ -1,6 +1,6 @@
 import { api } from "@convex/_generated/api";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, useConvexAuth } from "convex/react";
 import { Suspense, useEffect, useRef } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { LoadingFallback } from "@/components/loading-fallback";
@@ -15,7 +15,6 @@ import { EventProvider } from "@/contexts/EventContext";
 import { HeaderProvider, useHeader } from "@/contexts/HeaderContext";
 import { useActivityTracker } from "@/hooks/use-activity-tracker";
 import ConvexProvider from "@/integrations/convex/provider";
-import { useSession } from "@/lib/auth";
 
 /**
  * Authenticated Layout Route
@@ -75,31 +74,20 @@ function ActivityTracker() {
  * ProfileCreator Component
  * Fallback mechanism to create user profile if Better Auth trigger failed
  * Triggers should create profile automatically, but this ensures profile exists
- * Waits for session to be ready before attempting profile creation
+ * Waits for Convex auth to be ready before attempting profile creation
  */
 function ProfileCreator() {
-	const { data: session } = useSession();
+	const { isAuthenticated } = useConvexAuth();
 	const userProfile = useQuery(api.users.getMyProfile);
 	const createProfile = useMutation(api.users.createOrUpdateProfile);
 	const isCreatingRef = useRef(false);
 
 	useEffect(() => {
-		// Wait for session to be fully loaded before checking profile
-		if (!session?.user) {
-			console.log("[ProfileCreator] Waiting for session to load...");
+		// Wait for Convex auth to be ready before checking profile
+		// With expectAuth: true, queries won't execute until authenticated
+		if (!isAuthenticated) {
 			return;
 		}
-
-		console.log("[ProfileCreator] Session loaded:", {
-			email: session.user.email,
-			verified: session.user.emailVerified,
-			profileStatus:
-				userProfile === undefined
-					? "loading"
-					: userProfile === null
-						? "missing"
-						: "exists",
-		});
 
 		// If profile is still loading, wait
 		if (userProfile === undefined) {
@@ -109,11 +97,10 @@ function ProfileCreator() {
 		// If user is loaded and profile doesn't exist, create it
 		// Guard against multiple simultaneous calls
 		if (userProfile === null && !isCreatingRef.current) {
-			console.log("[ProfileCreator] Creating profile for:", session.user.email);
 			isCreatingRef.current = true;
 			createProfile({})
 				.then(() => {
-					console.log("[ProfileCreator] Profile created successfully");
+					// Profile created successfully
 				})
 				.catch((error) => {
 					console.error(
@@ -122,10 +109,8 @@ function ProfileCreator() {
 					);
 					isCreatingRef.current = false; // Reset on error to allow retry
 				});
-		} else if (userProfile) {
-			console.log("[ProfileCreator] Profile already exists, skipping creation");
 		}
-	}, [session, userProfile, createProfile]);
+	}, [userProfile, createProfile, isAuthenticated]);
 
 	return null;
 }
@@ -154,19 +139,52 @@ function SidebarAwareHeader() {
 
 /**
  * Authenticated Layout Component
- * Wraps children with ConvexProvider, EventProvider, sidebar navigation, and activity tracking
+ * Wraps children with ConvexProvider
+ * The actual auth-dependent logic is in AuthenticatedContent below
  */
 function AuthenticatedLayout() {
-	const { userId } = Route.useRouteContext();
-	const { data: session } = useSession();
-
 	return (
 		<ConvexProvider>
+			<AuthenticatedContent />
+		</ConvexProvider>
+	);
+}
+
+/**
+ * Authenticated Content Component
+ * Contains all auth-dependent logic and UI
+ * Must be rendered inside ConvexProvider so useConvexAuth() works
+ */
+function AuthenticatedContent() {
+	const { userId } = Route.useRouteContext();
+	const { isLoading, isAuthenticated } = useConvexAuth();
+
+	// Wait for Convex auth to be ready (with expectAuth: true, this pauses queries)
+	// This prevents "Unauthenticated" errors from race conditions where queries
+	// execute before Convex validates the Better Auth token
+	if (isLoading) {
+		return (
+			<HeaderProvider>
+				<SidebarProvider>
+					<AppSidebar />
+					<SidebarInset className="flex flex-col">
+						<SidebarAwareHeader />
+						<div className="flex-1 min-h-0 overflow-auto">
+							<LoadingFallback />
+						</div>
+					</SidebarInset>
+				</SidebarProvider>
+			</HeaderProvider>
+		);
+	}
+
+	return (
+		<>
 			<ActivityTracker />
 			<ProfileCreator />
-			{/* Only sync theme once session is ready to avoid unauthenticated queries */}
+			{/* Only sync theme once Convex auth is ready to avoid unauthenticated queries */}
 			<Suspense fallback={null}>
-				{session?.user && <ThemeConvexSync />}
+				{isAuthenticated && <ThemeConvexSync />}
 			</Suspense>
 			<Suspense
 				fallback={
@@ -197,6 +215,6 @@ function AuthenticatedLayout() {
 					</HeaderProvider>
 				</EventProvider>
 			</Suspense>
-		</ConvexProvider>
+		</>
 	);
 }

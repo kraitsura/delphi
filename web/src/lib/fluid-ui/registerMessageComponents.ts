@@ -9,6 +9,7 @@ import { AddExpenseModal } from "@/components/dashboard/AddExpenseModal";
 import { AddTaskModal } from "@/components/dashboard/AddTaskModal";
 import { AddVendorModal } from "@/components/dashboard/AddVendorModal";
 import { CalendarView } from "@/components/dashboard/CalendarView";
+import { DailyDeadlinesModal } from "@/components/dashboard/DailyDeadlinesModal";
 import { ExpenseDetailsModal } from "@/components/dashboard/ExpenseDetailsModal";
 import { ExpensesList } from "@/components/dashboard/ExpensesList";
 import { ExpensesSummary } from "@/components/dashboard/ExpensesSummary";
@@ -1263,7 +1264,42 @@ export function registerMessageComponents() {
 		},
 	});
 
-	console.log("[Fluid UI] Message components registered successfully");
+	// DailyDeadlinesModal - For viewing task deadlines on a specific day
+	registerComponent("DailyDeadlinesModal", DailyDeadlinesModal, {
+		name: "Daily Deadlines Modal",
+		description:
+			"Modal showing all task deadlines for a specific day with expandable details",
+		layoutRules: {
+			canShare: false,
+			mustSpanFull: false,
+			preferredRatio: "1fr",
+			minWidth: "600px",
+			minHeight: "400px",
+		},
+		connections: {
+			canBeMaster: false,
+			canBeDetail: false,
+			emits: [],
+			listensTo: [],
+		},
+		props: {
+			eventId: {
+				type: "string",
+				required: true,
+				description: "Event ID to fetch tasks for",
+			},
+			date: {
+				type: "number",
+				required: true,
+				description: "Unix timestamp of the selected day",
+			},
+			modalId: {
+				type: "string",
+				required: true,
+				description: "Unique modal ID for managing modal state",
+			},
+		},
+	});
 }
 
 /**
@@ -1295,6 +1331,7 @@ export function areMessageComponentsRegistered(): boolean {
 		"RoomActivity",
 		"PollsList",
 		"CalendarView",
+		"DailyDeadlinesModal",
 	];
 
 	// Import hasComponent from registry
