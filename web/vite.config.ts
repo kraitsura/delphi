@@ -39,12 +39,19 @@ const config = defineConfig({
             return 'dnd-kit';
           }
 
-          // Convex and auth (excluding external modules)
-          if (
-            id.includes('convex') &&
-            !id.includes('@convex-dev/better-auth') &&
-            !id.includes('@convex-dev/react-query')
-          ) {
+          // Convex - split auth-related modules into separate chunk
+          if (id.includes('convex')) {
+            // Keep auth-related Convex modules separate to avoid circular dependency issues
+            if (id.includes('@convex-dev/better-auth')) {
+              return 'auth-vendor';
+            }
+            if (id.includes('@convex-dev/react-query')) {
+              return 'convex-react';
+            }
+            // Don't bundle _generated files with other convex files
+            if (id.includes('_generated')) {
+              return 'convex-generated';
+            }
             return 'convex-vendor';
           }
 
