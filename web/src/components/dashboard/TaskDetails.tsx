@@ -94,7 +94,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 	if (task === undefined) {
 		return (
 			<Dialog open onOpenChange={handleClose}>
-				<DialogContent className="max-w-2xl">
+				<DialogContent className="max-w-[95vw] sm:max-w-2xl">
 					<TaskDetailsSkeleton />
 				</DialogContent>
 			</Dialog>
@@ -105,7 +105,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 	if (!task) {
 		return (
 			<Dialog open onOpenChange={handleClose}>
-				<DialogContent className="max-w-2xl">
+				<DialogContent className="max-w-[95vw] sm:max-w-2xl">
 					<DialogHeader>
 						<DialogTitle>Task Not Found</DialogTitle>
 						<DialogDescription>
@@ -157,7 +157,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 	if (isEditing) {
 		return (
 			<Dialog open onOpenChange={handleClose}>
-				<DialogContent className="max-w-2xl">
+				<DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] overflow-y-auto">
 					<DialogHeader>
 						<DialogTitle>Edit Task</DialogTitle>
 						<DialogDescription>
@@ -165,6 +165,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 						</DialogDescription>
 					</DialogHeader>
 					<TaskEditor
+						key={`edit-${taskId}-${isEditing}`}
 						taskId={taskId}
 						onSave={handleSave}
 						onCancel={handleCancelEdit}
@@ -177,7 +178,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 	// Read-only view
 	return (
 		<Dialog open onOpenChange={handleClose}>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] flex flex-col">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-3">
 						<span className={`text-xl priority-indicator--${task.priority}`}>
@@ -186,7 +187,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 						<span className="flex-1">{task.title}</span>
 					</DialogTitle>
 					<DialogDescription>
-						<div className="flex flex-wrap items-center gap-2 mt-2">
+						<span className="flex flex-wrap items-center gap-2 mt-2">
 							<Badge
 								className={`status-badge status-badge--${task.status.replace("_", "-")}`}
 							>
@@ -201,11 +202,11 @@ export function TaskDetails(props: TaskDetailsProps) {
 							>
 								{task.priority}
 							</Badge>
-						</div>
+						</span>
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-6">
+				<div className="overflow-y-auto flex-1 space-y-6 px-1">
 					{/* Description */}
 					{task.description && (
 						<div>
@@ -219,7 +220,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 					<Separator />
 
 					{/* Task Details Grid */}
-					<div className="grid grid-cols-2 gap-4">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 						<div>
 							<h4 className="text-xs font-normal text-muted-foreground mb-1">
 								Due Date
@@ -227,26 +228,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 							<p className="text-sm">{formatDate(task.deadline)}</p>
 						</div>
 
-						{task.estimatedDuration && (
-							<div>
-								<h4 className="text-xs font-normal text-muted-foreground mb-1">
-									Estimated Time
-								</h4>
-								<p className="text-sm">{task.estimatedDuration} min</p>
-							</div>
-						)}
 
-						{task.estimatedCost && (
-							<div>
-								<h4 className="text-xs font-normal text-muted-foreground mb-1">
-									Estimated Cost
-								</h4>
-								<p className="text-sm fluid-mono">
-									${task.estimatedCost.min.toFixed(2)} - $
-									{task.estimatedCost.max.toFixed(2)}
-								</p>
-							</div>
-						)}
 
 						{task.assignedTo && (
 							<div>
@@ -263,7 +245,7 @@ export function TaskDetails(props: TaskDetailsProps) {
 					<Separator />
 
 					{/* Metadata */}
-					<div className="grid grid-cols-2 gap-4 text-xs text-muted-foreground">
+					<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-muted-foreground">
 						<div>
 							<p>Created: {formatDateTime(task.createdAt)}</p>
 							<p>Updated: {formatDateTime(task.updatedAt)}</p>
@@ -360,7 +342,7 @@ function TaskDetailsSkeleton() {
 				</div>
 			</div>
 			<Skeleton className="h-20 w-full" />
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 				<Skeleton className="h-12 w-full" />
 				<Skeleton className="h-12 w-full" />
 			</div>

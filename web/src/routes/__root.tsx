@@ -2,7 +2,6 @@ import {
 	fetchSession,
 	getCookieName,
 } from "@convex-dev/better-auth/react-start";
-import { TanStackDevtools } from "@tanstack/react-devtools";
 import type { QueryClient } from "@tanstack/react-query";
 import {
 	createRootRouteWithContext,
@@ -10,25 +9,24 @@ import {
 	Outlet,
 	Scripts,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { createServerFn } from "@tanstack/react-start";
 import { getCookie, getRequest } from "@tanstack/react-start/server";
-import { useEffect } from "react";
-import { scan } from "react-scan";
+import React, { useEffect } from "react";
 import { Toaster } from "sonner";
 import { ErrorBoundary } from "../components/errors/error-boundary";
 import { NotFound } from "../components/errors/not-found";
 import { ThemeSetProvider } from "../components/theme-set-provider";
 import { TooltipProvider } from "../components/ui/tooltip";
-import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import { registerMessageComponents } from "../lib/fluid-ui/registerMessageComponents";
 import appCss from "../styles.css?url";
 
 // Initialize React Scan only in development
 if (typeof window !== "undefined" && import.meta.env.DEV) {
-	scan({
-		enabled: true,
-		log: false,
+	import("react-scan").then(({ scan }) => {
+		scan({
+			enabled: true,
+			log: false,
+		});
 	});
 }
 
@@ -115,23 +113,10 @@ function RootComponent() {
 			<body className="h-full overflow-hidden">
 				<div className="h-full flex flex-col">
 					<ThemeSetProvider>
-						<TooltipProvider>
+						<TooltipProvider delayDuration={400}>
 							<Outlet />
 							<Toaster position="top-right" />
-							{import.meta.env.DEV && (
-								<TanStackDevtools
-									config={{
-										position: "bottom-right",
-									}}
-									plugins={[
-										{
-											name: "Tanstack Router",
-											render: <TanStackRouterDevtoolsPanel />,
-										},
-										TanStackQueryDevtools,
-									]}
-								/>
-							)}
+							{import.meta.env.DEV && <DevTools />}
 						</TooltipProvider>
 					</ThemeSetProvider>
 				</div>
@@ -139,4 +124,37 @@ function RootComponent() {
 			</body>
 		</html>
 	);
+}
+
+// Lazy load devtools only in development
+function DevTools() {
+	const [DevtoolsComponent, setDevtoolsComponent] = React.useState<
+		React.ComponentType<any> | null
+	>(null);
+
+	React.useEffect(() => {
+		Promise.all([
+			import("@tanstack/react-devtools"),
+			import("@tanstack/react-router-devtools"),
+			import("../integrations/tanstack-query/devtools"),
+		]).then(([{ TanStackDevtools }, { TanStackRouterDevtoolsPanel }, QueryDevtools]) => {
+			const Component = () => (
+				<TanStackDevtools
+					config={{
+						position: "bottom-right",
+					}}
+					plugins={[
+						{
+							name: "Tanstack Router",
+							render: <TanStackRouterDevtoolsPanel />,
+						},
+						QueryDevtools.default,
+					]}
+				/>
+			);
+			setDevtoolsComponent(() => Component);
+		});
+	}, []);
+
+	return DevtoolsComponent ? <DevtoolsComponent /> : null;
 }

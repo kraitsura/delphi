@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
 	Tooltip,
 	TooltipContent,
-	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
@@ -54,8 +53,7 @@ export function PresenceAvatarStack({
 			onClick={onClick}
 		>
 			<div className="flex -space-x-2">
-				<TooltipProvider>
-					{visibleUsers.map((user) => {
+				{visibleUsers.map((user) => {
 						const status = user.data?.status || "active";
 						const statusColors = {
 							active: "bg-green-500",
@@ -115,7 +113,6 @@ export function PresenceAvatarStack({
 							</TooltipContent>
 						</Tooltip>
 					)}
-				</TooltipProvider>
 			</div>
 		</Wrapper>
 	);

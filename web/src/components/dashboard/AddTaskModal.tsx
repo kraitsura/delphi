@@ -95,7 +95,7 @@ export function AddTaskModal(props: AddTaskModalProps) {
 
 	return (
 		<Dialog open={true} onOpenChange={() => closeModal(modalId)}>
-			<DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+			<DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] flex flex-col">
 				<DialogHeader>
 					<DialogTitle>Add New Task</DialogTitle>
 					<DialogDescription>
@@ -103,84 +103,86 @@ export function AddTaskModal(props: AddTaskModalProps) {
 					</DialogDescription>
 				</DialogHeader>
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* Title */}
-					<div className="space-y-2">
-						<Label htmlFor="title">
-							Title <span className="text-red-500">*</span>
-						</Label>
-						<Input
-							id="title"
-							value={title}
-							onChange={(e) => setTitle(e.target.value)}
-							placeholder="Enter task title"
-							required
-						/>
-					</div>
-
-					{/* Description */}
-					<div className="space-y-2">
-						<Label htmlFor="description">Description</Label>
-						<Textarea
-							id="description"
-							value={description}
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder="Enter task description"
-							rows={4}
-						/>
-					</div>
-
-					{/* Status and Priority */}
-					<div className="grid grid-cols-2 gap-4">
+				<form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+					<div className="overflow-y-auto flex-1 space-y-4 px-1">
+						{/* Title */}
 						<div className="space-y-2">
-							<Label htmlFor="status">Status</Label>
-							<Select
-								value={status}
-								onValueChange={(value) => setStatus(value as typeof status)}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="todo">Not Started</SelectItem>
-									<SelectItem value="in_progress">In Progress</SelectItem>
-									<SelectItem value="blocked">Blocked</SelectItem>
-									<SelectItem value="completed">Completed</SelectItem>
-								</SelectContent>
-							</Select>
+							<Label htmlFor="title">
+								Title <span className="text-red-500">*</span>
+							</Label>
+							<Input
+								id="title"
+								value={title}
+								onChange={(e) => setTitle(e.target.value)}
+								placeholder="Enter task title"
+								required
+							/>
 						</div>
 
+						{/* Description */}
 						<div className="space-y-2">
-							<Label htmlFor="priority">Priority</Label>
-							<Select
-								value={priority}
-								onValueChange={(value) => setPriority(value as typeof priority)}
-							>
-								<SelectTrigger>
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="low">Low</SelectItem>
-									<SelectItem value="medium">Medium</SelectItem>
-									<SelectItem value="high">High</SelectItem>
-									<SelectItem value="urgent">Urgent</SelectItem>
-								</SelectContent>
-							</Select>
+							<Label htmlFor="description">Description</Label>
+							<Textarea
+								id="description"
+								value={description}
+								onChange={(e) => setDescription(e.target.value)}
+								placeholder="Enter task description"
+								rows={4}
+							/>
+						</div>
+
+						{/* Status and Priority */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div className="space-y-2">
+								<Label htmlFor="status">Status</Label>
+								<Select
+									value={status}
+									onValueChange={(value) => setStatus(value as typeof status)}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="todo">Not Started</SelectItem>
+										<SelectItem value="in_progress">In Progress</SelectItem>
+										<SelectItem value="blocked">Blocked</SelectItem>
+										<SelectItem value="completed">Completed</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+
+							<div className="space-y-2">
+								<Label htmlFor="priority">Priority</Label>
+								<Select
+									value={priority}
+									onValueChange={(value) => setPriority(value as typeof priority)}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="low">Low</SelectItem>
+										<SelectItem value="medium">Medium</SelectItem>
+										<SelectItem value="high">High</SelectItem>
+										<SelectItem value="urgent">Urgent</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+
+						{/* Category */}
+						<div className="space-y-2">
+							<Label htmlFor="category">Category (optional)</Label>
+							<Input
+								id="category"
+								value={category}
+								onChange={(e) => setCategory(e.target.value as typeof category)}
+								placeholder="e.g., Planning, Setup, Coordination"
+							/>
 						</div>
 					</div>
 
-					{/* Category */}
-					<div className="space-y-2">
-						<Label htmlFor="category">Category (optional)</Label>
-						<Input
-							id="category"
-							value={category}
-							onChange={(e) => setCategory(e.target.value as typeof category)}
-							placeholder="e.g., Planning, Setup, Coordination"
-						/>
-					</div>
-
-					<DialogFooter>
+					<DialogFooter className="mt-4 flex-shrink-0">
 						<Button
 							type="button"
 							variant="outline"

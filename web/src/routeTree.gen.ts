@@ -28,7 +28,6 @@ import { Route as AuthedEventsEventIdIndexRouteImport } from './routes/_authed/e
 import { Route as AuthedEventsEventIdTeamRouteImport } from './routes/_authed/events.$eventId.team'
 import { Route as AuthedEventsEventIdSettingsRouteImport } from './routes/_authed/events.$eventId.settings'
 import { Route as AuthedEventsEventIdRoomsRouteImport } from './routes/_authed/events.$eventId.rooms'
-import { Route as AuthedEventsEventIdDashboardRouteImport } from './routes/_authed/events.$eventId.dashboard'
 import { Route as AuthedEventsEventIdCalendarRouteImport } from './routes/_authed/events.$eventId.calendar'
 import { Route as AuthedEventsEventIdRoomsIndexRouteImport } from './routes/_authed/events.$eventId.rooms.index'
 import { Route as AuthedEventsEventIdRoomsRoomIdRouteImport } from './routes/_authed/events.$eventId.rooms.$roomId'
@@ -130,12 +129,6 @@ const AuthedEventsEventIdRoomsRoute =
     path: '/rooms',
     getParentRoute: () => AuthedEventsEventIdRoute,
   } as any)
-const AuthedEventsEventIdDashboardRoute =
-  AuthedEventsEventIdDashboardRouteImport.update({
-    id: '/dashboard',
-    path: '/dashboard',
-    getParentRoute: () => AuthedEventsEventIdRoute,
-  } as any)
 const AuthedEventsEventIdCalendarRoute =
   AuthedEventsEventIdCalendarRouteImport.update({
     id: '/calendar',
@@ -171,7 +164,6 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/events': typeof AuthedEventsIndexRoute
   '/events/$eventId/calendar': typeof AuthedEventsEventIdCalendarRoute
-  '/events/$eventId/dashboard': typeof AuthedEventsEventIdDashboardRoute
   '/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsRouteWithChildren
   '/events/$eventId/settings': typeof AuthedEventsEventIdSettingsRoute
   '/events/$eventId/team': typeof AuthedEventsEventIdTeamRoute
@@ -194,7 +186,6 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/events': typeof AuthedEventsIndexRoute
   '/events/$eventId/calendar': typeof AuthedEventsEventIdCalendarRoute
-  '/events/$eventId/dashboard': typeof AuthedEventsEventIdDashboardRoute
   '/events/$eventId/settings': typeof AuthedEventsEventIdSettingsRoute
   '/events/$eventId/team': typeof AuthedEventsEventIdTeamRoute
   '/events/$eventId': typeof AuthedEventsEventIdIndexRoute
@@ -219,7 +210,6 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authed/events/': typeof AuthedEventsIndexRoute
   '/_authed/events/$eventId/calendar': typeof AuthedEventsEventIdCalendarRoute
-  '/_authed/events/$eventId/dashboard': typeof AuthedEventsEventIdDashboardRoute
   '/_authed/events/$eventId/rooms': typeof AuthedEventsEventIdRoomsRouteWithChildren
   '/_authed/events/$eventId/settings': typeof AuthedEventsEventIdSettingsRoute
   '/_authed/events/$eventId/team': typeof AuthedEventsEventIdTeamRoute
@@ -245,7 +235,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/events'
     | '/events/$eventId/calendar'
-    | '/events/$eventId/dashboard'
     | '/events/$eventId/rooms'
     | '/events/$eventId/settings'
     | '/events/$eventId/team'
@@ -268,7 +257,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/events'
     | '/events/$eventId/calendar'
-    | '/events/$eventId/dashboard'
     | '/events/$eventId/settings'
     | '/events/$eventId/team'
     | '/events/$eventId'
@@ -292,7 +280,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/_authed/events/'
     | '/_authed/events/$eventId/calendar'
-    | '/_authed/events/$eventId/dashboard'
     | '/_authed/events/$eventId/rooms'
     | '/_authed/events/$eventId/settings'
     | '/_authed/events/$eventId/team'
@@ -448,13 +435,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedEventsEventIdRoomsRouteImport
       parentRoute: typeof AuthedEventsEventIdRoute
     }
-    '/_authed/events/$eventId/dashboard': {
-      id: '/_authed/events/$eventId/dashboard'
-      path: '/dashboard'
-      fullPath: '/events/$eventId/dashboard'
-      preLoaderRoute: typeof AuthedEventsEventIdDashboardRouteImport
-      parentRoute: typeof AuthedEventsEventIdRoute
-    }
     '/_authed/events/$eventId/calendar': {
       id: '/_authed/events/$eventId/calendar'
       path: '/calendar'
@@ -497,7 +477,6 @@ const AuthedEventsEventIdRoomsRouteWithChildren =
 
 interface AuthedEventsEventIdRouteChildren {
   AuthedEventsEventIdCalendarRoute: typeof AuthedEventsEventIdCalendarRoute
-  AuthedEventsEventIdDashboardRoute: typeof AuthedEventsEventIdDashboardRoute
   AuthedEventsEventIdRoomsRoute: typeof AuthedEventsEventIdRoomsRouteWithChildren
   AuthedEventsEventIdSettingsRoute: typeof AuthedEventsEventIdSettingsRoute
   AuthedEventsEventIdTeamRoute: typeof AuthedEventsEventIdTeamRoute
@@ -506,7 +485,6 @@ interface AuthedEventsEventIdRouteChildren {
 
 const AuthedEventsEventIdRouteChildren: AuthedEventsEventIdRouteChildren = {
   AuthedEventsEventIdCalendarRoute: AuthedEventsEventIdCalendarRoute,
-  AuthedEventsEventIdDashboardRoute: AuthedEventsEventIdDashboardRoute,
   AuthedEventsEventIdRoomsRoute: AuthedEventsEventIdRoomsRouteWithChildren,
   AuthedEventsEventIdSettingsRoute: AuthedEventsEventIdSettingsRoute,
   AuthedEventsEventIdTeamRoute: AuthedEventsEventIdTeamRoute,

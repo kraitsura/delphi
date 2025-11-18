@@ -1,6 +1,8 @@
 import type { Id } from "@convex/_generated/dataModel";
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarView } from "@/components/dashboard/CalendarView";
+import { DashboardStoreProvider } from "@/lib/fluid-ui/DashboardStoreContext";
+import { ModalRenderer } from "@/lib/fluid-ui/ModalRenderer";
 
 export const Route = createFileRoute("/_authed/events/$eventId/calendar")({
 	ssr: false, // Disable SSR - uses parent loader with auth
@@ -12,11 +14,14 @@ function CalendarPage() {
 	const typedEventId = eventId as Id<"events">;
 
 	return (
-		<CalendarView
-			eventId={typedEventId}
-			view="month"
-			showTasks={true}
-			showMilestones={true}
-		/>
+		<DashboardStoreProvider>
+			<CalendarView
+				eventId={typedEventId}
+				view="month"
+				showTasks={true}
+				showMilestones={true}
+			/>
+			<ModalRenderer />
+		</DashboardStoreProvider>
 	);
 }

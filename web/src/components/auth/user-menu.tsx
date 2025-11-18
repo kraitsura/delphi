@@ -17,7 +17,8 @@ export function UserMenu() {
 
 	const handleSignOut = async () => {
 		await authClient.signOut();
-		navigate({ to: "/" });
+		// Use hard reload to cleanly unmount all components and cancel queries
+		window.location.href = "/auth/sign-in";
 	};
 
 	if (isPending) {

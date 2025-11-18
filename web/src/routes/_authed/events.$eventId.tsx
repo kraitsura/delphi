@@ -127,7 +127,7 @@ function EventLayout() {
 		>
 			{/* Tab Navigation - Hidden for room detail view */}
 			{showTabs && (
-				<div className="flex gap-8 border-b mb-6">
+				<div className="sticky top-0 z-10 flex gap-8 border-b mb-6 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 -mt-4 px-4 pt-2">
 					<Link
 						to="/events/$eventId"
 						params={{ eventId }}

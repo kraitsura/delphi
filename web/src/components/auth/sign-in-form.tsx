@@ -1,4 +1,4 @@
-import { useNavigate, useRouter } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,6 @@ interface SignInFormProps {
 
 export function SignInForm({ verified = false }: SignInFormProps) {
 	const navigate = useNavigate();
-	const router = useRouter();
 	const emailId = useId();
 	const passwordId = useId();
 	const [email, setEmail] = useState("");
@@ -39,12 +38,10 @@ export function SignInForm({ verified = false }: SignInFormProps) {
 				password,
 			});
 
-			// Ensure session is loaded before navigating
 			if (result?.data) {
-				// Give Better Auth time to set the session
-				await new Promise(resolve => setTimeout(resolve, 500));
-				// Hard reload to ensure clean SSR auth state
-				window.location.href = "/events";
+				// Use client-side navigation - the _authed layout now waits for
+				// Better Auth session to load before rendering, preventing race conditions
+				navigate({ to: "/events" });
 			} else {
 				setError("Sign in failed - please try again");
 				setLoading(false);

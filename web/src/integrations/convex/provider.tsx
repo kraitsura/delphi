@@ -8,9 +8,10 @@ if (!CONVEX_URL) {
 	throw new Error("Missing environment variable: VITE_CONVEX_URL");
 }
 
-// Create Convex client with auth expectations
+// Create Convex client with expectAuth to pause queries until authenticated
+// This prevents race conditions where Better Auth session loads before Convex validates the token
 const convexClient = new ConvexReactClient(CONVEX_URL, {
-	expectAuth: true, // Pauses queries until auth is ready
+	expectAuth: true,
 });
 
 // Export client for use in TanStack Query integration

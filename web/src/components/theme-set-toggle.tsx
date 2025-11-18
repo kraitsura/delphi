@@ -40,7 +40,7 @@ const themeSetOptions: ThemeSetOption[] = [
 	{
 		value: "redwood",
 		label: "Redwood",
-		colors: ["#F5F0D9", "#C9A875", "#5D8855", "#4A6443"],
+		colors: ["#F5F0D9", "#9A4945", "#6B4E38", "#98745D"],
 	},
 	{
 		value: "flare",

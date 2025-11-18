@@ -304,7 +304,7 @@ export function TasksKanban(props: TasksKanbanProps) {
 		>
 			<Card data-testid="tasks-kanban" className="fluid-component-card">
 				<CardHeader className="fluid-component-header">
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-4">
 						<CardTitle className="fluid-component-title">
 							{SYMBOLS.BLACK_SQUARE} Tasks Board
 						</CardTitle>

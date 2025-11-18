@@ -193,7 +193,7 @@ export function MilestoneTimeline(props: MilestoneTimelineProps) {
 			<CardContent className="fluid-component-content">
 				<div className="relative">
 					{/* Timeline line */}
-					<div className="absolute left-[19px] top-8 bottom-8 w-0.5 bg-border" />
+					<div className="absolute left-[19px] top-8 bottom-14 w-0.5 bg-border" />
 
 					{/* Milestones */}
 					<div className="space-y-6">

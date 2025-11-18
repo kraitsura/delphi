@@ -88,7 +88,12 @@ export function RoomList({ eventId }: RoomListProps) {
 									className="block group"
 								>
 									<div className="py-2 px-3 rounded hover:bg-gray-50 transition-colors cursor-pointer">
-										<div className="flex items-start justify-between gap-3">
+										<div className="flex items-start gap-3">
+											{/* Accent Bullet Point */}
+											<div className="flex items-center pt-1.5">
+												<div className="h-2 w-2 rounded-full bg-primary/60 group-hover:bg-primary transition-colors" />
+											</div>
+
 											<div className="flex-1 min-w-0">
 												<h4 className="font-medium text-gray-900 truncate">
 													{room.name}

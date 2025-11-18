@@ -329,6 +329,19 @@ export async function getUserEventRole(
 }
 
 /**
+ * Check if user can invite members to an event
+ * Both coordinators and collaborators can invite members
+ */
+export async function canInviteMembers(
+  ctx: QueryCtx | MutationCtx,
+  eventId: Id<"events">,
+  userId: Id<"users">
+): Promise<boolean> {
+  const role = await getUserEventRole(ctx, eventId, userId);
+  return role === "coordinator" || role === "collaborator";
+}
+
+/**
  * Check if user is a participant in a room
  */
 export async function isRoomParticipant(

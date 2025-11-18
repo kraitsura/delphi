@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { RoomListItem } from "@/components/RoomListItem";
+import { RoomListItem } from "@/components/sidebar-room-list-item";
 import { Input } from "@/components/ui/input";
 import {
 	SidebarGroup,
@@ -112,8 +112,8 @@ export function RoomList() {
 
 	// Render room list
 	return (
-		<SidebarGroup className="group-data-[collapsible=icon]:p-0 -mt-2">
-			<SidebarGroupLabel>
+		<SidebarGroup className="group-data-[collapsible=icon]:p-0 -mt-2 group-data-[collapsible=icon]:mt-0">
+			<SidebarGroupLabel className="transition-[margin,opacity,transform] duration-300 ease-in-out">
 				<Link
 					to="/events/$eventId/rooms"
 					params={{ eventId }}
@@ -124,7 +124,7 @@ export function RoomList() {
 			</SidebarGroupLabel>
 
 			{/* Search Bar - Compact Pill Style */}
-			<div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+			<div className="px-2 pb-2 transition-[max-height,opacity,margin] duration-300 ease-in-out overflow-hidden group-data-[collapsible=icon]:max-h-0 group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:mb-0 max-h-20">
 				<div className="relative">
 					<Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
 					<Input
@@ -132,7 +132,7 @@ export function RoomList() {
 						placeholder="Search rooms..."
 						value={searchTerm}
 						onChange={(e) => setSearchTerm(e.target.value)}
-						className="rounded-full pl-9 pr-3 h-8 text-sm"
+						className="rounded-full pl-9 pr-3 h-8 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
 					/>
 				</div>
 			</div>
