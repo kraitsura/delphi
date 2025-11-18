@@ -1,18 +1,14 @@
-import { createClient, type AuthFunctions } from "@convex-dev/better-auth";
+import { createClient } from "@convex-dev/better-auth";
 import { DataModel } from "./_generated/dataModel";
 import { components, internal } from "./_generated/api";
 
 // Create the auth component client with inline triggers
-// We define triggers inline to keep user creation logic in one place
-// AuthFunctions reference will be lazily evaluated to avoid circular dependency
+// Note: We're NOT passing authFunctions to avoid any circular dependency
+// The triggers are defined inline and that's sufficient for Better Auth
 export const authComponent = createClient<DataModel>(
   components.betterAuth,
   {
-    // Use a getter to lazily evaluate authFunctions
-    // This avoids accessing internal.authTriggers at module initialization time
-    get authFunctions(): AuthFunctions {
-      return internal.authTriggers;
-    },
+    // No authFunctions needed - triggers are defined inline
     triggers: {
       user: {
         onCreate: async (ctx, user) => {

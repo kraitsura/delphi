@@ -14,7 +14,6 @@ import type * as announcements from "../announcements.js";
 import type * as auth from "../auth.js";
 import type * as authComponent from "../authComponent.js";
 import type * as authHelpers from "../authHelpers.js";
-import type * as authTriggers from "../authTriggers.js";
 import type * as cascadeHelpers from "../cascadeHelpers.js";
 import type * as checkpoints from "../checkpoints.js";
 import type * as contacts from "../contacts.js";
@@ -64,7 +63,6 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   authComponent: typeof authComponent;
   authHelpers: typeof authHelpers;
-  authTriggers: typeof authTriggers;
   cascadeHelpers: typeof cascadeHelpers;
   checkpoints: typeof checkpoints;
   contacts: typeof contacts;
