@@ -9,8 +9,8 @@ import { internalMutation, mutation, query } from "./_generated/server";
 import { authComponent } from "./authComponent";
 
 /**
- * Internal mutation called by Better Auth trigger on user creation
- * Creates user profile automatically when Better Auth user is created
+ * Internal mutation for creating user profiles
+ * Used by the system to create extended user profiles
  */
 export const createUserProfile = internalMutation({
   args: {
@@ -56,8 +56,8 @@ export const createUserProfile = internalMutation({
 
 /**
  * Create or update extended user profile
- * Note: Profile is automatically created via Better Auth onCreate trigger
- * This function serves as a fallback for existing users or manual profile updates
+ * Called by ProfileCreator component in _authed.tsx after authentication
+ * Ensures every authenticated user has an extended profile
  */
 export const createOrUpdateProfile = mutation({
   args: {},

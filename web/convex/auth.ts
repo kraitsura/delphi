@@ -102,9 +102,8 @@ export const createAuth = (
       },
     },
     plugins: [convex()], // Required for Convex integration
-    // Note: User profile creation happens via authComponent onCreate trigger
-    // The trigger fires when a Better Auth user is created and automatically
-    // creates the extended user profile in the users table
+    // Note: User profile creation is handled by ProfileCreator component
+    // in _authed.tsx which ensures every authenticated user has a profile
   });
 };
 
@@ -117,7 +116,7 @@ export const getCurrentUser = query({
 });
 
 // Helper query to get current user's extended profile
-// Profile is created automatically via onCreate trigger when Better Auth user is created
+// Profile is created by ProfileCreator component after authentication
 export const getCurrentUserProfile = query({
   args: {},
   handler: async (ctx) => {

@@ -72,8 +72,8 @@ function ActivityTracker() {
 
 /**
  * ProfileCreator Component
- * Fallback mechanism to create user profile if Better Auth trigger failed
- * Triggers should create profile automatically, but this ensures profile exists
+ * Primary mechanism to create user profile after authentication
+ * Ensures every authenticated user has an extended profile in the users table
  * Waits for Convex auth to be ready before attempting profile creation
  */
 function ProfileCreator() {

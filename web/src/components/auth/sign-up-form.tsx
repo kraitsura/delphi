@@ -33,7 +33,7 @@ export function SignUpForm() {
 
 		try {
 			// Sign up with Better Auth
-			// User profile is created automatically via Better Auth onCreate trigger
+			// User profile will be created by ProfileCreator when user accesses authenticated routes
 			await authClient.signUp.email({
 				name,
 				email,
