@@ -1,5 +1,5 @@
 import { mutation, query, internalMutation } from "./_generated/server";
-import { authComponent } from "./auth";
+import { authComponent } from "./authComponent";
 
 /**
  * Helper function to get the start of the current week (Monday 00:00 UTC)

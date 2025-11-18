@@ -2,11 +2,11 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
 import { api } from "./_generated/api";
-import { authComponent } from "./auth";
+import { authComponent } from "./authComponent";
 import type { Id } from "./_generated/dataModel";
 
 // Mock authComponent for authentication
-vi.mock("./auth", () => ({
+vi.mock("./authComponent", () => ({
   authComponent: {
     getAuthUser: vi.fn(),
   },

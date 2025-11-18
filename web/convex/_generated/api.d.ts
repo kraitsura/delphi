@@ -12,6 +12,7 @@ import type * as agent from "../agent.js";
 import type * as agentContext from "../agentContext.js";
 import type * as announcements from "../announcements.js";
 import type * as auth from "../auth.js";
+import type * as authComponent from "../authComponent.js";
 import type * as authHelpers from "../authHelpers.js";
 import type * as cascadeHelpers from "../cascadeHelpers.js";
 import type * as checkpoints from "../checkpoints.js";
@@ -60,6 +61,7 @@ declare const fullApi: ApiFromModules<{
   agentContext: typeof agentContext;
   announcements: typeof announcements;
   auth: typeof auth;
+  authComponent: typeof authComponent;
   authHelpers: typeof authHelpers;
   cascadeHelpers: typeof cascadeHelpers;
   checkpoints: typeof checkpoints;

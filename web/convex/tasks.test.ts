@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { convexTest } from "convex-test";
 import schema from "./schema";
-import { authComponent } from "./auth";
+import { authComponent } from "./authComponent";
 import {
   listTasksByEvent,
   getTaskById,

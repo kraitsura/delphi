@@ -19,10 +19,10 @@ import {
 } from "./authHelpers";
 import { factories } from "../src/test/factories";
 import type { Id } from "./_generated/dataModel";
-import { authComponent } from "./auth";
+import { authComponent } from "./authComponent";
 
 // Mock authComponent.getAuthUser for all tests
-vi.mock("./auth", () => ({
+vi.mock("./authComponent", () => ({
   authComponent: {
     getAuthUser: vi.fn(),
   },

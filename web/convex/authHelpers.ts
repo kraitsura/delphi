@@ -7,7 +7,7 @@
 
 import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
-import { authComponent } from "./auth";
+import { authComponent } from "./authComponent";
 
 // ==========================================
 // TYPE DEFINITIONS

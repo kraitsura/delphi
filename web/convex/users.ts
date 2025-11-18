@@ -6,7 +6,7 @@
 
 import { v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { authComponent } from "./auth";
+import { authComponent } from "./authComponent";
 
 /**
  * Internal mutation called by Better Auth trigger on user creation
