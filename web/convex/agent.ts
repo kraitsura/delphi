@@ -161,3 +161,136 @@ export const getState = query({
       .first();
   },
 });
+
+// ==========================================
+// BATCH SYNC (EventOrchestratorDO State Sync)
+// ==========================================
+
+/**
+ * Validator for state changes from EventOrchestratorDO
+ */
+const stateChangeValidator = v.object({
+  table: v.union(v.literal("tasks"), v.literal("expenses"), v.literal("vendors")),
+  operation: v.union(v.literal("create"), v.literal("update"), v.literal("delete")),
+  id: v.optional(v.string()),
+  data: v.optional(v.any()),
+});
+
+/**
+ * Batch Sync Mutation - Syncs state changes from EventOrchestratorDO
+ * Used by Durable Objects to batch sync their state changes to Convex
+ */
+export const batchSync = mutation({
+  args: {
+    eventId: v.id("events"),
+    changes: v.array(stateChangeValidator),
+  },
+  handler: async (ctx, { eventId, changes }) => {
+    // Verify event exists
+    const event = await ctx.db.get(eventId);
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    const results: Array<{ index: number; success: boolean; id?: string; error?: string }> = [];
+
+    for (let i = 0; i < changes.length; i++) {
+      const change = changes[i];
+
+      try {
+        switch (change.operation) {
+          case "create":
+            const newId = await ctx.db.insert(change.table as any, {
+              ...change.data,
+              eventId,
+              createdAt: Date.now(),
+            });
+            results.push({ index: i, success: true, id: newId });
+            break;
+
+          case "update":
+            if (!change.id) throw new Error("Missing id for update");
+            await ctx.db.patch(change.id as any, {
+              ...change.data,
+              updatedAt: Date.now(),
+            });
+            results.push({ index: i, success: true, id: change.id });
+            break;
+
+          case "delete":
+            if (!change.id) throw new Error("Missing id for delete");
+            await ctx.db.patch(change.id as any, {
+              deletedAt: Date.now(),
+            });
+            results.push({ index: i, success: true, id: change.id });
+            break;
+        }
+      } catch (error) {
+        results.push({
+          index: i,
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error"
+        });
+      }
+    }
+
+    // Update event's lastSyncedAt
+    await ctx.db.patch(eventId, {
+      lastSyncedAt: Date.now(),
+    } as any);
+
+    return {
+      eventId,
+      processed: changes.length,
+      successful: results.filter(r => r.success).length,
+      failed: results.filter(r => !r.success).length,
+      results,
+    };
+  },
+});
+
+/**
+ * Get Sync State - Returns sync metadata and entity counts for an event
+ * Used by EventOrchestratorDO to check current state
+ */
+export const getSyncState = query({
+  args: {
+    eventId: v.id("events"),
+  },
+  handler: async (ctx, { eventId }) => {
+    const event = await ctx.db.get(eventId);
+    if (!event) return null;
+
+    // Get counts for each table
+    const [taskCount, expenseCount, vendorCount] = await Promise.all([
+      ctx.db
+        .query("tasks")
+        .withIndex("by_event", (q) => q.eq("eventId", eventId))
+        .filter((q) => q.eq(q.field("deletedAt"), undefined))
+        .collect()
+        .then((t) => t.length),
+      ctx.db
+        .query("expenses")
+        .withIndex("by_event", (q) => q.eq("eventId", eventId))
+        .filter((q) => q.eq(q.field("deletedAt"), undefined))
+        .collect()
+        .then((e) => e.length),
+      ctx.db
+        .query("vendors")
+        .withIndex("by_event", (q) => q.eq("eventId", eventId))
+        .filter((q) => q.eq(q.field("deletedAt"), undefined))
+        .collect()
+        .then((v) => v.length),
+    ]);
+
+    return {
+      eventId,
+      lastSyncedAt: (event as any).lastSyncedAt || 0,
+      counts: {
+        tasks: taskCount,
+        expenses: expenseCount,
+        vendors: vendorCount,
+      },
+    };
+  },
+});

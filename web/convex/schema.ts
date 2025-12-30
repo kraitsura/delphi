@@ -158,6 +158,9 @@ export default defineSchema({
     updatedAt: v.number(),
     createdBy: v.id("users"),
 
+    // Sync metadata (for EventOrchestratorDO)
+    lastSyncedAt: v.optional(v.number()),
+
     // Soft delete
     deletedAt: v.optional(v.number()),
   })
