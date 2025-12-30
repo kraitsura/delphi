@@ -27,3 +27,5 @@ export interface MultiTaskResult {
 export type { Message, Commitment, CommitmentExtractionResult } from './CommitmentExtractor';
 export type { RoomContext, Intent } from './IntentDetector';
 export type { ContextBuildOptions } from './ContextBuilder';
+export type { HeuristicScore } from './KeywordHeuristics';
+export type { FastRouteMatch } from './FastIntentRouter';
