@@ -182,6 +182,24 @@ const DEFAULT_CONFIG: AgenticLoopConfig = {
   trackHistory: true,
 };
 
+/**
+ * Tool call with dependency information for parallel execution
+ */
+interface ClassifiedToolCall {
+  tool: string;
+  params: any;
+  isParallel: boolean;  // Can run in parallel with other parallel tools
+  dependsOn?: string[]; // Tool names this depends on (for sequential ordering)
+}
+
+/**
+ * Classification result for a set of tool calls
+ */
+interface ToolCallClassification {
+  parallel: ClassifiedToolCall[];   // Can all run simultaneously
+  sequential: ClassifiedToolCall[]; // Must run after parallel, in order
+}
+
 export abstract class BaseAgent {
   protected tools: Map<string, Tool>;
   protected aiKey: string;
@@ -538,6 +556,185 @@ export abstract class BaseAgent {
       actionBudget: 7,
       description: 'Default operation',
     };
+  }
+
+  // ============================================================================
+  // PARALLEL TOOL EXECUTION (Phase 2: delphi-jtm)
+  // ============================================================================
+
+  /**
+   * Classify tool calls for parallel vs sequential execution
+   * Based on operation type and table dependencies
+   */
+  protected classifyToolCalls(toolCalls: Array<{ tool: string; params: any }>): ToolCallClassification {
+    const parallel: ClassifiedToolCall[] = [];
+    const sequential: ClassifiedToolCall[] = [];
+
+    // Track tables being written to for dependency detection
+    const writeTables = new Set<string>();
+
+    for (const call of toolCalls) {
+      const { tool, params } = call;
+      const classified = this.classifySingleToolCall(tool, params, writeTables);
+
+      if (classified.isParallel) {
+        parallel.push(classified);
+      } else {
+        sequential.push(classified);
+      }
+
+      // Track writes for future dependency detection
+      if (this.isWriteOperation(tool, params)) {
+        const table = this.getTableFromParams(params);
+        if (table) writeTables.add(table);
+      }
+    }
+
+    return { parallel, sequential };
+  }
+
+  /**
+   * Classify a single tool call
+   */
+  private classifySingleToolCall(
+    tool: string,
+    params: any,
+    writeTables: Set<string>
+  ): ClassifiedToolCall {
+    // Read operations are always parallelizable
+    if (this.isReadOperation(tool, params)) {
+      return { tool, params, isParallel: true };
+    }
+
+    // Check if this write depends on a table already being written to
+    const table = this.getTableFromParams(params);
+    if (table && writeTables.has(table)) {
+      return {
+        tool,
+        params,
+        isParallel: false,
+        dependsOn: [table],
+      };
+    }
+
+    // Independent writes can be parallel
+    // Creates on different tables are parallelizable
+    if (this.isCreateOperation(tool, params)) {
+      return { tool, params, isParallel: true };
+    }
+
+    // Updates are sequential by default (safer)
+    return { tool, params, isParallel: false };
+  }
+
+  /**
+   * Check if tool call is a read operation
+   */
+  private isReadOperation(tool: string, params: any): boolean {
+    if (tool === 'convex_crud') {
+      const op = params.operation?.toLowerCase();
+      return op === 'read' || op === 'query' || op === 'list' || op === 'get';
+    }
+    // Web search tools are reads
+    if (tool.includes('search') || tool.includes('scrape') || tool.includes('firecrawl')) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Check if tool call is a write operation
+   */
+  private isWriteOperation(tool: string, params: any): boolean {
+    if (tool === 'convex_crud') {
+      const op = params.operation?.toLowerCase();
+      return op === 'create' || op === 'update' || op === 'delete' || op === 'patch';
+    }
+    return false;
+  }
+
+  /**
+   * Check if tool call is a create operation
+   */
+  private isCreateOperation(tool: string, params: any): boolean {
+    if (tool === 'convex_crud') {
+      return params.operation?.toLowerCase() === 'create';
+    }
+    return false;
+  }
+
+  /**
+   * Get table name from tool params
+   */
+  private getTableFromParams(params: any): string | null {
+    return params.table || null;
+  }
+
+  /**
+   * Execute multiple tool calls with parallel/sequential handling
+   * Returns results in the same order as input
+   */
+  protected async executeToolCalls(
+    toolCalls: Array<{ tool: string; params: any }>
+  ): Promise<Array<{ toolName: string; result: ToolResult }>> {
+    if (toolCalls.length === 0) return [];
+
+    // Single tool call - just execute normally
+    if (toolCalls.length === 1) {
+      const { tool: toolName, params } = toolCalls[0];
+      const tool = this.tools.get(toolName);
+      if (!tool) {
+        return [{
+          toolName,
+          result: {
+            success: false,
+            error: `Tool not found: ${toolName}`,
+          },
+        }];
+      }
+      const result = await tool.execute(params);
+      return [{ toolName, result }];
+    }
+
+    // Multiple tools - classify and execute
+    const { parallel, sequential } = this.classifyToolCalls(toolCalls);
+    const results: Array<{ toolName: string; result: ToolResult }> = [];
+
+    console.log(`[${this.agentType}] Executing ${parallel.length} parallel + ${sequential.length} sequential tools`);
+
+    // Execute parallel tools simultaneously
+    if (parallel.length > 0) {
+      const parallelPromises = parallel.map(async (call) => {
+        const tool = this.tools.get(call.tool);
+        if (!tool) {
+          return {
+            toolName: call.tool,
+            result: { success: false, error: `Tool not found: ${call.tool}` } as ToolResult,
+          };
+        }
+        const result = await tool.execute(call.params);
+        return { toolName: call.tool, result };
+      });
+
+      const parallelResults = await Promise.all(parallelPromises);
+      results.push(...parallelResults);
+    }
+
+    // Execute sequential tools in order
+    for (const call of sequential) {
+      const tool = this.tools.get(call.tool);
+      if (!tool) {
+        results.push({
+          toolName: call.tool,
+          result: { success: false, error: `Tool not found: ${call.tool}` },
+        });
+        continue;
+      }
+      const result = await tool.execute(call.params);
+      results.push({ toolName: call.tool, result });
+    }
+
+    return results;
   }
 
   /**
