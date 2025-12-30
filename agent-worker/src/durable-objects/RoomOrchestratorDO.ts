@@ -20,7 +20,7 @@ import { ConvexCRUDTool } from '../tools/ConvexCRUDTool';
 import { FirecrawlTool } from '../tools/FirecrawlTool';
 import { ToolContext } from '../tools';
 import { AgentContext } from '../agents/BaseAgent';
-import { ContextBuilder, RoomContext, Intent as EnhancedIntent, Message as ContextMessage } from '../agents/helpers';
+import { ContextBuilder, RoomContext, Intent as EnhancedIntent, Message as ContextMessage, TieredIntentDetector } from '../agents/helpers';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -116,10 +116,81 @@ export class RoomOrchestratorDO {
   // Track 2 v3.1: Intent caching
   private intentCache: Map<string, EnhancedIntent> = new Map();
   private contextBuilder: ContextBuilder | null = null;
+  private tieredDetector: TieredIntentDetector | null = null;
 
   constructor(state: DurableObjectState, env: any) {
     this.doState = state;
     this.env = env;
+  }
+
+  // ============================================================================
+  // EVENT ORCHESTRATOR DELEGATION
+  // ============================================================================
+
+  /**
+   * Get the EventOrchestratorDO stub for the given event
+   * EventOrchestratorDO owns event-wide state (tasks, expenses, vendors)
+   */
+  private getEventOrchestrator(eventId: string): DurableObjectStub {
+    const id = this.env.EVENT_ORCHESTRATOR.idFromName(`event-${eventId}`);
+    return this.env.EVENT_ORCHESTRATOR.get(id);
+  }
+
+  /**
+   * Fetch cached event context from EventOrchestratorDO
+   * This avoids repeated Convex fetches for event-level data
+   */
+  private async getEventContextFromDO(eventId: string, roomId: string): Promise<any> {
+    try {
+      const eventDO = this.getEventOrchestrator(eventId);
+      const response = await eventDO.fetch(
+        new Request('http://internal/context', {
+          method: 'GET',
+          headers: { 'X-Room-Id': roomId }
+        })
+      );
+
+      if (response.ok) {
+        return await response.json();
+      }
+      console.warn(`[RoomOrchestratorDO] EventDO context fetch failed: ${response.status}`);
+      return null;
+    } catch (error) {
+      console.error('[RoomOrchestratorDO] Error fetching event context from DO:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Notify EventOrchestratorDO to sync state after tool calls
+   * This is a fire-and-forget operation - errors are logged but don't fail the request
+   */
+  private async notifyEventDOSync(
+    eventId: string,
+    convexUrl?: string,
+    authToken?: string
+  ): Promise<void> {
+    try {
+      const eventDO = this.getEventOrchestrator(eventId);
+
+      // If we have credentials, do a full sync; otherwise just invalidate
+      const body = convexUrl && authToken
+        ? JSON.stringify({ eventId, convexUrl, authToken })
+        : JSON.stringify({ eventId });
+
+      await eventDO.fetch(
+        new Request('http://internal/sync', {
+          method: 'POST',
+          body,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+
+      console.log(`[RoomOrchestratorDO] Notified EventDO to sync for event: ${eventId}`);
+    } catch (error) {
+      // Non-fatal: EventDO will sync on next request anyway
+      console.error('[RoomOrchestratorDO] Error notifying EventDO sync:', error);
+    }
   }
 
   // ============================================================================
@@ -371,10 +442,25 @@ export class RoomOrchestratorDO {
         threadContext = await this.getThreadContext(convex, parentMessageId);
       }
 
-      // Enrich context with event state
-      const taskCount = await this.getTaskCount(convex, eventId);
-      const hasBudget = await this.checkBudgetExists(convex, eventId);
-      const vendorCount = await this.getVendorCount(convex, eventId);
+      // Try to get cached context from EventOrchestratorDO first
+      let taskCount: number;
+      let hasBudget: boolean;
+      let vendorCount: number;
+
+      const cachedEventContext = await this.getEventContextFromDO(eventId, roomId);
+      if (cachedEventContext) {
+        // Use cached counts from EventOrchestratorDO
+        taskCount = cachedEventContext.tasks?.length || 0;
+        hasBudget = (cachedEventContext.expenses?.length || 0) > 0;
+        vendorCount = cachedEventContext.vendors?.length || 0;
+        console.log(`[RoomOrchestratorDO] Using cached event context from EventDO: ${taskCount} tasks, ${vendorCount} vendors`);
+      } else {
+        // Fallback to Convex queries
+        console.log('[RoomOrchestratorDO] EventDO not available, falling back to Convex queries');
+        taskCount = await this.getTaskCount(convex, eventId);
+        hasBudget = await this.checkBudgetExists(convex, eventId);
+        vendorCount = await this.getVendorCount(convex, eventId);
+      }
 
       const enrichedContext = {
         message,
@@ -388,7 +474,8 @@ export class RoomOrchestratorDO {
         eventType: eventContext?.type,
         taskCount,
         hasBudget,
-        vendorCount
+        vendorCount,
+        cachedEventContext // Include for agent use
       };
 
       // Initialize agent BEFORE intent detection (fixes timing bug)
@@ -412,6 +499,17 @@ export class RoomOrchestratorDO {
           this.env.CLAUDE_API_KEY,
           [convexTool, firecrawlTool]
         );
+      }
+
+      // Initialize tiered detector for fast intent detection
+      if (!this.tieredDetector && this.agent) {
+        this.tieredDetector = new TieredIntentDetector(this.env, {
+          eventId,
+          roomId,
+          message,
+          eventContext: enrichedContext.eventContext,
+          recentMessages: []
+        } as any);
       }
 
       // Track 2 v3.1: Multi-intent detection with conversation context
@@ -496,6 +594,11 @@ export class RoomOrchestratorDO {
         };
         this.addMessageToHistory(assistantMessage);
         await this.manageMemory();
+
+        // Phase 1 Integration: Notify EventOrchestratorDO if tools modified state
+        if (agentResponse.toolsUsed && agentResponse.toolsUsed.length > 0) {
+          await this.notifyEventDOSync(eventId, convexUrl, authToken);
+        }
 
         return new Response(
           JSON.stringify({
@@ -665,6 +768,12 @@ export class RoomOrchestratorDO {
       // Manage memory if needed
       await this.manageMemory();
 
+      // Phase 1 Integration: Notify EventOrchestratorDO if tools modified state
+      // This invalidates the EventDO cache so next request gets fresh data
+      if (agentResponse.toolsUsed && agentResponse.toolsUsed.length > 0) {
+        await this.notifyEventDOSync(eventId, convexUrl, authToken);
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
@@ -802,6 +911,8 @@ export class RoomOrchestratorDO {
     context: any,
     recentMessages: Message[]
   ): Promise<EnhancedIntent> {
+    const startTime = performance.now();
+
     // Check cache first (keyed by message + checkpoint)
     const cacheKey = `${message}_${this.state?.checkpointId || 'init'}`;
 
@@ -809,8 +920,6 @@ export class RoomOrchestratorDO {
       console.log('[RoomOrchestratorDO] Using cached intent');
       return this.intentCache.get(cacheKey)!;
     }
-
-    console.log('[RoomOrchestratorDO] Detecting intent with AI...');
 
     try {
       // Initialize context builder if needed
@@ -845,8 +954,38 @@ export class RoomOrchestratorDO {
 
       console.log(`[RoomOrchestratorDO] Room context: ${roomContext.taskCount} tasks, ${roomContext.extractedCommitments.length} commitments`);
 
-      // Use agent's AI-based intent detection
+      // Try tiered detection first (fast-path → heuristics → cache → AI)
+      if (this.tieredDetector) {
+        const tieredResult = await this.tieredDetector.detect(message, roomContext);
+
+        // Use tiered result if it's from fast/heuristic tier with confidence >= 0.85
+        if ((tieredResult.tier === 'fast' || tieredResult.tier === 'heuristic') &&
+            tieredResult.intent.confidence >= 0.85) {
+          const latency = performance.now() - startTime;
+          console.log(`[RoomOrchestratorDO] Tiered detection (${tieredResult.tier}): ${tieredResult.intent.primaryIntent} (confidence: ${tieredResult.intent.confidence}, latency: ${latency.toFixed(2)}ms)`);
+
+          // Cache the result
+          this.intentCache.set(cacheKey, tieredResult.intent);
+          return tieredResult.intent;
+        }
+
+        // If tiered detection returned a cache or AI result, use it
+        if (tieredResult.tier === 'cache' || tieredResult.tier === 'ai') {
+          const latency = performance.now() - startTime;
+          console.log(`[RoomOrchestratorDO] Tiered detection (${tieredResult.tier}): ${tieredResult.intent.primaryIntent} (confidence: ${tieredResult.intent.confidence}, latency: ${latency.toFixed(2)}ms)`);
+
+          // Cache the result
+          this.intentCache.set(cacheKey, tieredResult.intent);
+          return tieredResult.intent;
+        }
+      }
+
+      // Fall through to AI detection if tiered detection didn't provide a result
+      console.log('[RoomOrchestratorDO] Detecting intent with AI...');
       const intent = await this.agent!.detectIntent(message, roomContext, this.env);
+
+      const latency = performance.now() - startTime;
+      console.log(`[RoomOrchestratorDO] AI detection: ${intent.primaryIntent} (confidence: ${intent.confidence}, latency: ${latency.toFixed(2)}ms)`);
 
       // Cache the result
       this.intentCache.set(cacheKey, intent);
@@ -1226,6 +1365,12 @@ export class RoomOrchestratorDO {
       const iterCount = (response as any).metadata?.totalIterations || 0;
       console.log(`[RoomOrchestratorDO] Agent completed in ${iterCount} iterations`);
 
+      // Notify EventOrchestratorDO to sync if tools were used
+      if (response.toolsUsed && response.toolsUsed.length > 0) {
+        console.log(`[RoomOrchestratorDO] Notifying EventDO to sync after ${response.toolsUsed.length} tool calls`);
+        await this.notifyEventDOSync(context.eventId);
+      }
+
       return response;
     } catch (error) {
       console.error('[RoomOrchestratorDO] Agent invocation error:', error);
@@ -1267,6 +1412,12 @@ export class RoomOrchestratorDO {
       );
 
       console.log(`[RoomOrchestratorDO] Multi-intent agent completed`);
+
+      // Notify EventOrchestratorDO to sync if tools were used
+      if (response.toolsUsed && response.toolsUsed.length > 0) {
+        console.log(`[RoomOrchestratorDO] Notifying EventDO to sync after ${response.toolsUsed.length} tool calls`);
+        await this.notifyEventDOSync(context.eventId);
+      }
 
       return response;
     } catch (error) {

@@ -15,15 +15,20 @@ import { ConvexHttpClient } from 'convex/browser';
 // Track 7 v3.1: Unified DO for all room types (ChatOrchestratorDO and EventCoordinatorDO removed)
 import { RoomOrchestratorDO } from './durable-objects/RoomOrchestratorDO';
 import { FirecrawlQueueDO } from './durable-objects/FirecrawlQueueDO';
+import { EventOrchestratorDO } from './durable-objects/EventOrchestratorDO';
+// Phase 3: WebSocket Streaming Architecture
+import { RoomSessionDO } from './durable-objects/RoomSessionDO';
 import { api } from '../../web/convex/_generated/api';
 
 // Export DO classes
-export { RoomOrchestratorDO, FirecrawlQueueDO };
+export { RoomOrchestratorDO, FirecrawlQueueDO, EventOrchestratorDO, RoomSessionDO };
 
 // Define environment interface
 interface Env {
   ROOM_ORCHESTRATOR: DurableObjectNamespace;
   FIRECRAWL_QUEUE: DurableObjectNamespace;
+  EVENT_ORCHESTRATOR: DurableObjectNamespace;
+  ROOM_SESSION: DurableObjectNamespace;
   CONVEX_DEPLOY_URL?: string;
   CLAUDE_API_KEY?: string;
   KIMI_API_KEY?: string;
@@ -224,6 +229,191 @@ export default {
       }
     }
 
+    // EventOrchestratorDO: Get event state (admin/debug)
+    if (path.match(/^\/api\/event\/[^/]+\/state$/) && request.method === 'GET') {
+      try {
+        const pathParts = path.split('/');
+        const eventId = pathParts[3];
+
+        const doId = env.EVENT_ORCHESTRATOR.idFromName(`event-${eventId}`);
+        const stub = env.EVENT_ORCHESTRATOR.get(doId);
+
+        const doResponse = await stub.fetch(
+          new Request('http://internal/state')
+        );
+
+        const result = await doResponse.json();
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+      } catch (error) {
+        console.error('EventOrchestrator state error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to get event state' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // EventOrchestratorDO: Force event sync
+    if (path.match(/^\/api\/event\/[^/]+\/sync$/) && request.method === 'POST') {
+      try {
+        const pathParts = path.split('/');
+        const eventId = pathParts[3];
+
+        const doId = env.EVENT_ORCHESTRATOR.idFromName(`event-${eventId}`);
+        const stub = env.EVENT_ORCHESTRATOR.get(doId);
+
+        const doResponse = await stub.fetch(
+          new Request('http://internal/sync', {
+            method: 'POST'
+          })
+        );
+
+        const result = await doResponse.json();
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+      } catch (error) {
+        console.error('EventOrchestrator sync error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to sync event' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // EventOrchestratorDO: Get event orchestrator status
+    if (path.match(/^\/api\/event\/[^/]+\/status$/) && request.method === 'GET') {
+      try {
+        const pathParts = path.split('/');
+        const eventId = pathParts[3];
+
+        const doId = env.EVENT_ORCHESTRATOR.idFromName(`event-${eventId}`);
+        const stub = env.EVENT_ORCHESTRATOR.get(doId);
+
+        const doResponse = await stub.fetch(
+          new Request('http://internal/status')
+        );
+
+        const result = await doResponse.json();
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+      } catch (error) {
+        console.error('EventOrchestrator status error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to get event status' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // =========================================================================
+    // PHASE 3: WebSocket endpoint for real-time streaming
+    // =========================================================================
+
+    // WebSocket upgrade for room sessions
+    if (path.match(/^\/api\/room\/[^/]+\/ws$/) && request.method === 'GET') {
+      try {
+        const pathParts = path.split('/');
+        const roomId = pathParts[3];
+
+        // Check for WebSocket upgrade
+        const upgradeHeader = request.headers.get('Upgrade');
+        if (upgradeHeader !== 'websocket') {
+          return new Response('Expected WebSocket upgrade', { status: 426 });
+        }
+
+        // Validate token from query param
+        const token = url.searchParams.get('token');
+        if (!token) {
+          return new Response(
+            JSON.stringify({ error: 'Missing token query parameter' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Validate token and get user info
+        const convexUrl = env.CONVEX_DEPLOY_URL || 'http://localhost:8000';
+        const convex = new ConvexHttpClient(convexUrl);
+        convex.setAuth(token);
+
+        let user: any;
+        try {
+          user = await convex.query(api.users.getMyProfile, {});
+          if (!user) {
+            return new Response(
+              JSON.stringify({ error: 'Invalid token' }),
+              { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        } catch (error) {
+          console.error('Token validation error:', error);
+          return new Response(
+            JSON.stringify({ error: 'Token validation failed' }),
+            { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Get eventId from query param (optional, for context)
+        const eventId = url.searchParams.get('eventId') || '';
+
+        // Route to RoomSessionDO
+        const doId = env.ROOM_SESSION.idFromName(`session-${roomId}`);
+        const stub = env.ROOM_SESSION.get(doId);
+
+        // Forward the upgrade request with user info in headers
+        return stub.fetch(
+          new Request('http://internal/websocket', {
+            headers: {
+              ...Object.fromEntries(request.headers),
+              'X-User-Id': user._id,
+              'X-Room-Id': roomId,
+              'X-Event-Id': eventId,
+            },
+          })
+        );
+
+      } catch (error) {
+        console.error('WebSocket upgrade error:', error);
+        return new Response(
+          JSON.stringify({ error: 'WebSocket upgrade failed' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // RoomSessionDO status endpoint
+    if (path.match(/^\/api\/room\/[^/]+\/ws\/status$/) && request.method === 'GET') {
+      try {
+        const pathParts = path.split('/');
+        const roomId = pathParts[3];
+
+        const doId = env.ROOM_SESSION.idFromName(`session-${roomId}`);
+        const stub = env.ROOM_SESSION.get(doId);
+
+        const doResponse = await stub.fetch(
+          new Request('http://internal/status')
+        );
+
+        const result = await doResponse.json();
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+      } catch (error) {
+        console.error('RoomSession status error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Failed to get session status' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // 404 handler
     return new Response(
       JSON.stringify({
@@ -231,7 +421,12 @@ export default {
         availableEndpoints: [
           'GET /health',
           'POST /api/room/:roomId/invoke',
-          'GET /api/room/:roomId/status'
+          'GET /api/room/:roomId/status',
+          'GET /api/room/:roomId/ws (WebSocket upgrade)',
+          'GET /api/room/:roomId/ws/status',
+          'GET /api/event/:eventId/state',
+          'POST /api/event/:eventId/sync',
+          'GET /api/event/:eventId/status'
         ]
       }),
       { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

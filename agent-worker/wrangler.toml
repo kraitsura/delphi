@@ -24,11 +24,31 @@ class_name = "RoomOrchestratorDO"
 name = "FIRECRAWL_QUEUE"
 class_name = "FirecrawlQueueDO"
 
+# Event orchestrator for event-sourced state management with alarms
+[[durable_objects.bindings]]
+name = "EVENT_ORCHESTRATOR"
+class_name = "EventOrchestratorDO"
+
+# Phase 3: Room session for WebSocket hibernation
+[[durable_objects.bindings]]
+name = "ROOM_SESSION"
+class_name = "RoomSessionDO"
+
 # Migration history (preserved for Cloudflare)
 # v1: RoomOrchestratorDO and FirecrawlQueueDO (using SQLite for free plan)
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RoomOrchestratorDO", "FirecrawlQueueDO"]
+
+# v2: Add EventOrchestratorDO with alarm support
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["EventOrchestratorDO"]
+
+# v3: Add RoomSessionDO for WebSocket hibernation (Phase 3)
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["RoomSessionDO"]
 
 # Development environment
 [env.dev]
